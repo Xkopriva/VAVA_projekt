@@ -13,7 +13,7 @@ public class DatabaseConnection {
     // --- Konfiguracia – idealne nacitat z .properties suboru alebo env premennych ---
     private static final String URL      = "jdbc:postgresql://localhost:5432/bais_db";
     private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "idkMan";
+    private static final String PASSWORD = "idkMan"; // idealne mat usera pre aplikaciu s obmedzenymi pravami
 
     static {
         try {
