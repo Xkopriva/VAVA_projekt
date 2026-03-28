@@ -1,4 +1,4 @@
-package sk.BAIS.model;
+package sk.bais.students;
 
 /**
  * Model trieda reprezentujuca studenta v systeme.
@@ -35,8 +35,8 @@ public class Student {
 
     // Gettery a Settery
 
-    public int getDBID() { return id; }
-    public void setDBID(int id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public int getBaisId() { return baisId; }
     public void setBaisId(int baisId) { this.baisId = baisId; }

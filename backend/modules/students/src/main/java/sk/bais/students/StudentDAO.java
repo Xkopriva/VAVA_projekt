@@ -1,7 +1,4 @@
-package sk.BAIS.dao;
-
-import sk.BAIS.DB.DatabaseConnection;
-import sk.BAIS.model.Student;
+package sk.bais.students;
 
 import java.sql.*;
 import java.util.ArrayList;
