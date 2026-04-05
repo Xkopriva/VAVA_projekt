@@ -8,9 +8,20 @@ public class MigrationRunner {
 
     // zmenit z configu pre superuser, neshipovat s aplikaciou, ktora bezi s normalnym userom
     public static void main(String[] args) {
-        String dbUrl = getEnvOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/bais");
-        String dbUser = getEnvOrDefault("DB_USER", "postgres");
-        String dbPassword = getEnvOrDefault("DB_PASSWORD", "postgres");
+        java.util.Properties props = new java.util.Properties();
+        try (java.io.InputStream is = MigrationRunner.class.getClassLoader().getResourceAsStream("application.properties")) {
+            if (is != null) {
+                props.load(is);
+            } else {
+                System.out.println("application.properties not found, using defaults/env vars.");
+            }
+        } catch (java.io.IOException e) {
+            System.err.println("Could not load application.properties");
+        }
+
+        String dbUrl = getEnvOrDefault("DB_URL", props.getProperty("db.url", "jdbc:postgresql://localhost:5432/bais"));
+        String dbUser = getEnvOrDefault("DB_USER", props.getProperty("db.user", "postgres"));
+        String dbPassword = getEnvOrDefault("DB_PASSWORD", props.getProperty("db.password", "postgres"));
 
         try {
             System.out.println("Configuring Flyway...");
