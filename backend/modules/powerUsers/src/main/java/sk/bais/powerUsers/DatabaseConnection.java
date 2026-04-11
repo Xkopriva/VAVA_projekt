@@ -1,4 +1,4 @@
-package sk.bais.students;
+package sk.bais.powerUsers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,6 @@ public class DatabaseConnection {
     private static final String URL;
     private static final String USER;
     private static final String PASSWORD;
-
     // Konfiguracia – nacitanie konfiguracie z application.properties suboru
     static {
         Properties props = new Properties();
@@ -25,24 +24,20 @@ public class DatabaseConnection {
                 .getResourceAsStream("application.properties")) {
             if (is != null) {
                 props.load(is);
+            } else {
+                System.err.println("WARN: application.properties nenajdene, pouzivam defaulty.");
             }
         } catch (IOException e) {
-            throw new RuntimeException("Nepodarilo sa načítať application.properties", e);
+            throw new RuntimeException("Nepodarilo sa nacitat application.properties", e);
         }
-        // fallback ak neexistuje application properties
         URL      = props.getProperty("db.url",      "jdbc:postgresql://localhost:5432/bais");
         USER     = props.getProperty("db.user",     "postgres");
         PASSWORD = props.getProperty("db.password", "postgres");
     }
 
-    /**
-     * Vrati nove pripojenie k databaze.
-     * Volajuci kod je zodpovedny za zatvorenie (try-with-resources).
-     */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
-    // Privatny konstruktor – trieda je len utilita, nema sa instanciovat
     private DatabaseConnection() {}
 }
