@@ -1,4 +1,4 @@
-package sk.bais.powerUsers;
+package sk.bais.dao;
 
 import java.sql.*;
 import java.util.ArrayList;

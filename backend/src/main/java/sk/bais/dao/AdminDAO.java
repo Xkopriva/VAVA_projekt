@@ -1,5 +1,7 @@
-package sk.bais.admins;
+package sk.bais.dao;
 
+import sk.bais.model.Admin;
+import sk.bais.util.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,0 @@
-<dependencies>
-    <dependency>
-        <groupId>sk.bais</groupId>
-        <artifactId>students</artifactId>
-        <version>1.0-SNAPSHOT</version>
-    </dependency>
-    </dependencies>

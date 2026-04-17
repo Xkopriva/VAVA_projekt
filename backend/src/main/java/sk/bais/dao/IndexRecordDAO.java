@@ -1,4 +1,4 @@
-package sk.bais.students;
+package sk.bais.dao;
 
 import java.sql.Connection;
 import java.sql.Date;
