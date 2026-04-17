@@ -8,6 +8,11 @@ public class MigrationRunner {
 
     // zmenit z configu pre superuser, neshipovat s aplikaciou, ktora bezi s normalnym userom
     public static void main(String[] args) {
+        boolean seedEnabled = false;
+        if (args.length > 0 && args[0].equals("seed")) {
+            seedEnabled = true;
+        }
+
         java.util.Properties props = new java.util.Properties();
         try (java.io.InputStream is = MigrationRunner.class.getClassLoader().getResourceAsStream("application.properties")) {
             if (is != null) {
@@ -25,9 +30,13 @@ public class MigrationRunner {
 
         try {
             System.out.println("Configuring Flyway...");
+            String[] locations = seedEnabled 
+                    ? new String[]{"classpath:db/migration", "classpath:db/seed"}
+                    : new String[]{"classpath:db/migration"};
+
             Flyway flyway = Flyway.configure()
                     .dataSource(dbUrl, dbUser, dbPassword)
-                    .locations("classpath:db/migration")
+                    .locations(locations)
                     .load();
 
             System.out.println("Flyway Info:");
