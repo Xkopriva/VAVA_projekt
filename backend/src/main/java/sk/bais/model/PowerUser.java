@@ -1,4 +1,4 @@
-package sk.bais.powerUsers;
+package sk.bais.model;
 
 import java.time.OffsetDateTime;
 

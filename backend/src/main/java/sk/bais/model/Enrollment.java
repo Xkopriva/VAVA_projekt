@@ -1,4 +1,4 @@
-package sk.bais.students;
+package sk.bais.model;
 
 import java.time.OffsetDateTime;
 

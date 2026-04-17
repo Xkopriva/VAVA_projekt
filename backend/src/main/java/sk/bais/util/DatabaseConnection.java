@@ -1,4 +1,4 @@
-package sk.bais.admins;
+package sk.bais.util;
 
 import java.io.IOException;
 import java.io.InputStream;
