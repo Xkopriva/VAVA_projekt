@@ -1,9 +1,9 @@
 package sk.bais;
 
-import sk.bais.students.StudentDAO;
+import sk.bais.dao.StudentDAO;
 // Importuj ostatné DAO podľa potreby
 
-public class BackendApplication {
+public class Main {
 
     public static void main(String[] args) {
         System.out.println("Backend sa spúšťa...");

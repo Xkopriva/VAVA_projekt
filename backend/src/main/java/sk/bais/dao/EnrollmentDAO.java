@@ -1,5 +1,7 @@
 package sk.bais.dao;
 
+import sk.bais.model.Enrollment;
+import sk.bais.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

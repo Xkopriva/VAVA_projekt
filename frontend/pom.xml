@@ -15,29 +15,24 @@
     <artifactId>frontend</artifactId>
     <packaging>jar</packaging>
 
-    <dependencies>
+    <!-- <dependencies>
         <!-- Závislosť na všetkých backend moduloch -->
         <dependency>
             <groupId>sk.bais</groupId>
-            <artifactId>students</artifactId>
+            <artifactId>dao</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>sk.bais</groupId>
-            <artifactId>teachers</artifactId>
+            <artifactId>model</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>sk.bais</groupId>
-            <artifactId>admins</artifactId>
+            <artifactId>util</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>sk.bais</groupId>
-            <artifactId>powerUsers</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+    </dependencies> -->
 
     <build>
         <plugins>

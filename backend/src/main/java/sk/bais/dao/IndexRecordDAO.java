@@ -1,5 +1,7 @@
 package sk.bais.dao;
 
+import sk.bais.model.IndexRecord;
+import sk.bais.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
