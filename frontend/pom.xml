@@ -15,8 +15,7 @@
     <artifactId>frontend</artifactId>
     <packaging>jar</packaging>
 
-    <!-- <dependencies>
-        <!-- Závislosť na všetkých backend moduloch -->
+     <!-- <dependencies>
         <dependency>
             <groupId>sk.bais</groupId>
             <artifactId>dao</artifactId>

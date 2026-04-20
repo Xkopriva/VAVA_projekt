@@ -1,20 +1,22 @@
 package sk.bais.dao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sk.bais.model.Enrollment;
 import sk.bais.util.DatabaseConnection;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * DAO trieda pre tabulku enrollment.
+ * Logovanie: INFO pre uspesne operacie, ERROR pre SQL vynimky.
  */
 public class EnrollmentDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(EnrollmentDAO.class);
 
     private static final String SQL_LIST =
             "SELECT id, student_id, subject_id, semester_id, " +
@@ -41,7 +43,7 @@ public class EnrollmentDAO {
     private static final String SQL_DELETE =
             "DELETE FROM enrollment WHERE id = ?";
 
-    // --- LIST vsetkych ---
+    // --- LIST ---
 
     public List<Enrollment> list() throws SQLException {
         List<Enrollment> list = new ArrayList<>();
@@ -50,10 +52,11 @@ public class EnrollmentDAO {
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
         }
+        log.info("Nacitanych {} enrollment zaznamov", list.size());
         return list;
     }
 
-    // --- LIST podla studenta --- (najcastejsi use-case)
+    // --- LIST BY STUDENT ---
 
     public List<Enrollment> listByStudent(int studentId) throws SQLException {
         List<Enrollment> list = new ArrayList<>();
@@ -64,6 +67,7 @@ public class EnrollmentDAO {
                 while (rs.next()) list.add(mapRow(rs));
             }
         }
+        log.debug("Nacitanych {} zapisov pre studentId={}", list.size(), studentId);
         return list;
     }
 
@@ -74,9 +78,13 @@ public class EnrollmentDAO {
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny enrollment id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Enrollment id={} nenajdeny", id);
         return Optional.empty();
     }
 
@@ -97,17 +105,21 @@ public class EnrollmentDAO {
                 if (keys.next()) e.setId(keys.getInt(1));
             }
         }
+        log.info("Vytvoreny enrollment id={} pre studentId={} subjectId={}",
+                e.getId(), e.getStudentId(), e.getSubjectId());
         return e;
     }
 
-    // --- UPDATE STATUS --- (najcastejsia zmena — ACTIVE -> PASSED/FAILED/WITHDRAWN)
+    // --- UPDATE STATUS ---
 
     public boolean updateStatus(int enrollmentId, Enrollment.Status newStatus) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE_STATUS)) {
             stmt.setString(1, newStatus.name());
             stmt.setInt(2, enrollmentId);
-            return stmt.executeUpdate() > 0;
+            boolean updated = stmt.executeUpdate() > 0;
+            if (updated) log.info("Enrollment id={} -> status={}", enrollmentId, newStatus);
+            return updated;
         }
     }
 
@@ -117,7 +129,9 @@ public class EnrollmentDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany enrollment id={}", id);
+            return deleted;
         }
     }
 

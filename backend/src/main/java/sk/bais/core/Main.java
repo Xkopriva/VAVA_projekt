@@ -1,4 +1,4 @@
-package sk.bais;
+package sk.bais.core;
 
 import sk.bais.dao.StudentDAO;
 // Importuj ostatné DAO podľa potreby
