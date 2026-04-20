@@ -1,7 +1,5 @@
 package sk.bais.dao;
 
-import sk.bais.model.Student;
-import sk.bais.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,6 +8,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import sk.bais.model.Student;
+import sk.bais.util.DatabaseConnection;
 
 /**
  * DAO trieda pre studentov.

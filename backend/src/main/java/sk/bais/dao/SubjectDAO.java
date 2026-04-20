@@ -1,11 +1,17 @@
 package sk.bais.dao;
 
-import sk.bais.model.Subject;
-import sk.bais.util.DatabaseConnection;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import sk.bais.model.Subject;
+import sk.bais.util.DatabaseConnection;
 
 /**
  * DAO trieda pre tabulku subject.
@@ -50,7 +56,6 @@ public class SubjectDAO {
             "DELETE FROM subject WHERE id = ?";
 
     // --- LIST ---
-
     public List<Subject> list() throws SQLException {
         List<Subject> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -62,7 +67,6 @@ public class SubjectDAO {
     }
 
     // --- GET BY ID ---
-
     public Optional<Subject> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
@@ -75,7 +79,6 @@ public class SubjectDAO {
     }
 
     // --- CREATE ---
-
     public Subject create(Subject s) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
@@ -106,7 +109,6 @@ public class SubjectDAO {
     }
 
     // --- UPDATE ---
-
     public boolean update(Subject s) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
@@ -132,7 +134,6 @@ public class SubjectDAO {
     }
 
     // --- DELETE ---
-
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
@@ -142,7 +143,6 @@ public class SubjectDAO {
     }
 
     // --- MAPPER ---
-
     private Subject mapRow(ResultSet rs) throws SQLException {
         Subject s = new Subject();
         s.setId(rs.getInt("id"));
