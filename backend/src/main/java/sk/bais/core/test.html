@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>BAIS Test Client</title></head>
+<body>
+    <h2>BAIS WebSocket Test</h2>
+    <div id="status">Status: Odpojené</div>
+    <hr>
+    <button onclick="login()">Login (Jozko)</button>
+    <button onclick="getStudents()">Získať študentov</button>
+    <pre id="output"></pre>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8887');
+        const out = document.getElementById('output');
+        
+        ws.onopen = () => document.getElementById('status').innerText = "Status: Pripojené";
+        ws.onmessage = (e) => out.innerText += "\n" + e.data;
+
+        function login() {
+            ws.send(JSON.stringify({
+                action: 'LOGIN',
+                payload: { email: 'jozko.mrkvicka@stuba.sk', password: 'heslo' }
+            }));
+        }
+
+        function getStudents() {
+            ws.send(JSON.stringify({ action: 'GET_STUDENTS' }));
+        }
+    </script>
+</body>
+</html>
