@@ -1,13 +1,21 @@
 package sk.bais.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku enrollment.
- * Reprezentuje zapis studenta na predmet v danom semestri.
  *
- * status: ACTIVE | PASSED | FAILED | WITHDRAWN
+ * @Data        = generuje gettery, settery, toString, equals, hashCode aj toString
+ * @NoArgsConstructor  = generuje prazdny konstruktor (potrebny pre mapRow v DAO)
+ * @AllArgsConstructor = generuje konstruktor so vsetkymi polami
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Enrollment {
 
     public enum Status {
@@ -15,16 +23,18 @@ public class Enrollment {
     }
 
     private int id;
-    private int studentId;      // FK -> user (student)
-    private int subjectId;      // FK -> subject
-    private int semesterId;     // FK -> semester
-    private int attemptNumber;  // 1 = prvy pokus, 2 = opakovany
+    private int studentId;
+    private int subjectId;
+    private int semesterId;
+    private int attemptNumber;
     private OffsetDateTime enrolledAt;
     private Status status;
 
-    public Enrollment() {}
-
-    // Konstruktor pre INSERT
+    /**
+     * Konstruktor pre INSERT — bez id a enrolledAt (generuje DB).
+     * @Data negeneruje tento specificky konstruktor automaticky,
+     * preto ho definujeme manualne.
+     */
     public Enrollment(int studentId, int subjectId, int semesterId,
                       int attemptNumber, Status status) {
         this.studentId = studentId;
@@ -32,33 +42,5 @@ public class Enrollment {
         this.semesterId = semesterId;
         this.attemptNumber = attemptNumber;
         this.status = status;
-    }
-
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public int getStudentId() { return studentId; }
-    public void setStudentId(int v) { this.studentId = v; }
-
-    public int getSubjectId() { return subjectId; }
-    public void setSubjectId(int v) { this.subjectId = v; }
-
-    public int getSemesterId() { return semesterId; }
-    public void setSemesterId(int v) { this.semesterId = v; }
-
-    public int getAttemptNumber() { return attemptNumber; }
-    public void setAttemptNumber(int v) { this.attemptNumber = v; }
-
-    public OffsetDateTime getEnrolledAt() { return enrolledAt; }
-    public void setEnrolledAt(OffsetDateTime v) { this.enrolledAt = v; }
-
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-
-    @Override
-    public String toString() {
-        return "Enrollment{id=" + id + ", studentId=" + studentId +
-               ", subjectId=" + subjectId + ", semesterId=" + semesterId +
-               ", attempt=" + attemptNumber + ", status=" + status + "}";
     }
 }

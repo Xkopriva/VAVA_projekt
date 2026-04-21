@@ -1,16 +1,26 @@
 package sk.bais.dao;
 
-import sk.bais.model.Teacher;
-import sk.bais.util.DatabaseConnection;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sk.bais.model.Teacher;
+import sk.bais.util.DatabaseConnection;
 
 /**
  * DAO trieda pre ucitelov (rola TEACHER).
  */
 public class TeacherDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(TeacherDAO.class);
 
     private static final String SQL_LIST =
             "SELECT u.id, u.email, u.first_name, u.last_name, u.password_hash, " +
@@ -44,27 +54,35 @@ public class TeacherDAO {
     private static final String SQL_DELETE =
             "DELETE FROM \"user\" WHERE id = ?";
 
+    // LIST
     public List<Teacher> list() throws SQLException {
-        List<Teacher> teachers = new ArrayList<>();
+        List<Teacher> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_LIST);
              ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) teachers.add(mapRow(rs));
+            while (rs.next()) list.add(mapRow(rs));
         }
-        return teachers;
+        log.info("Nacitanych {} teacher zaznamov", list.size());
+        return list;
     }
 
+    // GET BY ID
     public Optional<Teacher> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny teacher id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Teacher id={} nenajdeny", id);
         return Optional.empty();
     }
 
+    // CREATE
     public Teacher create(Teacher teacher) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -86,14 +104,17 @@ public class TeacherDAO {
                     roleStmt.executeUpdate();
                 }
                 conn.commit();
+                log.info("Vytvoreny teacher id={}", teacher.getId());
             } catch (SQLException e) {
                 conn.rollback();
+                log.error("Chyba pri vytvarani zaznamu, rollback", e);
                 throw e;
             }
         }
         return teacher;
     }
 
+    // UPDATE
     public boolean update(Teacher teacher) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
@@ -107,14 +128,18 @@ public class TeacherDAO {
         }
     }
 
+    // DELETE
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany teacher id={}", id);
+            return deleted;
         }
     }
 
+    // MAPPER
     private Teacher mapRow(ResultSet rs) throws SQLException {
         return new Teacher(
                 rs.getInt("id"),

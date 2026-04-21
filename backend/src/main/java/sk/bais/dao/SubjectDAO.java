@@ -1,17 +1,28 @@
 package sk.bais.dao;
 
-import sk.bais.model.Subject;
-import sk.bais.util.DatabaseConnection;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sk.bais.model.Subject;
+import sk.bais.util.DatabaseConnection;
 
 /**
  * DAO trieda pre tabulku subject.
  * completion_type je VARCHAR s CHECK — posielame ho ako obycajny String, bez ::cast.
  */
 public class SubjectDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(SubjectDAO.class);
 
     private static final String COLS =
             "id, code, external_id, faculty, credits, is_mandatory, is_profiled, " +
@@ -49,8 +60,7 @@ public class SubjectDAO {
     private static final String SQL_DELETE =
             "DELETE FROM subject WHERE id = ?";
 
-    // --- LIST ---
-
+    //  LIST 
     public List<Subject> list() throws SQLException {
         List<Subject> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -58,24 +68,27 @@ public class SubjectDAO {
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
         }
+        log.info("Nacitanych {} subject zaznamov", list.size());
         return list;
     }
 
-    // --- GET BY ID ---
-
+    //  GET BY ID 
     public Optional<Subject> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny subject id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Subject id={} nenajdeny", id);
         return Optional.empty();
     }
 
-    // --- CREATE ---
-
+    //  CREATE 
     public Subject create(Subject s) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
@@ -102,11 +115,11 @@ public class SubjectDAO {
                 if (keys.next()) s.setId(keys.getInt(1));
             }
         }
+        log.info("Vytvoreny subject id={}", s.getId());
         return s;
     }
 
-    // --- UPDATE ---
-
+    //  UPDATE 
     public boolean update(Subject s) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
@@ -127,22 +140,24 @@ public class SubjectDAO {
             stmt.setString(14, s.getFaculty());
             stmt.setInt(15, s.getId());
 
-            return stmt.executeUpdate() > 0;
+            boolean updated = stmt.executeUpdate() > 0;
+            if (updated) log.info("Subject id={} uspesne upraveny", s.getId());
+            return updated;
         }
     }
 
-    // --- DELETE ---
-
+    //  DELETE 
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany subject id={}", id);
+            return deleted;
         }
     }
 
-    // --- MAPPER ---
-
+    //  MAPPER 
     private Subject mapRow(ResultSet rs) throws SQLException {
         Subject s = new Subject();
         s.setId(rs.getInt("id"));

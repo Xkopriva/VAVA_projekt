@@ -1,7 +1,5 @@
 package sk.bais.dao;
 
-import sk.bais.model.Student;
-import sk.bais.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,11 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sk.bais.model.Student;
+import sk.bais.util.DatabaseConnection;
+
 /**
  * DAO trieda pre studentov.
  * Studenti su uzivatelia s rolou STUDENT.
  */
 public class StudentDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(StudentDAO.class);
 
     private static final String SQL_LIST =
             "SELECT u.id, u.email, u.first_name, u.last_name, u.password_hash, " +
@@ -50,36 +56,38 @@ public class StudentDAO {
     private static final String SQL_DELETE =
             "DELETE FROM \"user\" WHERE id = ?";
 
-    // --- LIST ---
-
+    //  LIST 
     public List<Student> list() throws SQLException {
-        List<Student> students = new ArrayList<>();
+        List<Student> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_LIST);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                students.add(mapRow(rs));
+                list.add(mapRow(rs));
             }
         }
-        return students;
+        log.info("Nacitanych {} student zaznamov", list.size());
+        return list;
     }
 
-    // --- GET BY ID ---
-
+    //  GET BY ID 
     public Optional<Student> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny student id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Enrollment id={} nenajdeny", id);
         return Optional.empty();
     }
 
-    // --- CREATE ---
+    //  CREATE 
     // Vlozi uzivatela a priradi mu rolu STUDENT v jednej transakcii
-
     public Student create(Student student) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -106,41 +114,45 @@ public class StudentDAO {
                 }
 
                 conn.commit();
+                log.info("Vytvoreny student id={}", student.getId());
             } catch (SQLException e) {
                 conn.rollback();
+                log.error("Chyba pri vytvarani zaznamu, rollback", e);
                 throw e;
             }
         }
         return student;
     }
 
-    // --- UPDATE ---
-
+    //  UPDATE 
     public boolean update(Student student) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
+            
             stmt.setString(1, student.getEmail());
             stmt.setString(2, student.getFirstName());
             stmt.setString(3, student.getLastName());
             stmt.setBoolean(4, student.isActive());
             stmt.setString(5, student.getProfilePictureUrl());
             stmt.setInt(6, student.getId());
-            return stmt.executeUpdate() > 0;
+            boolean updated = stmt.executeUpdate() > 0;
+            if (updated) log.info("Student id={} uspesne upraveny", student.getId());
+            return updated;
         }
     }
 
-    // --- DELETE ---
-
+    //  DELETE 
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany student id={}", id);
+            return deleted;
         }
     }
 
-    // --- MAPPER ---
-
+    //  MAPPER 
     private Student mapRow(ResultSet rs) throws SQLException {
         return new Student(
                 rs.getInt("id"),

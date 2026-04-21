@@ -1,17 +1,27 @@
 package sk.bais.dao;
 
-import sk.bais.model.PowerUser;
-import sk.bais.util.DatabaseConnection;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sk.bais.model.PowerUser;
+import sk.bais.util.DatabaseConnection;
 
 /**
  * DAO trieda pre power userov (rola POWER_USER).
  * Mozu spravovat predmety, eventy a syllabus obsah.
  */
 public class PowerUserDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(PowerUserDAO.class);
 
     private static final String SQL_LIST =
             "SELECT u.id, u.email, u.first_name, u.last_name, u.password_hash, " +
@@ -45,27 +55,35 @@ public class PowerUserDAO {
     private static final String SQL_DELETE =
             "DELETE FROM \"user\" WHERE id = ?";
 
+    // LIST
     public List<PowerUser> list() throws SQLException {
-        List<PowerUser> users = new ArrayList<>();
+        List<PowerUser> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_LIST);
              ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) users.add(mapRow(rs));
+            while (rs.next()) list.add(mapRow(rs));
         }
-        return users;
+        log.info("Nacitanych {} power users zaznamov", list.size());
+        return list;
     }
 
+    // GET BY ID
     public Optional<PowerUser> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny power user id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Power user id={} nenajdeny", id);
         return Optional.empty();
     }
 
+    // CREATE
     public PowerUser create(PowerUser user) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -87,35 +105,45 @@ public class PowerUserDAO {
                     roleStmt.executeUpdate();
                 }
                 conn.commit();
+                log.info("Vytvoreny power user id={}", user.getId());
             } catch (SQLException e) {
                 conn.rollback();
+                log.error("Chyba pri vytvarani zaznamu, rollback", e);
                 throw e;
             }
         }
         return user;
     }
 
+    // UPDATE
     public boolean update(PowerUser user) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
+            
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getFirstName());
             stmt.setString(3, user.getLastName());
             stmt.setBoolean(4, user.isActive());
             stmt.setString(5, user.getProfilePictureUrl());
             stmt.setInt(6, user.getId());
-            return stmt.executeUpdate() > 0;
+            boolean updated = stmt.executeUpdate() > 0;
+            if (updated) log.info("Power user id={} uspesne upraveny", user.getId());
+            return updated;
         }
     }
 
+    // DELETE
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany power user id={}", id);
+            return deleted;
         }
     }
 
+    // MAPPER
     private PowerUser mapRow(ResultSet rs) throws SQLException {
         return new PowerUser(
                 rs.getInt("id"),
