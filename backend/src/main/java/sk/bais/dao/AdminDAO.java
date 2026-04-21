@@ -41,7 +41,7 @@ public class AdminDAO {
 
     private static final String SQL_DELETE = "DELETE FROM \"user\" WHERE id = ?";
 
-    // --- LIST ---
+    //  LIST 
     public List<Admin> list() throws SQLException {
         List<Admin> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -55,13 +55,14 @@ public class AdminDAO {
         return list;
     }
 
-    // --- GET BY ID ---
+    //  GET BY ID 
     public Optional<Admin> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    log.debug("Najdeny admin id={}", id);
                     return Optional.of(mapRow(rs));
                 }
             }
@@ -70,7 +71,7 @@ public class AdminDAO {
         return Optional.empty();
     }
 
-    // --- UPDATE ---
+    //  UPDATE 
     public boolean update(Admin admin) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
@@ -86,7 +87,7 @@ public class AdminDAO {
         }
     }
 
-    // --- DELETE ---
+    //  DELETE 
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
@@ -97,7 +98,7 @@ public class AdminDAO {
         }
     }
 
-    // --- MAPPER ---
+    //  MAPPER 
     private Admin mapRow(ResultSet rs) throws SQLException {
         return new Admin(
                 rs.getInt("id"),

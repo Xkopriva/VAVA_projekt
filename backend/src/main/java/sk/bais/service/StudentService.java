@@ -1,8 +1,14 @@
 package sk.bais.service;
 
-import lombok.RequiredArgsConstructor;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
 import sk.bais.dao.MarkDAO;
@@ -10,11 +16,6 @@ import sk.bais.dao.StudentDAO;
 import sk.bais.model.Enrollment;
 import sk.bais.model.Mark;
 import sk.bais.model.Student;
-
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Service vrstva pre studenta.
@@ -36,9 +37,9 @@ public class StudentService {
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
 
-    // -------------------------------------------------------------------------
+    
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
-    // -------------------------------------------------------------------------
+    
 
     public List<Student> getAllStudents(AuthContext ctx) {
         if (!ctx.hasPermission("users:read")) {
@@ -55,9 +56,9 @@ public class StudentService {
         }
     }
 
-    // -------------------------------------------------------------------------
+    
     // Detail študenta — student vidí len seba, admin/teacher vidí kohokoľvek
-    // -------------------------------------------------------------------------
+    
 
     public Optional<Student> getStudent(int studentId, AuthContext ctx) {
         boolean isSelf = ctx.getUserId() == studentId;
@@ -75,9 +76,9 @@ public class StudentService {
         }
     }
 
-    // -------------------------------------------------------------------------
+    
     // Zápis na predmet — len STUDENT, len sám seba
-    // -------------------------------------------------------------------------
+    
 
     public Optional<Enrollment> enrollInSubject(int subjectId, int semesterId, AuthContext ctx) {
         if (!ctx.hasPermission("enrollments:write")) {
@@ -108,9 +109,9 @@ public class StudentService {
         }
     }
 
-    // -------------------------------------------------------------------------
+    
     // Moje zápisy — student vidí len svoje
-    // -------------------------------------------------------------------------
+    
 
     public List<Enrollment> getMyEnrollments(AuthContext ctx) {
         try {
@@ -121,9 +122,9 @@ public class StudentService {
         }
     }
 
-    // -------------------------------------------------------------------------
+    
     // Moje známky — student vidí len svoje
-    // -------------------------------------------------------------------------
+    
 
     public List<Mark> getMyMarks(int enrollmentId, AuthContext ctx) {
         try {

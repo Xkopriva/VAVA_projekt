@@ -1,7 +1,5 @@
 package sk.bais.dao;
 
-import sk.bais.model.Mark;
-import sk.bais.util.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,10 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sk.bais.model.Mark;
+import sk.bais.util.DatabaseConnection;
+
 /**
  * DAO trieda pre tabulku mark.
  */
 public class MarkDAO {
+
+    private static final Logger log = LoggerFactory.getLogger(MarkDAO.class);
 
     private static final String SQL_LIST =
             "SELECT id, enrollment_id, event_id, task_submission_id, " +
@@ -44,6 +50,7 @@ public class MarkDAO {
     private static final String SQL_DELETE =
             "DELETE FROM mark WHERE id = ?";
 
+    // LIST
     public List<Mark> list() throws SQLException {
         List<Mark> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -51,9 +58,11 @@ public class MarkDAO {
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
         }
+        log.info("Nacitanych {} mark zaznamov", list.size());
         return list;
     }
-
+    
+    // LIST BY ENROLLMENT
     // Vrati vsetky znamky pre dany enrollment — najcastejsi use-case
     public List<Mark> listByEnrollment(int enrollmentId) throws SQLException {
         List<Mark> list = new ArrayList<>();
@@ -64,20 +73,27 @@ public class MarkDAO {
                 while (rs.next()) list.add(mapRow(rs));
             }
         }
+        log.debug("Nacitanych {} zapisov pre enrollmentId={}", list.size(), enrollmentId);
         return list;
     }
 
+    // GET BY ID
     public Optional<Mark> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next()) {
+                    log.debug("Najdeny mark id={}", id);
+                    return Optional.of(mapRow(rs));
+                }
             }
         }
+        log.debug("Mark id={} nenajdeny", id);
         return Optional.empty();
     }
 
+    // CREATE
     public Mark create(Mark m) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
@@ -96,9 +112,11 @@ public class MarkDAO {
                 if (keys.next()) m.setId(keys.getInt(1));
             }
         }
+        log.info("Vytvoreny mark id={}", m.getId());
         return m;
     }
 
+    // UPDATE
     public boolean update(Mark m) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
@@ -107,18 +125,25 @@ public class MarkDAO {
             stmt.setBigDecimal(3, m.getMaxPoints());
             stmt.setString(4, m.getNotes());
             stmt.setInt(5, m.getId());
-            return stmt.executeUpdate() > 0;
+
+            boolean updated = stmt.executeUpdate() > 0;
+            if (updated) log.info("Mark id={} uspesne upraveny", m.getId());
+            return updated;
         }
     }
 
+    // DELETE
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
             stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
+            boolean deleted = stmt.executeUpdate() > 0;
+            if (deleted) log.info("Vymazany mark id={}", id);
+            return deleted;
         }
     }
 
+    // MAPPER
     private Mark mapRow(ResultSet rs) throws SQLException {
         Mark m = new Mark();
         m.setId(rs.getInt("id"));
@@ -137,6 +162,7 @@ public class MarkDAO {
         return m;
     }
 
+    // HELPER
     private void setNullableInt(PreparedStatement stmt, int idx, Integer val) throws SQLException {
         if (val != null) stmt.setInt(idx, val);
         else stmt.setNull(idx, Types.INTEGER);

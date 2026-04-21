@@ -3,12 +3,22 @@ package sk.bais.model;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * Model trieda mapovana na tabulku index_record.
  * Reprezentuje oficialnu znamku za jeden enrollment.
  *
  * final_mark: A | B | C | D | E | FX | PASS | FAIL
+ * @Data        = generuje gettery, settery, toString, equals, hashCode aj toString
+ * @NoArgsConstructor  = generuje prazdny konstruktor (potrebny pre mapRow v DAO)
+ * @AllArgsConstructor = generuje konstruktor so vsetkymi polami
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class IndexRecord {
 
     private int id;
@@ -19,8 +29,6 @@ public class IndexRecord {
     private LocalDate examDate; // DATE, nullable
     private String notes;
 
-    public IndexRecord() {}
-
     // Konstruktor pre INSERT
     public IndexRecord(int enrollmentId, Integer recordedBy,
                        String finalMark, LocalDate examDate, String notes) {
@@ -29,32 +37,5 @@ public class IndexRecord {
         this.finalMark = finalMark;
         this.examDate = examDate;
         this.notes = notes;
-    }
-
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public int getEnrollmentId() { return enrollmentId; }
-    public void setEnrollmentId(int v) { this.enrollmentId = v; }
-
-    public Integer getRecordedBy() { return recordedBy; }
-    public void setRecordedBy(Integer v) { this.recordedBy = v; }
-
-    public String getFinalMark() { return finalMark; }
-    public void setFinalMark(String v) { this.finalMark = v; }
-
-    public OffsetDateTime getRecordedAt() { return recordedAt; }
-    public void setRecordedAt(OffsetDateTime v) { this.recordedAt = v; }
-
-    public LocalDate getExamDate() { return examDate; }
-    public void setExamDate(LocalDate v) { this.examDate = v; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String v) { this.notes = v; }
-
-    @Override
-    public String toString() {
-        return "IndexRecord{id=" + id + ", enrollmentId=" + enrollmentId +
-               ", finalMark='" + finalMark + "', examDate=" + examDate + "}";
     }
 }

@@ -42,14 +42,17 @@ public class EnrollmentDAO {
             "INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, status) " +
             "VALUES (?, ?, ?, ?, ?)";
 
+    private static final String SQL_UPDATE =
+        "UPDATE enrollment SET attempt_number = ?, status = ? " +
+        "WHERE id = ?";
+
     private static final String SQL_UPDATE_STATUS =
             "UPDATE enrollment SET status = ? WHERE id = ?";
 
     private static final String SQL_DELETE =
             "DELETE FROM enrollment WHERE id = ?";
 
-    // --- LIST ---
-
+    //  LIST 
     public List<Enrollment> list() throws SQLException {
         List<Enrollment> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -61,8 +64,7 @@ public class EnrollmentDAO {
         return list;
     }
 
-    // --- LIST BY STUDENT ---
-
+    //  LIST BY STUDENT 
     public List<Enrollment> listByStudent(int studentId) throws SQLException {
         List<Enrollment> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -76,8 +78,7 @@ public class EnrollmentDAO {
         return list;
     }
 
-    // --- GET BY ID ---
-
+    //  GET BY ID 
     public Optional<Enrollment> getById(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_GET_BY_ID)) {
@@ -93,11 +94,10 @@ public class EnrollmentDAO {
         return Optional.empty();
     }
 
-    // --- CREATE ---
-
+    //  CREATE 
     public Enrollment create(Enrollment e) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement stmt = conn.prepareStatement(SQL_INSERT, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setInt(1, e.getStudentId());
             stmt.setInt(2, e.getSubjectId());
@@ -114,9 +114,21 @@ public class EnrollmentDAO {
                 e.getId(), e.getStudentId(), e.getSubjectId());
         return e;
     }
+    // UPDATE
+    public boolean update(Enrollment e) throws SQLException {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
+        stmt.setInt(1, e.getAttemptNumber());
+        stmt.setString(2, e.getStatus().name());
+        stmt.setInt(3, e.getId());
+        boolean updated = stmt.executeUpdate() > 0;
+        if (updated) log.info("Enrollment id={} upraveny: attempt={} status={}",
+                e.getId(), e.getAttemptNumber(), e.getStatus());
+        return updated;
+    }
+}
 
-    // --- UPDATE STATUS ---
-
+    //  UPDATE STATUS 
     public boolean updateStatus(int enrollmentId, Enrollment.Status newStatus) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE_STATUS)) {
@@ -128,8 +140,7 @@ public class EnrollmentDAO {
         }
     }
 
-    // --- DELETE ---
-
+    //  DELETE 
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
@@ -140,8 +151,7 @@ public class EnrollmentDAO {
         }
     }
 
-    // --- MAPPER ---
-
+    //  MAPPER 
     private Enrollment mapRow(ResultSet rs) throws SQLException {
         Enrollment e = new Enrollment();
         e.setId(rs.getInt("id"));
