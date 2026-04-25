@@ -39,8 +39,6 @@ public class StudentService {
 
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
-    
-
     public List<Student> getAllStudents(AuthContext ctx) {
         if (!ctx.hasPermission("users:read")) {
             log.warn("Zamietnutý prístup k zoznamu študentov pre užívateľa id={}", ctx.getUserId());
