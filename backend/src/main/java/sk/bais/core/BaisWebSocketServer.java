@@ -9,7 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
+import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
+import sk.bais.service.TeacherService;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -22,15 +24,20 @@ public class BaisWebSocketServer extends WebSocketServer {
 
     private final AuthService authService;
     private final StudentService studentService;
+    private final TeacherService teacherService;
+    private final AdminService adminService;    
 
     // Mapa aktívnych sessions: každé WebSocket spojenie má svoj AuthContext
     private final Map<WebSocket, AuthContext> sessions = new ConcurrentHashMap<>();
 
-    public BaisWebSocketServer(int port, AuthService authService, StudentService studentService) {
-        super(new InetSocketAddress(port));
-        this.authService = authService;
-        this.studentService = studentService;
-    }
+    public BaisWebSocketServer(int port, AuthService authService, StudentService studentService, 
+                            TeacherService teacherService, AdminService adminService) {
+    super(new InetSocketAddress(port));
+    this.authService = authService;
+    this.studentService = studentService;
+    this.teacherService = teacherService; 
+    this.adminService = adminService;     
+}
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
@@ -61,6 +68,23 @@ public class BaisWebSocketServer extends WebSocketServer {
             switch (action) {
                 case "LOGIN"        -> handleLogin(conn, payload);
                 case "GET_STUDENTS" -> handleGetStudents(conn);
+
+                // --- ADMIN AKCIE ---
+                case "CREATE_USER" -> handleCreateUser(conn, payload);
+                case "LIST_USERS" -> handleListUsers(conn);
+                case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
+
+                // --- TEACHER AKCIE ---
+                case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
+                case "ADD_MARK" -> handleAddMark(conn, payload);
+                
+                // --- STUDENT AKCIE ---
+                case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
+                case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
+
+
+
+
                 default             -> sendError(conn, "Neznáma akcia: " + action);
             }
         } catch (Exception e) {
@@ -117,6 +141,99 @@ public class BaisWebSocketServer extends WebSocketServer {
             sendResponse(conn, "STUDENTS_LIST", students);
         });
     }
+
+    // -------------------------------------------------------------------------
+    // Student Handlery
+    // -------------------------------------------------------------------------
+
+    private void handleEnrollSubject(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            int subjectId = payload.get("subjectId").asInt();
+            int semesterId = payload.get("semesterId").asInt();
+            var result = studentService.enrollInSubject(subjectId, semesterId, ctx);
+            if (result.isPresent()) {
+                sendResponse(conn, "ENROLLMENT_SUCCESS", result.get());
+            } else {
+                sendError(conn, "Zápis na predmet zlyhal");
+            }
+        });
+    }
+
+    private void handleGetMyEnrollments(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var enrollments = studentService.getMyEnrollments(ctx);
+            sendResponse(conn, "MY_ENROLLMENTS", enrollments);
+        });
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Teacher Handlery
+    // -------------------------------------------------------------------------
+
+    private void handleGetTeacherSubjects(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var subjects = teacherService.getMySubjects(ctx);
+            sendResponse(conn, "TEACHER_SUBJECTS_LIST", subjects);
+        });
+    }
+
+    private void handleAddMark(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                sk.bais.model.Mark mark = mapper.treeToValue(payload, sk.bais.model.Mark.class);
+                var result = teacherService.addMark(mark, ctx);
+                if (result.isPresent()) {
+                    sendResponse(conn, "MARK_ADDED", result.get());
+                } else {
+                    sendError(conn, "Nepodarilo sa pridať známku");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre známku");
+            }
+        });
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Admin Handlery
+    // -------------------------------------------------------------------------
+
+    private void handleCreateUser(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                // Mapovanie JSONu na objekt User a vytiahnutie plain hesla
+                sk.bais.model.User newUser = mapper.treeToValue(payload.get("user"), sk.bais.model.User.class);
+                String password = payload.get("password").asText();
+                String role = payload.get("role").asText();
+                
+                var result = adminService.createUser(newUser, password, role, ctx);
+                if (result.isPresent()) {
+                    sendResponse(conn, "USER_CREATED", result.get());
+                } else {
+                    sendError(conn, "Nepodarilo sa vytvoriť používateľa (chýbajúce práva alebo chyba v DB)");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre vytvorenie používateľa");
+            }
+        });
+    }
+
+    private void handleListUsers(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var users = adminService.getAllUsers(ctx);
+            sendResponse(conn, "USERS_LIST", users);
+        });
+    }
+
+    private void handleDeactivateUser(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            int targetId = payload.get("userId").asInt();
+            boolean success = adminService.deactivateUser(targetId, ctx);
+            sendResponse(conn, "USER_DEACTIVATED", Map.of("success", success, "userId", targetId));
+        });
+    }
+
 
     // -------------------------------------------------------------------------
     // Pomocné metódy pre odosielanie odpovedí

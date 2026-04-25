@@ -39,8 +39,6 @@ public class StudentService {
 
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
-    
-
     public List<Student> getAllStudents(AuthContext ctx) {
         if (!ctx.hasPermission("users:read")) {
             log.warn("Zamietnutý prístup k zoznamu študentov pre užívateľa id={}", ctx.getUserId());
@@ -58,8 +56,6 @@ public class StudentService {
 
     
     // Detail študenta — student vidí len seba, admin/teacher vidí kohokoľvek
-    
-
     public Optional<Student> getStudent(int studentId, AuthContext ctx) {
         boolean isSelf = ctx.getUserId() == studentId;
         boolean canReadOthers = ctx.hasPermission("users:read");
@@ -78,8 +74,6 @@ public class StudentService {
 
     
     // Zápis na predmet — len STUDENT, len sám seba
-    
-
     public Optional<Enrollment> enrollInSubject(int subjectId, int semesterId, AuthContext ctx) {
         if (!ctx.hasPermission("enrollments:write")) {
             log.warn("Zamietnutý zápis na predmet: userId={} nemá enrollments:write", ctx.getUserId());
@@ -111,8 +105,6 @@ public class StudentService {
 
     
     // Moje zápisy — student vidí len svoje
-    
-
     public List<Enrollment> getMyEnrollments(AuthContext ctx) {
         try {
             return enrollmentDAO.listByStudent(ctx.getUserId());
@@ -124,8 +116,6 @@ public class StudentService {
 
     
     // Moje známky — student vidí len svoje
-    
-
     public List<Mark> getMyMarks(int enrollmentId, AuthContext ctx) {
         try {
             // Overíme že enrollment patrí tomuto studentovi

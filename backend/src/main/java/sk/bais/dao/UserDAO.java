@@ -54,7 +54,9 @@ public class UserDAO {
 
     private static final String SQL_DELETE =
             "DELETE FROM \"user\" WHERE id = ?";
-
+            
+    private static final String SQL_ASSIGN_ROLE = "INSERT INTO user_role (user_id, role_id) " +
+            "SELECT ?, id FROM role WHERE name = ?";
     /**
      * Zoznam vsetkych pouzivatelov.
      */
@@ -183,6 +185,19 @@ public class UserDAO {
             boolean deleted = stmt.executeUpdate() > 0;
             if (deleted) log.info("Vymazany user id={}", id);
             return deleted;
+        }
+    }
+
+    /**
+     * Prida uyivatelovi rolu
+     */
+    public void assignRole(int userId, String roleName) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(SQL_ASSIGN_ROLE)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, roleName);
+            stmt.executeUpdate();
+            log.info("Rola {} priradena pouzivatelovi id={}", roleName, userId);
         }
     }
 

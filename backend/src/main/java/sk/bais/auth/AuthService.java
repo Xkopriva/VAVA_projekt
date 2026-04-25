@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +19,6 @@ import sk.bais.util.DatabaseConnection;
  *
  * 1. AUTENTIFIKÁCIA — overí email + heslo voči DB
  * 2. AUTORIZÁCIA — načíta oprávnenia užívateľa z RBAC tabuliek
- *
- * TODO: Heslá sú v DB hashované (bcrypt/argon2).
- * Tu používame jednoduchú kontrolu hash == hash pre demonštráciu.
- * V produkcii treba použiť BCrypt.checkpw() alebo podobné.
  */
 public class AuthService {
 
@@ -73,9 +70,8 @@ public class AuthService {
 
                 String storedHash = rs.getString("password_hash");
 
-                // TODO: nahradiť BCrypt.checkpw(password, storedHash) keď pridáme bcrypt závislosť
-                // Teraz porovnávame priamo hash == zadaný reťazec (len pre vývoj!)
-                if (!storedHash.equals(password)) {
+                // BCrypt na porovnanie hash hesla
+                if (!BCrypt.checkpw(password, storedHash)) {
                     log.warn("Prihlásenie zlyhalo — nesprávne heslo: {}", email);
                     return Optional.empty();
                 }
