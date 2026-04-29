@@ -1,16 +1,20 @@
 package sk.bais.service;
 
-import lombok.RequiredArgsConstructor;
-import org.mindrot.jbcrypt.BCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sk.bais.auth.AuthContext;
-import sk.bais.dao.UserDAO;
-import sk.bais.model.User;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import lombok.RequiredArgsConstructor;
+import sk.bais.auth.AuthContext;
+import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.UserDAO;
+import sk.bais.model.Subject;
+import sk.bais.model.User;
 
 
 /**
@@ -23,6 +27,7 @@ public class AdminService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminService.class);
     private final UserDAO userDAO;
+    private final SubjectDAO subjectDAO;
 
     // Registruje noveho pouzivatela so zahashovanym heslom a priradi mu rolu
     public Optional<User> createUser(User newUser, String plainTextPassword, String roleName, AuthContext ctx) {
@@ -78,6 +83,40 @@ public class AdminService {
         } catch (SQLException e) {
             log.error("Chyba pri načítaní používateľov", e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Priradí učiteľa ako garanta pre konkrétny predmet.
+     */
+    public boolean assignGuarantor(int teacherId, int subjectId, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:manage")) {
+            log.warn("Zamietnutý pokus o priradenie garanta: userId={} nemá oprávnenie subjects:manage", ctx.getUserId());
+            return false;
+        }
+
+        try {
+            Optional<Subject> subjectOpt = subjectDAO.getById(subjectId);
+            
+            if (subjectOpt.isEmpty()) {
+                log.error("Nepodarilo sa priradiť garanta: Predmet id={} neexistuje", subjectId);
+                return false;
+            }
+
+            Subject subject = subjectOpt.get();
+            subject.setGuarantorId(teacherId); 
+
+            boolean success = subjectDAO.update(subject);
+
+            if (success) {
+                log.info("Admin id={} úspešne nastavil učiteľa id={} ako garanta predmetu id={}", 
+                        ctx.getUserId(), teacherId, subjectId);
+            }
+            return success;
+
+        } catch (SQLException e) {
+            log.error("Databázová chyba pri priraďovaní garanta učiteľovi id={} k predmetu id={}", teacherId, subjectId, e);
+            return false;
         }
     }
 }

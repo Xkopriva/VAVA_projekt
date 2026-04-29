@@ -32,7 +32,7 @@ public class Main {
         // 2. Inicializácia Biznis logiky (Service vrstva)
         StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO);
         TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
-        AdminService adminService = new AdminService(userDAO); 
+        AdminService adminService = new AdminService(userDAO, subjectDAO); 
 
         // 3. Spustenie WebSocket servera na porte 8887
         int port = 8887;
