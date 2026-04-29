@@ -1,24 +1,25 @@
 package sk.bais.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
 import sk.bais.service.TeacherService;
-
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class BaisWebSocketServer extends WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(BaisWebSocketServer.class);
@@ -76,6 +77,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "CREATE_USER" -> handleCreateUser(conn, payload);
                 case "LIST_USERS" -> handleListUsers(conn);
                 case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
+                case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
 
                 // --- TEACHER AKCIE ---
                 case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
@@ -234,6 +236,32 @@ public class BaisWebSocketServer extends WebSocketServer {
             int targetId = payload.get("userId").asInt();
             boolean success = adminService.deactivateUser(targetId, ctx);
             sendResponse(conn, "USER_DEACTIVATED", Map.of("success", success, "userId", targetId));
+        });
+    }
+
+    private void handleAssignGuarantor(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int teacherId = payload.get("teacherId").asInt();
+                int subjectId = payload.get("subjectId").asInt();
+                
+                boolean success = adminService.assignGuarantor(teacherId, subjectId, ctx);
+
+                if (success) {
+                    sendResponse(conn, "GUARANTOR_ASSIGNED", Map.of(
+                        "success", true,
+                        "teacherId", teacherId,
+                        "subjectId", subjectId
+                    ));
+                    log.info("Garant priradený: teacherId={}, subjectId={} (vykonal adminId={})", 
+                            teacherId, subjectId, ctx.getUserId());
+                } else {
+                    sendError(conn, "Nepodarilo sa priradiť garanta (nedostatočné práva alebo neexistujúci predmet/učiteľ)");
+                }
+            } catch (Exception e) {
+                log.error("Chyba pri spracovaní priradenia garanta", e);
+                sendError(conn, "Neplatné dáta pre priradenie garanta (očakávané teacherId a subjectId)");
+            }
         });
     }
 
