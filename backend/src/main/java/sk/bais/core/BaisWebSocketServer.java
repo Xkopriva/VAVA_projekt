@@ -2,6 +2,8 @@ package sk.bais.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -36,7 +38,8 @@ public class BaisWebSocketServer extends WebSocketServer {
     this.authService = authService;
     this.studentService = studentService;
     this.teacherService = teacherService; 
-    this.adminService = adminService;     
+    this.adminService = adminService;   
+    mapper.registerModule(new JavaTimeModule());  
 }
 
     @Override
