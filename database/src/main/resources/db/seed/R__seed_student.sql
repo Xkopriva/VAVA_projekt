@@ -8,17 +8,17 @@
 -- ============================================================
 -- USERS
 -- Password hashes use bcrypt cost 12.
--- Plaintext for both accounts: "password"
+-- Plaintext for both accounts: "heslo"
 -- ============================================================
 
 INSERT INTO "user" (email, first_name, last_name, password_hash, is_active) VALUES
     -- System admin used as recorded_by for seeded index records
     ('admin@fiit.stuba.sk', 'System', 'Admin',
-     '$2a$12$K8TaifKpYFrWLlOPD6XGFuQ3VfF1G4aJBZH0LB7X3nEpY3F2mWnTe',
+     '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
      TRUE),
     -- Student: Jožko Mrkvička
     ('jozko.mrkvicka@stuba.sk', 'Jožko', 'Mrkvička',
-     '$2a$12$K8TaifKpYFrWLlOPD6XGFuQ3VfF1G4aJBZH0LB7X3nEpY3F2mWnTe',
+     '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
      TRUE);
 
 -- ============================================================
