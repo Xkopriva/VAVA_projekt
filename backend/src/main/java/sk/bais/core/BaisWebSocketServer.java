@@ -74,10 +74,15 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_STUDENTS" -> handleGetStudents(conn);
 
                 // --- ADMIN AKCIE ---
-                case "CREATE_USER" -> handleCreateUser(conn, payload);
                 case "LIST_USERS" -> handleListUsers(conn);
+                case "CREATE_USER" -> handleCreateUser(conn, payload);
+                case "CREATE_SUBJECT" -> handleCreateSubject(conn, payload);
+                case "CREATE_SEMESTER" -> handleCreateSemester(conn, payload);
+                case "ASSIGN_ROLE" -> handleAssignRole(conn, payload);
                 case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
                 case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
+                case "DELETE_SUBJECT" -> handleDeleteSubject(conn, payload);
+                
 
                 // --- TEACHER AKCIE ---
                 case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
@@ -171,6 +176,8 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
+    
+
 
     // -------------------------------------------------------------------------
     // Teacher Handlery
@@ -204,6 +211,15 @@ public class BaisWebSocketServer extends WebSocketServer {
     // Admin Handlery
     // -------------------------------------------------------------------------
 
+    // LIST_USERS
+    private void handleListUsers(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var users = adminService.getAllUsers(ctx);
+            sendResponse(conn, "USERS_LIST", users);
+        });
+    }
+
+    // CREATE_USER
     private void handleCreateUser(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             try {
@@ -224,21 +240,58 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
-    private void handleListUsers(WebSocket conn) {
+    // CREATE_SUBJECT 
+    private void handleCreateSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
-            var users = adminService.getAllUsers(ctx);
-            sendResponse(conn, "USERS_LIST", users);
+            try {
+                sk.bais.model.Subject subject = mapper.treeToValue(payload.get("subject"), sk.bais.model.Subject.class);
+                
+                if (adminService.createSubject(subject, ctx)) {
+                    sendResponse(conn, "SUBJECT_CREATED", subject);
+                } else {
+                    sendError(conn, "Nepodarilo sa vytvoriť predmet (práva/DB)");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre predmet");
+            }
+        });
+    }
+    // CREATE_SEMESTER
+    private void handleCreateSemester(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                sk.bais.model.Semester semester = mapper.treeToValue(payload.get("semester"), sk.bais.model.Semester.class);
+                
+                if (adminService.createSemester(semester, ctx)) {
+                    sendResponse(conn, "SEMESTER_CREATED", semester);
+                } else {
+                    sendError(conn, "Nepodarilo sa vytvoriť semester");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre semester");
+            }
         });
     }
 
-    private void handleDeactivateUser(WebSocket conn, JsonNode payload) {
+
+    // ASSIGN_ROLE
+    private void handleAssignRole(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
-            int targetId = payload.get("userId").asInt();
-            boolean success = adminService.deactivateUser(targetId, ctx);
-            sendResponse(conn, "USER_DEACTIVATED", Map.of("success", success, "userId", targetId));
+            try {
+                int targetUserId = payload.get("userId").asInt();
+                String role = payload.get("role").asText();
+
+                if (adminService.assignRole(targetUserId, role, ctx)) {
+                    sendResponse(conn, "ROLE_ASSIGNED", "Rola " + role + " priradená userovi " + targetUserId);
+                } else {
+                    sendError(conn, "Nepodarilo sa priradiť rolu");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné parametre pre ASSIGN_ROLE");
+            }
         });
     }
-
+    // ASSIGN_GUARANTOR
     private void handleAssignGuarantor(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             try {
@@ -264,6 +317,34 @@ public class BaisWebSocketServer extends WebSocketServer {
             }
         });
     }
+    
+    // DEACTIVATE_USER
+    private void handleDeactivateUser(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            int targetId = payload.get("userId").asInt();
+            boolean success = adminService.deactivateUser(targetId, ctx);
+            sendResponse(conn, "USER_DEACTIVATED", Map.of("success", success, "userId", targetId));
+        });
+    }
+
+
+    // DELETE_SUBJECT 
+    private void handleDeleteSubject(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int subjectId = payload.get("subjectId").asInt();
+                
+                if (adminService.removeSubject(subjectId, ctx)) {
+                    sendResponse(conn, "SUBJECT_REMOVED", subjectId);
+                } else {
+                    sendError(conn, "Nepodarilo sa odstrániť predmet");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné ID predmetu");
+            }
+        });
+    }
+
 
 
     // -------------------------------------------------------------------------
