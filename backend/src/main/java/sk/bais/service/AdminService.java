@@ -13,9 +13,11 @@ import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.SemesterDAO;
 import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.SubjectTranslationDAO;
 import sk.bais.dao.UserDAO;
 import sk.bais.model.Semester;
 import sk.bais.model.Subject;
+import sk.bais.model.SubjectTranslation;
 import sk.bais.model.User;
 
 
@@ -31,6 +33,7 @@ public class AdminService {
     private final UserDAO userDAO;
     private final SubjectDAO subjectDAO;
     private final SemesterDAO semesterDAO;
+    private final SubjectTranslationDAO subjectTranslationDAO;
 
     // Registruje noveho pouzivatela so zahashovanym heslom a priradi mu rolu
     public Optional<User> createUser(User newUser, String plainTextPassword, String roleName, AuthContext ctx) {
@@ -61,17 +64,35 @@ public class AdminService {
     }
 
     // CREATE SUBJECT
-    public boolean createSubject(Subject subject, AuthContext ctx) {
+    public boolean createSubject(Subject subject, String name, String locale, String description, AuthContext ctx) {
         if (!ctx.hasPermission("subjects:write")) {
             log.warn("Zamietnutý prístup k vytvoreniu predmetu pre userId={}", ctx.getUserId());
             return false;
         }
+
         try {
-            subjectDAO.create(subject);
-            log.info("Admin userId={} vytvoril predmet {}", ctx.getUserId(), subject.getCode());
+            // 1. Nastavíme autora z kontextu (v JSONe to už byť nemusí)
+            subject.setCreatedBy(ctx.getUserId());
+
+            // 2. Vytvoríme základný predmet v tabuľke 'subject'
+            Subject createdSubject = subjectDAO.create(subject);
+
+            // 3. Vytvoríme preklad (názov predmetu)
+            SubjectTranslation translation = new SubjectTranslation(
+                createdSubject.getId(), // ID, ktoré pridelila DB
+                locale,                 // napr. 'sk'
+                name,                   // Názov z JSONu
+                description                    // Popis celeho predmetu
+            );
+
+            subjectTranslationDAO.create(translation); 
+
+            log.info("Predmet {} vytvorený s ID {} a názvom '{}' v jazyku {}", 
+                    subject.getCode(), createdSubject.getId(), name, locale);
             return true;
+
         } catch (SQLException e) {
-            log.error("Chyba pri vytváraní predmetu", e);
+            log.error("Chyba pri komplexnom vytváraní predmetu", e);
             return false;
         }
     }
