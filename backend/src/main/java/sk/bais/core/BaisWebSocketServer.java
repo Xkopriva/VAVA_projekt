@@ -91,8 +91,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
-
-
+                case "GET_MY_MARKS" ->handleGetMyMarks(conn);
 
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
@@ -176,6 +175,18 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
+    // GET_MY_MARKS
+    private void handleGetMyMarks(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var finalMarks = studentService.getMyFinalMarks(ctx);
+            
+            if (finalMarks != null) {
+                sendResponse(conn, "MY_INDEX_RECORDS", finalMarks);
+            } else {
+                sendError(conn, "Nepodarilo sa načítať záznamy z indexu");
+            }
+        });
+    }
     
 
 

@@ -40,6 +40,11 @@ public class IndexRecordDAO {
             "       recorded_at, exam_date, notes " +
             "FROM index_record WHERE enrollment_id = ?";
 
+    private static final String SQL_LIST_BY_STUDENT =
+        "SELECT ir.* FROM index_record ir " +
+        "JOIN enrollment e ON ir.enrollment_id = e.id " +
+        "WHERE e.student_id = ? ORDER BY ir.recorded_at DESC";
+
     private static final String SQL_INSERT =
             "INSERT INTO index_record (enrollment_id, recorded_by, final_mark, exam_date, notes) " +
             "VALUES (?, ?, ?, ?, ?)";
@@ -101,6 +106,21 @@ public class IndexRecordDAO {
         log.debug("Index record s enrollmentId={} nenajdeny", enrollmentId);
         return Optional.empty();
     }
+    // Actually ziska znamky pre studenta pre vsetky jeho predmety
+    public List<IndexRecord> listByStudentId(int studentId) throws SQLException {
+        List<IndexRecord> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(SQL_LIST_BY_STUDENT)) {
+            stmt.setInt(1, studentId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        }
+        return list;
+    }
+
     // CREATE
     public IndexRecord create(IndexRecord r) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
