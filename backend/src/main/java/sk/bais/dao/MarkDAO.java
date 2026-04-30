@@ -28,10 +28,14 @@ public class MarkDAO {
             "       title, points, max_points, given_by, given_at, notes " +
             "FROM mark ORDER BY given_at DESC";
 
-    private static final String SQL_LIST_BY_ENROLLMENT =
-            "SELECT id, enrollment_id, event_id, task_submission_id, " +
-            "       title, points, max_points, given_by, given_at, notes " +
-            "FROM mark WHERE enrollment_id = ? ORDER BY given_at DESC";
+    private static final String SQL_LIST_MY_POINTS =
+        "SELECT m.* FROM mark m " +
+        "JOIN enrollment e ON m.enrollment_id = e.id " +
+        "WHERE e.id = ? AND e.student_id = ? " +
+        "ORDER BY m.given_at DESC";
+
+    private static final String SQL_LIST_MY_POINTS_TEACHER = 
+    "SELECT * FROM mark WHERE enrollment_id = ? ORDER BY given_at DESC";
 
     private static final String SQL_GET_BY_ID =
             "SELECT id, enrollment_id, event_id, task_submission_id, " +
@@ -64,16 +68,34 @@ public class MarkDAO {
     
     // LIST BY ENROLLMENT
     // Vrati vsetky znamky pre dany enrollment — najcastejsi use-case
+    public List<Mark> listByEnrollment(int enrollmentId, int studentId) throws SQLException {
+        List<Mark> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(SQL_LIST_MY_POINTS)) {
+            
+            stmt.setInt(1, enrollmentId);
+            stmt.setInt(2, studentId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs)); // Mapper z tvojho MarkDAO[cite: 21]
+                }
+            }
+        }
+        return list;
+    }
+
+    // Pre učiteľa - stačí enrollmentId, lebo bezpečnosť rieši TeacherService cez garantora
     public List<Mark> listByEnrollment(int enrollmentId) throws SQLException {
         List<Mark> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SQL_LIST_BY_ENROLLMENT)) {
+            PreparedStatement stmt = conn.prepareStatement(SQL_LIST_MY_POINTS_TEACHER)) {
             stmt.setInt(1, enrollmentId);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
             }
         }
-        log.debug("Nacitanych {} zapisov pre enrollmentId={}", list.size(), enrollmentId);
         return list;
     }
 

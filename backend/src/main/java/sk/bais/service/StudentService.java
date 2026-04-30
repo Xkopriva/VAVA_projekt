@@ -116,22 +116,15 @@ public class StudentService {
         }
     }
 
-    
-    // Moje známky — student vidí len svoje  potom vymazat alebo zmenit 
-    public List<Mark> getMyMarks(int enrollmentId, AuthContext ctx) {
-        try {
-            // Overíme že enrollment patrí tomuto studentovi
-            Optional<Enrollment> enrollment = enrollmentDAO.getById(enrollmentId);
-            if (enrollment.isEmpty() || enrollment.get().getStudentId() != ctx.getUserId()) {
-                log.warn("Zamietnutý prístup k známkam: userId={} enrollmentId={}", ctx.getUserId(), enrollmentId);
-                return Collections.emptyList();
-            }
-            return markDAO.listByEnrollment(enrollmentId);
-        } catch (SQLException e) {
-            log.error("Chyba pri načítaní známok pre enrollmentId={}", enrollmentId, e);
-            return Collections.emptyList();
-        }
+    // ziska BODY v enrollmente pre daneho studenta
+    public List<Mark> getMyPoints(int enrollmentId, AuthContext ctx) {
+    try {
+        return markDAO.listByEnrollment(enrollmentId, ctx.getUserId());
+    } catch (SQLException e) {
+        log.error("Chyba pri načítaní bodov pre enrollment {}", enrollmentId, e);
+        return Collections.emptyList();
     }
+}
     // Ziska vsetky znamky pre daneho studenta
     public List<IndexRecord> getMyFinalMarks(AuthContext ctx) {
         if (!ctx.hasPermission("marks:read")) {
@@ -145,4 +138,5 @@ public class StudentService {
             return Collections.emptyList();
         }
     }
+    
 }

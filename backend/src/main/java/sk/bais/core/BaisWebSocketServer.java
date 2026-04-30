@@ -87,11 +87,14 @@ public class BaisWebSocketServer extends WebSocketServer {
                 // --- TEACHER AKCIE ---
                 case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
                 case "ADD_MARK" -> handleAddMark(conn, payload);
+                case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
+                case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
                 
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
-                case "GET_MY_MARKS" ->handleGetMyMarks(conn);
+                case "GET_MY_MARKS" -> handleGetMyMarks(conn);
+                case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
 
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
@@ -167,7 +170,7 @@ public class BaisWebSocketServer extends WebSocketServer {
             }
         });
     }
-
+    // GET_MY_ENROLLMENTS
     private void handleGetMyEnrollments(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
             var enrollments = studentService.getMyEnrollments(ctx);
@@ -175,7 +178,7 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
-    // GET_MY_MARKS
+    // GET_MY_MARKS (vráti List<IndexRecord>) teda studentove znamky
     private void handleGetMyMarks(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
             var finalMarks = studentService.getMyFinalMarks(ctx);
@@ -188,6 +191,25 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
     
+    // GET_MY_POINTS (vráti List<Mark> pre daný enrollment) cize body v danom enrollmente
+    private void handleGetMyPoints(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            // Validácia vstupu z payloadu
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int enrollmentId = payload.get("enrollmentId").asInt();
+            var points = studentService.getMyPoints(enrollmentId, ctx);
+            
+            if (points != null) {
+                sendResponse(conn, "MY_POINTS_LIST", points);
+            } else {
+                sendError(conn, "Nepodarilo sa načítať body pre daný zápis");
+            }
+        });
+    }
 
 
     // -------------------------------------------------------------------------
@@ -198,6 +220,42 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             var subjects = teacherService.getMySubjects(ctx);
             sendResponse(conn, "TEACHER_SUBJECTS_LIST", subjects);
+        });
+    }
+
+    // GET_POINTS_ENROLLMENT
+    private void handleGetPointsForEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int eid = payload.get("enrollmentId").asInt();
+            var points = teacherService.getPointsForEnrollment(eid, ctx);
+            
+            // Vrátime zoznam bodov (Mark objektov)
+            sendResponse(conn, "ENROLLMENT_POINTS_LIST", points);
+        });
+    }
+
+    // GET_MARKS_FOR_ENROLLMENT
+    private void handleGetIndexRecordForEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int eid = payload.get("enrollmentId").asInt();
+            var record = teacherService.getIndexRecordForEnrollment(eid, ctx);
+            
+            if (record.isPresent()) {
+                sendResponse(conn, "INDEX_RECORD_DETAIL", record.get());
+            } else {
+                // Ak neexistuje finálna známka, vrátime prázdny úspech alebo info
+                sendResponse(conn, "INDEX_RECORD_DETAIL", null);
+            }
         });
     }
 
