@@ -11,9 +11,11 @@ import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.model.Enrollment;
+import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
 import sk.bais.model.Student;
 
@@ -36,7 +38,7 @@ public class StudentService {
     private final StudentDAO studentDAO;
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
-
+    private final IndexRecordDAO indexRecordDAO;
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -114,20 +116,27 @@ public class StudentService {
         }
     }
 
-    
-    // Moje známky — student vidí len svoje
-    public List<Mark> getMyMarks(int enrollmentId, AuthContext ctx) {
+    // ziska BODY v enrollmente pre daneho studenta
+    public List<Mark> getMyPoints(int enrollmentId, AuthContext ctx) {
+    try {
+        return markDAO.listByEnrollment(enrollmentId, ctx.getUserId());
+    } catch (SQLException e) {
+        log.error("Chyba pri načítaní bodov pre enrollment {}", enrollmentId, e);
+        return Collections.emptyList();
+    }
+}
+    // Ziska vsetky znamky pre daneho studenta
+    public List<IndexRecord> getMyFinalMarks(AuthContext ctx) {
+        if (!ctx.hasPermission("marks:read")) {
+            return Collections.emptyList();
+        }
         try {
-            // Overíme že enrollment patrí tomuto studentovi
-            Optional<Enrollment> enrollment = enrollmentDAO.getById(enrollmentId);
-            if (enrollment.isEmpty() || enrollment.get().getStudentId() != ctx.getUserId()) {
-                log.warn("Zamietnutý prístup k známkam: userId={} enrollmentId={}", ctx.getUserId(), enrollmentId);
-                return Collections.emptyList();
-            }
-            return markDAO.listByEnrollment(enrollmentId);
+            // studentId berieme z kontextu prihláseného užívateľa[cite: 9]
+            return indexRecordDAO.listByStudentId(ctx.getUserId());
         } catch (SQLException e) {
-            log.error("Chyba pri načítaní známok pre enrollmentId={}", enrollmentId, e);
+            log.error("Chyba pri načítaní známok z indexu", e);
             return Collections.emptyList();
         }
     }
+    
 }

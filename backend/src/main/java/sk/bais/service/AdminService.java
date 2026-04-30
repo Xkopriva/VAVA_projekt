@@ -1,16 +1,22 @@
 package sk.bais.service;
 
-import lombok.RequiredArgsConstructor;
-import org.mindrot.jbcrypt.BCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sk.bais.auth.AuthContext;
-import sk.bais.dao.UserDAO;
-import sk.bais.model.User;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import lombok.RequiredArgsConstructor;
+import sk.bais.auth.AuthContext;
+import sk.bais.dao.SemesterDAO;
+import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.UserDAO;
+import sk.bais.model.Semester;
+import sk.bais.model.Subject;
+import sk.bais.model.User;
 
 
 /**
@@ -23,6 +29,8 @@ public class AdminService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminService.class);
     private final UserDAO userDAO;
+    private final SubjectDAO subjectDAO;
+    private final SemesterDAO semesterDAO;
 
     // Registruje noveho pouzivatela so zahashovanym heslom a priradi mu rolu
     public Optional<User> createUser(User newUser, String plainTextPassword, String roleName, AuthContext ctx) {
@@ -52,9 +60,52 @@ public class AdminService {
         }
     }
 
+    // CREATE SUBJECT
+    public boolean createSubject(Subject subject, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:write")) {
+            log.warn("Zamietnutý prístup k vytvoreniu predmetu pre userId={}", ctx.getUserId());
+            return false;
+        }
+        try {
+            subjectDAO.create(subject);
+            log.info("Admin userId={} vytvoril predmet {}", ctx.getUserId(), subject.getCode());
+            return true;
+        } catch (SQLException e) {
+            log.error("Chyba pri vytváraní predmetu", e);
+            return false;
+        }
+    }
+
+    // DELETE SUBJECT
+    public boolean removeSubject(int subjectId, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:delete")) return false;
+        try {
+            return subjectDAO.delete(subjectId);
+        } catch (SQLException e) {
+            log.error("Chyba pri mazaní predmetu id={}", subjectId, e);
+            return false;
+        }
+    }
+
+    // CREATE SEMESTER
+    public boolean createSemester(Semester semester, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:manage")) {
+            log.warn("Zamietnutý prístup k správe semestrov pre userId={}", ctx.getUserId());
+            return false;
+        }
+        try {
+            semesterDAO.create(semester);
+            log.info("Admin userId={} vytvoril semester {}", ctx.getUserId(), semester.getCode());
+            return true;
+        } catch (SQLException e) {
+            log.error("Chyba pri vytváraní semestra", e);
+            return false;
+        }
+    }
+
     // Deaktivuje uzivatela v DB
     public boolean deactivateUser(int targetUserId, AuthContext ctx) {
-        if (!ctx.hasPermission("users:write")) {
+        if (!ctx.hasPermission("users:manage")) {
             log.warn("Zamietnutá deaktivácia: userId={}", ctx.getUserId());
             return false;
         }
@@ -63,6 +114,20 @@ public class AdminService {
             return userDAO.setActive(targetUserId, false);
         } catch (SQLException e) {
             log.error("Chyba pri deaktivácii používateľa id={}", targetUserId, e);
+            return false;
+        }
+    }
+
+    // ASSIGN ROLE (používa UserDAO.assignRole alebo UserRoleDAO.assign)
+    public boolean assignRole(int targetUserId, String roleName, AuthContext ctx) {
+        if (!ctx.hasPermission("users:manage")) return false;
+        try {
+            // Použijeme UserDAO, ktorý priraďuje rolu podľa názvu
+            userDAO.assignRole(targetUserId, roleName);
+            log.info("Admin userId={} priradil rolu {} používateľovi {}", ctx.getUserId(), roleName, targetUserId);
+            return true;
+        } catch (SQLException e) {
+            log.error("Chyba pri priraďovaní roly", e);
             return false;
         }
     }
@@ -78,6 +143,53 @@ public class AdminService {
         } catch (SQLException e) {
             log.error("Chyba pri načítaní používateľov", e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Priradí učiteľa ako garanta pre konkrétny predmet.
+     */
+    public boolean assignGuarantor(int teacherId, int subjectId, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:manage")) {
+            log.warn("Zamietnutý pokus o priradenie garanta: userId={} nemá oprávnenie subjects:manage", ctx.getUserId());
+            return false;
+        }
+
+        try {
+            Optional<Subject> subjectOpt = subjectDAO.getById(subjectId);
+            
+            if (subjectOpt.isEmpty()) {
+                log.error("Nepodarilo sa priradiť garanta: Predmet id={} neexistuje", subjectId);
+                return false;
+            }
+
+            Subject subject = subjectOpt.get();
+            subject.setGuarantorId(teacherId); 
+
+            boolean success = subjectDAO.update(subject);
+
+            if (success) {
+                log.info("Admin id={} úspešne nastavil učiteľa id={} ako garanta predmetu id={}", 
+                        ctx.getUserId(), teacherId, subjectId);
+            }
+            return success;
+
+        } catch (SQLException e) {
+            log.error("Databázová chyba pri priraďovaní garanta učiteľovi id={} k predmetu id={}", teacherId, subjectId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Vymaže predmet z DB. Mame v DB delete on cascade
+     */
+    public boolean removeSubject(int subjectId) {
+        log.info("Admin inicioval vymazanie predmetu ID: {}", subjectId);
+        try {
+            return subjectDAO.delete(subjectId);
+        } catch (Exception e) {
+            log.error("Zlyhalo vymazanie predmetu: {}", e.getMessage());
+            return false;
         }
     }
 }

@@ -1,22 +1,25 @@
 package sk.bais.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
 import sk.bais.service.TeacherService;
-
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class BaisWebSocketServer extends WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(BaisWebSocketServer.class);
@@ -36,7 +39,8 @@ public class BaisWebSocketServer extends WebSocketServer {
     this.authService = authService;
     this.studentService = studentService;
     this.teacherService = teacherService; 
-    this.adminService = adminService;     
+    this.adminService = adminService;   
+    mapper.registerModule(new JavaTimeModule());  
 }
 
     @Override
@@ -70,19 +74,27 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_STUDENTS" -> handleGetStudents(conn);
 
                 // --- ADMIN AKCIE ---
-                case "CREATE_USER" -> handleCreateUser(conn, payload);
                 case "LIST_USERS" -> handleListUsers(conn);
+                case "CREATE_USER" -> handleCreateUser(conn, payload);
+                case "CREATE_SUBJECT" -> handleCreateSubject(conn, payload);
+                case "CREATE_SEMESTER" -> handleCreateSemester(conn, payload);
+                case "ASSIGN_ROLE" -> handleAssignRole(conn, payload);
                 case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
+                case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
+                case "DELETE_SUBJECT" -> handleDeleteSubject(conn, payload);
+                
 
                 // --- TEACHER AKCIE ---
                 case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
                 case "ADD_MARK" -> handleAddMark(conn, payload);
+                case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
+                case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
                 
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
-
-
+                case "GET_MY_MARKS" -> handleGetMyMarks(conn);
+                case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
 
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
@@ -158,11 +170,44 @@ public class BaisWebSocketServer extends WebSocketServer {
             }
         });
     }
-
+    // GET_MY_ENROLLMENTS
     private void handleGetMyEnrollments(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
             var enrollments = studentService.getMyEnrollments(ctx);
             sendResponse(conn, "MY_ENROLLMENTS", enrollments);
+        });
+    }
+
+    // GET_MY_MARKS (vráti List<IndexRecord>) teda studentove znamky
+    private void handleGetMyMarks(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var finalMarks = studentService.getMyFinalMarks(ctx);
+            
+            if (finalMarks != null) {
+                sendResponse(conn, "MY_INDEX_RECORDS", finalMarks);
+            } else {
+                sendError(conn, "Nepodarilo sa načítať záznamy z indexu");
+            }
+        });
+    }
+    
+    // GET_MY_POINTS (vráti List<Mark> pre daný enrollment) cize body v danom enrollmente
+    private void handleGetMyPoints(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            // Validácia vstupu z payloadu
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int enrollmentId = payload.get("enrollmentId").asInt();
+            var points = studentService.getMyPoints(enrollmentId, ctx);
+            
+            if (points != null) {
+                sendResponse(conn, "MY_POINTS_LIST", points);
+            } else {
+                sendError(conn, "Nepodarilo sa načítať body pre daný zápis");
+            }
         });
     }
 
@@ -175,6 +220,42 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             var subjects = teacherService.getMySubjects(ctx);
             sendResponse(conn, "TEACHER_SUBJECTS_LIST", subjects);
+        });
+    }
+
+    // GET_POINTS_ENROLLMENT
+    private void handleGetPointsForEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int eid = payload.get("enrollmentId").asInt();
+            var points = teacherService.getPointsForEnrollment(eid, ctx);
+            
+            // Vrátime zoznam bodov (Mark objektov)
+            sendResponse(conn, "ENROLLMENT_POINTS_LIST", points);
+        });
+    }
+
+    // GET_MARKS_FOR_ENROLLMENT
+    private void handleGetIndexRecordForEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("enrollmentId")) {
+                sendError(conn, "Chýba enrollmentId");
+                return;
+            }
+
+            int eid = payload.get("enrollmentId").asInt();
+            var record = teacherService.getIndexRecordForEnrollment(eid, ctx);
+            
+            if (record.isPresent()) {
+                sendResponse(conn, "INDEX_RECORD_DETAIL", record.get());
+            } else {
+                // Ak neexistuje finálna známka, vrátime prázdny úspech alebo info
+                sendResponse(conn, "INDEX_RECORD_DETAIL", null);
+            }
         });
     }
 
@@ -199,6 +280,15 @@ public class BaisWebSocketServer extends WebSocketServer {
     // Admin Handlery
     // -------------------------------------------------------------------------
 
+    // LIST_USERS
+    private void handleListUsers(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            var users = adminService.getAllUsers(ctx);
+            sendResponse(conn, "USERS_LIST", users);
+        });
+    }
+
+    // CREATE_USER
     private void handleCreateUser(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             try {
@@ -219,13 +309,85 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
-    private void handleListUsers(WebSocket conn) {
+    // CREATE_SUBJECT 
+    private void handleCreateSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
-            var users = adminService.getAllUsers(ctx);
-            sendResponse(conn, "USERS_LIST", users);
+            try {
+                sk.bais.model.Subject subject = mapper.treeToValue(payload.get("subject"), sk.bais.model.Subject.class);
+                
+                if (adminService.createSubject(subject, ctx)) {
+                    sendResponse(conn, "SUBJECT_CREATED", subject);
+                } else {
+                    sendError(conn, "Nepodarilo sa vytvoriť predmet (práva/DB)");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre predmet");
+            }
+        });
+    }
+    // CREATE_SEMESTER
+    private void handleCreateSemester(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                sk.bais.model.Semester semester = mapper.treeToValue(payload.get("semester"), sk.bais.model.Semester.class);
+                
+                if (adminService.createSemester(semester, ctx)) {
+                    sendResponse(conn, "SEMESTER_CREATED", semester);
+                } else {
+                    sendError(conn, "Nepodarilo sa vytvoriť semester");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné dáta pre semester");
+            }
         });
     }
 
+
+    // ASSIGN_ROLE
+    private void handleAssignRole(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int targetUserId = payload.get("userId").asInt();
+                String role = payload.get("role").asText();
+
+                if (adminService.assignRole(targetUserId, role, ctx)) {
+                    sendResponse(conn, "ROLE_ASSIGNED", "Rola " + role + " priradená userovi " + targetUserId);
+                } else {
+                    sendError(conn, "Nepodarilo sa priradiť rolu");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné parametre pre ASSIGN_ROLE");
+            }
+        });
+    }
+    // ASSIGN_GUARANTOR
+    private void handleAssignGuarantor(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int teacherId = payload.get("teacherId").asInt();
+                int subjectId = payload.get("subjectId").asInt();
+                
+                boolean success = adminService.assignGuarantor(teacherId, subjectId, ctx);
+
+                if (success) {
+                    sendResponse(conn, "GUARANTOR_ASSIGNED", Map.of(
+                        "success", true,
+                        "teacherId", teacherId,
+                        "subjectId", subjectId
+                    ));
+                    log.info("Garant priradený: teacherId={}, subjectId={} (vykonal adminId={})", 
+                            teacherId, subjectId, ctx.getUserId());
+                } else {
+                    sendError(conn, "Nepodarilo sa priradiť garanta (nedostatočné práva alebo neexistujúci predmet/učiteľ)");
+                }
+            } catch (Exception e) {
+                log.error("Chyba pri spracovaní priradenia garanta", e);
+                sendError(conn, "Neplatné dáta pre priradenie garanta (očakávané teacherId a subjectId)");
+            }
+        });
+    }
+    
+    // DEACTIVATE_USER
     private void handleDeactivateUser(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             int targetId = payload.get("userId").asInt();
@@ -233,6 +395,25 @@ public class BaisWebSocketServer extends WebSocketServer {
             sendResponse(conn, "USER_DEACTIVATED", Map.of("success", success, "userId", targetId));
         });
     }
+
+
+    // DELETE_SUBJECT 
+    private void handleDeleteSubject(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int subjectId = payload.get("subjectId").asInt();
+                
+                if (adminService.removeSubject(subjectId, ctx)) {
+                    sendResponse(conn, "SUBJECT_REMOVED", subjectId);
+                } else {
+                    sendError(conn, "Nepodarilo sa odstrániť predmet");
+                }
+            } catch (Exception e) {
+                sendError(conn, "Neplatné ID predmetu");
+            }
+        });
+    }
+
 
 
     // -------------------------------------------------------------------------

@@ -1,8 +1,14 @@
 package sk.bais.service;
 
-import lombok.RequiredArgsConstructor;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
 import sk.bais.dao.IndexRecordDAO;
@@ -12,11 +18,6 @@ import sk.bais.model.Enrollment;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
 import sk.bais.model.Subject;
-
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Service vrstva pre učiteľa.
@@ -163,19 +164,58 @@ public class TeacherService {
     }
 
     /**
-     * Vráti všetky známky pre daný enrollment.
-     * Teacher musí byť garantor príslušného predmetu.
+     * Vráti finálne hodnotenie z indexu pre daný enrollment.
+     * Vyžaduje overenie, či je učiteľ garantom predmetu.
      */
-    public List<Mark> getMarksForEnrollment(int enrollmentId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:read")) {
-            log.warn("Zamietnutý prístup k známkam pre userId={}", ctx.getUserId());
-            return Collections.emptyList();
-        }
+    public Optional<IndexRecord> getIndexRecordForEnrollment(int enrollmentId, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:read")) return Optional.empty();
+        
         try {
+            // Bezpečnostná kontrola garantora
+            if (!isGuarantorOfEnrollment(enrollmentId, ctx)) return Optional.empty();
+
+            return indexRecordDAO.getByEnrollment(enrollmentId);
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní index recordu pre enrollmentId={}", enrollmentId, e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Vráti všetky čiastkové body (Mark) pre daný enrollment.
+     * Vyžaduje overenie, či je učiteľ garantom predmetu.
+     */
+    public List<Mark> getPointsForEnrollment(int enrollmentId, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:read")) return Collections.emptyList();
+        
+        try {
+            // Kontrola, či je učiteľ garantom
+            if (!isGuarantorOfEnrollment(enrollmentId, ctx)) {
+                log.warn("Teacher {} nie je autorizovaný pre enrollment {}", ctx.getUserId(), enrollmentId);
+                return Collections.emptyList();
+            }
+
+            // Voláme metódu bez potreby studentId
             return markDAO.listByEnrollment(enrollmentId);
         } catch (SQLException e) {
-            log.error("Chyba pri načítaní známok pre enrollmentId={}", enrollmentId, e);
+            log.error("Chyba pri načítaní bodov pre enrollmentId={}", enrollmentId, e);
             return Collections.emptyList();
         }
+    }
+
+
+
+    // Pomocná metóda na overenie práv k enrollmentu
+    private boolean isGuarantorOfEnrollment(int enrollmentId, AuthContext ctx) throws SQLException {
+        if (ctx.hasRole("ADMIN")) return true;
+
+        Optional<Enrollment> enrollmentOpt = enrollmentDAO.getById(enrollmentId);
+        if (enrollmentOpt.isEmpty()) return false;
+
+        Optional<Subject> subjectOpt = subjectDAO.getById(enrollmentOpt.get().getSubjectId());
+        if (subjectOpt.isEmpty()) return false;
+
+        Subject s = subjectOpt.get();
+        return s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId();
     }
 }

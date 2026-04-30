@@ -4,6 +4,7 @@ import sk.bais.auth.AuthService;
 import sk.bais.dao.EnrollmentDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.SemesterDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.UserDAO;
@@ -26,13 +27,14 @@ public class Main {
         EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
         MarkDAO markDAO = new MarkDAO();
         SubjectDAO subjectDAO = new SubjectDAO();
+        SemesterDAO semesterDAO = new SemesterDAO();
         UserDAO userDAO = new UserDAO();
         IndexRecordDAO indexRecordDAO = new IndexRecordDAO();
 
         // 2. Inicializácia Biznis logiky (Service vrstva)
-        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO);
+        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO);
         TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
-        AdminService adminService = new AdminService(userDAO); 
+        AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO); 
 
         // 3. Spustenie WebSocket servera na porte 8887
         int port = 8887;
