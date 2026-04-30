@@ -67,7 +67,6 @@ public class AdminService {
             return false;
         }
         try {
-            subject.setCreatedBy(ctx.getUserId());
             subjectDAO.create(subject);
             log.info("Admin userId={} vytvoril predmet {}", ctx.getUserId(), subject.getCode());
             return true;
