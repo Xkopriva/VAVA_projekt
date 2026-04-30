@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,7 +30,9 @@ public class Subject {
     private Integer externalId;
     private String faculty;                 // VARCHAR(20)
     private int credits;                    // INT NOT NULL
+    @JsonProperty("isMandatory")
     private boolean isMandatory;
+    @JsonProperty("isProfiled")
     private boolean isProfiled;             // is_profiled
     private CompletionType completionType;
     private Integer lectureHrsWeekly;
@@ -58,6 +62,7 @@ public class Subject {
                    CompletionType completionType, Integer guarantorId) {
         this.code = code;
         this.credits = credits;
+        
         this.isMandatory = isMandatory;
         this.completionType = completionType;
         this.guarantorId = guarantorId;

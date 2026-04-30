@@ -325,7 +325,6 @@ public class BaisWebSocketServer extends WebSocketServer {
                 }
             } catch (Exception e) {
                 sendError(conn, "Neplatné dáta pre predmet");
-                e.printStackTrace();
             }
         });
     }

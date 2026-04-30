@@ -1,10 +1,12 @@
 package sk.bais.model;
 
+import java.time.OffsetDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku notification.
@@ -26,6 +28,7 @@ public class Notification {
     private Type type;                  // enum NOT NULL
     private String title;               // VARCHAR(255) NOT NULL
     private String message;             // nullable TEXT
+    @JsonProperty("isRead")
     private boolean isRead;             // DEFAULT FALSE
     private Integer relatedMarkId;      // FK -> mark nullable
     private Integer relatedSubjectId;   // FK -> subject nullable

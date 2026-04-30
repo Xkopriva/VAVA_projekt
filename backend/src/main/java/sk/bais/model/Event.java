@@ -1,10 +1,12 @@
 package sk.bais.model;
 
+import java.time.OffsetDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku event.
@@ -26,6 +28,7 @@ public class Event {
     private String room;                // nullable VARCHAR(100)
     private OffsetDateTime scheduledAt; // nullable TIMESTAMPTZ
     private Integer durationMinutes;    // nullable
+    @JsonProperty("isPublished")
     private boolean isPublished;        // DEFAULT FALSE
     private Integer createdBy;          // FK -> user nullable
     private OffsetDateTime createdAt;
