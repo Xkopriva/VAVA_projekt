@@ -106,7 +106,7 @@ public class AdminService {
 
     // Deaktivuje uzivatela v DB
     public boolean deactivateUser(int targetUserId, AuthContext ctx) {
-        if (!ctx.hasPermission("users:write")) {
+        if (!ctx.hasPermission("users:manage")) {
             log.warn("Zamietnutá deaktivácia: userId={}", ctx.getUserId());
             return false;
         }
