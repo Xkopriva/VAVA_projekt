@@ -1,0 +1,253 @@
+/* ============================================
+   DARK MODE – Lepší Akademický Systém (BAIS)
+   ============================================ */
+
+/* ─── ROOT ─── */
+.root-pane { -fx-background-color: #13181f; }
+
+/* ════ LOGIN ════ */
+.login-topbar {
+    -fx-padding: 12 24; -fx-background-color: #1B2129;
+    -fx-border-color: transparent transparent #334155 transparent;
+    -fx-border-width: 0 0 2 0;
+}
+.header-icon {
+    -fx-font-size: 28px; -fx-background-color: #06b6d4;
+    -fx-background-radius: 10; -fx-padding: 8; -fx-text-fill: white;
+    -fx-min-width: 44; -fx-min-height: 44; -fx-alignment: CENTER;
+}
+.login-topbar-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.login-topbar-subtitle { -fx-font-size: 13px; -fx-text-fill: #94a3b8; }
+.language-flag-button {
+    -fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 6;
+    -fx-background-radius: 8; -fx-min-width: 44; -fx-min-height: 36;
+    -fx-border-color: transparent; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;
+}
+.language-flag-button:hover { -fx-background-color: #334155; -fx-background-radius: 8; }
+.login-card {
+    -fx-background-color: #1E3A8A; -fx-background-radius: 20; -fx-padding: 40 44;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 32, 0, 0, 8);
+}
+.card-logo {
+    -fx-font-size: 32px; -fx-background-color: #06b6d4; -fx-background-radius: 14;
+    -fx-padding: 14; -fx-text-fill: white; -fx-min-width: 60; -fx-min-height: 60; -fx-alignment: CENTER;
+}
+.login-title    { -fx-text-fill: #e2e8f0; -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-alignment: CENTER; }
+.login-subtitle { -fx-text-fill: #94a3b8; -fx-font-size: 13px; -fx-text-alignment: CENTER; }
+.input-label    { -fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold; }
+.forgot-password-link { -fx-text-fill: #22d3ee; -fx-font-size: 11px; -fx-cursor: hand; }
+.login-input {
+    -fx-background-color: #1B2129; -fx-background-radius: 10; -fx-padding: 12 14;
+    -fx-text-fill: #e2e8f0; -fx-font-size: 14px;
+    -fx-border-color: #334155; -fx-border-radius: 10; -fx-border-width: 1;
+    -fx-prompt-text-fill: #64748b;
+}
+.login-input:focused { -fx-border-color: #06b6d4; -fx-border-width: 2; }
+.login-button {
+    -fx-background-color: #34E4FF; -fx-background-radius: 10;
+    -fx-text-fill: #0f172a; -fx-font-weight: bold; -fx-padding: 13;
+    -fx-font-size: 14px; -fx-cursor: hand;
+}
+.login-button:hover  { -fx-background-color: #22d3ee; }
+.bottom-link         { -fx-text-fill: #94a3b8; -fx-font-size: 12px; -fx-cursor: hand; }
+.bottom-link:hover   { -fx-text-fill: #22d3ee; }
+
+/* ════ DARK MODE TOGGLE ════ */
+.dark-mode-toggle {
+    -fx-background-color: transparent; -fx-cursor: hand; -fx-font-size: 18px;
+    -fx-padding: 6 10; -fx-text-fill: #e2e8f0; -fx-border-color: transparent;
+    -fx-focus-color: transparent; -fx-faint-focus-color: transparent;
+}
+.dark-mode-toggle:hover  { -fx-text-fill: white; }
+.dark-mode-toggle:pressed { -fx-text-fill: #64748b; }
+.dark-mode-toggle:focused,
+.dark-mode-toggle:pressed { -fx-background-color: transparent; -fx-border-color: transparent; }
+
+/* ════ HEADER ════ */
+.header {
+    -fx-background-color: #1b2129;
+    -fx-padding: 10 23; -fx-spacing: 10;
+    -fx-min-height: 60; -fx-max-height: 60; -fx-pref-height: 60;
+    -fx-border-color: transparent transparent #334155 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.header-logo-section  { -fx-min-width: 220; -fx-pref-width: 220; -fx-max-width: 220; }
+.header-logo-icon {
+    -fx-font-size: 18px; -fx-background-color: #06b6d4; -fx-background-radius: 8;
+    -fx-padding: 6; -fx-text-fill: white; -fx-min-width: 32; -fx-min-height: 32; -fx-alignment: CENTER;
+}
+.header-main-title    { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: white; }
+.header-main-subtitle { -fx-font-size: 12px; -fx-text-fill: #475569; -fx-font-weight: bold; }
+.search-container { -fx-padding: 0 16; }
+.search-bar {
+    -fx-background-color: #334155; -fx-background-radius: 20; -fx-border-radius: 20; -fx-padding: 7 14;
+    -fx-text-fill: #e2e8f0; -fx-prompt-text-fill: #64748b; -fx-border-color: transparent; -fx-font-size: 13px;
+}
+.search-bar:focused {
+    -fx-background-color: #3e4f63; -fx-border-color: #06b6d4; -fx-border-width: 1; -fx-border-radius: 20; -fx-background-radius: 20;
+}
+.header-actions { -fx-spacing: 4; }
+.header-action-item { -fx-cursor: hand; -fx-padding: 0; }
+.notification-icon, .help-icon, .settings-icon {
+    -fx-font-size: 18px; -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-padding: 4 6;
+}
+.notification-icon:hover, .help-icon:hover, .settings-icon:hover { -fx-text-fill: white; }
+.notification-icon:pressed, .help-icon:pressed, .settings-icon:pressed { -fx-text-fill: #64748b; }
+.notification-badge {
+    -fx-background-color: #ef4444; -fx-background-radius: 50%; -fx-text-fill: white;
+    -fx-font-size: 9px; -fx-padding: 1 4; -fx-min-width: 16; -fx-min-height: 16;
+    -fx-alignment: CENTER; -fx-translate-x: 8; -fx-translate-y: 2;
+}
+
+/* ════ SIDEBAR ════ */
+.sidebar {
+    -fx-background-color: #1e293b; -fx-min-width: 220; -fx-max-width: 220; -fx-pref-width: 220;
+    -fx-border-color: transparent #334155 transparent transparent; -fx-border-width: 0 1 0 0;
+}
+.sidebar-logo-row { -fx-padding: 18 16 14 16; }
+.logo-icon {
+    -fx-font-size: 20px; -fx-background-color: #06b6d4; -fx-background-radius: 10;
+    -fx-padding: 8; -fx-text-fill: white; -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: CENTER;
+}
+.logo-title    { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.logo-subtitle { -fx-font-size: 11px; -fx-text-fill: #64748b; }
+.sidebar-separator { -fx-background-color: #334155; -fx-min-height: 1; -fx-max-height: 1; -fx-pref-height: 1; }
+
+.nav-item { -fx-padding: 12 16; -fx-cursor: hand; -fx-background-color: transparent; }
+.nav-item:hover { -fx-background-color: #0f2744; }
+.nav-label { -fx-font-size: 15px; -fx-text-fill: #94a3b8; }
+.nav-icon  { -fx-font-size: 17px; -fx-text-fill: #475569; }
+.nav-icon-logout { -fx-text-fill: #f87171; -fx-font-size: 20px; }
+
+.nav-item-active {
+    -fx-background-color: #0c2a40;
+    -fx-border-color: transparent transparent transparent #06b6d4; -fx-border-width: 0 0 0 3;
+}
+.nav-item-active .nav-label { -fx-text-fill: #06b6d4; -fx-font-weight: bold; }
+.nav-item-active .nav-icon  { -fx-text-fill: #06b6d4; }
+
+.nav-logout:hover { -fx-background-color: #3d1515; }
+.nav-logout .nav-label { -fx-text-fill: #f87171; -fx-font-weight: bold; }
+.nav-logout:hover .nav-label { -fx-text-fill: #ef4444; }
+
+.sidebar-bottom {
+    -fx-padding: 8 0 12 0;
+    -fx-border-color: #334155 transparent transparent transparent; -fx-border-width: 1 0 0 0;
+}
+.language-selector {
+    -fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 10 16;
+    -fx-alignment: CENTER_LEFT; -fx-border-color: transparent;
+    -fx-focus-color: transparent; -fx-faint-focus-color: transparent;
+    -fx-pref-width: Infinity; -fx-max-width: Infinity;
+}
+.language-selector:hover { -fx-background-color: #0f2744; }
+.lang-label { -fx-font-size: 13px; -fx-text-fill: #94a3b8; }
+
+/* ════ MAIN CONTENT ════ */
+.main-scroll { -fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent; }
+.main-content { -fx-background-color: #13181f; -fx-padding: 20 24; }
+
+/* ── WELCOME BANNER ── */
+.welcome-banner {
+    -fx-background-color: #0f2a14; -fx-background-radius: 12; -fx-padding: 28 32;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0, 0, 2);
+}
+.welcome-title { -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.welcome-sub   { -fx-font-size: 15px; -fx-text-fill: #94a3b8; }
+
+/* ── SECTION CARDS ── */
+.section-card {
+    -fx-background-color: #1e293b; -fx-background-radius: 12; -fx-padding: 18 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0, 0, 2);
+}
+.section-header-row { -fx-padding: 0 0 14 0; }
+.section-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.link-label    { -fx-font-size: 14px; -fx-text-fill: #06b6d4; -fx-cursor: hand; }
+
+/* ── SCHEDULE ── */
+.schedule-date { -fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: bold; }
+.schedule-row {
+    -fx-padding: 12 0;
+    -fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 0 0 1 0;
+}
+.schedule-row-last { -fx-border-width: 0; }
+.schedule-name { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.schedule-loc  { -fx-font-size: 13px; -fx-text-fill: #64748b; }
+.schedule-time { -fx-font-size: 14px; -fx-font-weight: bold; }
+.time-blue  { -fx-text-fill: #60a5fa; }
+.time-red   { -fx-text-fill: #f87171; }
+.time-green { -fx-text-fill: #4ade80; }
+
+/* ── BADGES ── */
+.badge { -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 9; -fx-background-radius: 6; }
+.badge-lecture { -fx-background-color: #1e3a5f; -fx-text-fill: #60a5fa; }
+.badge-seminar { -fx-background-color: #3f1f1f; -fx-text-fill: #f87171; }
+.badge-lab     { -fx-background-color: #14291f; -fx-text-fill: #4ade80; }
+
+/* ── ALERTS ── */
+.alert-item  { -fx-padding: 10 12; -fx-background-radius: 8; }
+.alert-title { -fx-font-size: 12px; -fx-font-weight: bold; }
+.alert-body  { -fx-font-size: 11px; -fx-text-fill: #94a3b8; }
+.alert-red    { -fx-background-color: #2d1515; }
+.alert-red .alert-title    { -fx-text-fill: #f87171; }
+.alert-blue   { -fx-background-color: #0f2133; }
+.alert-blue .alert-title   { -fx-text-fill: #60a5fa; }
+.alert-orange { -fx-background-color: #2a1d0d; }
+.alert-orange .alert-title { -fx-text-fill: #fb923c; }
+
+/* ── RECENT PERFORMANCE ── */
+.perf-card   { -fx-background-color: #0f172a; -fx-background-radius: 10; -fx-padding: 16 18; }
+.perf-course { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #64748b; }
+.perf-grade  { -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; }
+.perf-item   { -fx-font-size: 13px; -fx-text-fill: #64748b; }
+.perf-bar    { -fx-min-height: 3; -fx-max-height: 3; -fx-background-radius: 2; -fx-pref-width: Infinity; }
+.perf-bar-hi  { -fx-background-color: #06b6d4; }
+.perf-bar-mid { -fx-background-color: #475569; }
+
+/* ── DEGREE PROGRESS ── */
+.progress-ring {
+    -fx-min-width: 72; -fx-min-height: 72; -fx-background-radius: 36;
+    -fx-border-color: #06b6d4; -fx-border-width: 5; -fx-border-radius: 36; -fx-background-color: transparent;
+}
+.progress-pct { -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #06b6d4; }
+.btn-primary {
+    -fx-background-color: #06b6d4; -fx-background-radius: 8; -fx-text-fill: white;
+    -fx-font-weight: bold; -fx-padding: 8 16; -fx-font-size: 12px; -fx-cursor: hand;
+}
+.btn-primary:hover { -fx-background-color: #0891b2; }
+.btn-secondary {
+    -fx-background-color: transparent; -fx-border-color: #06b6d4; -fx-border-radius: 8;
+    -fx-border-width: 1; -fx-text-fill: #06b6d4; -fx-font-weight: bold;
+    -fx-padding: 8 16; -fx-font-size: 12px; -fx-cursor: hand;
+}
+.btn-secondary:hover { -fx-background-color: #0c2a40; }
+
+/* ── QUICK LINKS ── */
+.quick-link-card {
+    -fx-background-color: #0c2440; -fx-background-radius: 10; -fx-padding: 14 10; -fx-cursor: hand;
+}
+.quick-link-card:hover { -fx-background-color: #0f3057; }
+.ql-icon  { -fx-font-size: 22px; }
+.ql-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #06b6d4; }
+
+/* ════ CALENDAR ════ */
+.calendar-title    { -fx-text-fill: #e2e8f0; -fx-font-size: 26px; -fx-font-weight: bold; }
+.calendar-subtitle { -fx-text-fill: #94a3b8; -fx-font-size: 13px; }
+.view-toggle-group  { -fx-border-color: #334155; -fx-border-radius: 8; -fx-background-color: #1e293b; -fx-background-radius: 8; }
+.view-toggle-btn    { -fx-text-fill: #94a3b8; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 5 14; }
+.view-toggle-active { -fx-background-color: #334155; -fx-background-radius: 8; -fx-text-fill: #e2e8f0; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5 14; }
+.calendar-grid             { -fx-background-color: #1a2744; -fx-border-color: #2d3f5e; -fx-border-radius: 12; -fx-border-width: 1; }
+.calendar-day-header       { -fx-background-color: #1e2d4a; }
+.calendar-day-header-today { -fx-background-color: #0c2a3f; }
+.calendar-day-name         { -fx-text-fill: #94a3b8; }
+.calendar-day-name-today   { -fx-text-fill: #06b6d4; }
+.calendar-day-num          { -fx-text-fill: #e2e8f0; }
+.calendar-day-num-today    { -fx-text-fill: #06b6d4; }
+.calendar-cell             { -fx-background-color: #1a2744; -fx-border-color: #2d3f5e; -fx-border-width: 1 0 0 0; }
+.calendar-event-prednaska  { -fx-background-color: #93c5fd; -fx-background-radius: 8; }
+.calendar-event-cvicenie   { -fx-background-color: #86efac; -fx-background-radius: 8; }
+.calendar-event-odovzdanie { -fx-background-color: #fde68a; -fx-background-radius: 8; }
+.calendar-event-taskdue    { -fx-background-color: #fca5a5; -fx-background-radius: 8; }
+.calendar-event-default    { -fx-background-color: #e2e8f0; -fx-background-radius: 8; }
+
+.content-placeholder { -fx-font-size: 16px; -fx-text-fill: #64748b; }
