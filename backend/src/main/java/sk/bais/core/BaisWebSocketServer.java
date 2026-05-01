@@ -72,6 +72,8 @@ public class BaisWebSocketServer extends WebSocketServer {
             switch (action) {
                 case "LOGIN"        -> handleLogin(conn, payload);
                 case "GET_STUDENTS" -> handleGetStudents(conn);
+                case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
+                case "GET_ALL_SEMESTERS" -> handleGetAllSemesters(conn);
 
                 // --- ADMIN AKCIE ---
                 case "LIST_USERS" -> handleListUsers(conn);
@@ -147,16 +149,44 @@ public class BaisWebSocketServer extends WebSocketServer {
         }
     }
 
-    private void handleGetStudents(WebSocket conn) {
-        requireAuth(conn).ifPresent(ctx -> {
-            var students = studentService.getAllStudents(ctx);
-            sendResponse(conn, "STUDENTS_LIST", students);
-        });
-    }
+     private void handleGetStudents(WebSocket conn) {
+         requireAuth(conn).ifPresent(ctx -> {
+             var students = studentService.getAllStudents(ctx);
+             sendResponse(conn, "STUDENTS_LIST", students);
+         });
+     }
 
-    // -------------------------------------------------------------------------
-    // Student Handlery
-    // -------------------------------------------------------------------------
+     private void handleGetUserProfile(WebSocket conn) {
+         requireAuth(conn).ifPresent(ctx -> {
+             try {
+                 var userOpt = studentService.getStudent(ctx.getUserId(), ctx);
+                 if (userOpt.isEmpty()) {
+                     sendError(conn, "Profil používateľa sa nepodarilo načítať");
+                 } else {
+                     sendResponse(conn, "USER_PROFILE", userOpt.get().getUser());
+                 }
+             } catch (Exception e) {
+                 log.error("Chyba pri načítaní profilu používateľa", e);
+                 sendError(conn, "Chyba pri načítaní profilu");
+             }
+         });
+     }
+
+     private void handleGetAllSemesters(WebSocket conn) {
+         requireAuth(conn).ifPresent(ctx -> {
+             try {
+                 var semesters = adminService.getAllSemesters(ctx);
+                 sendResponse(conn, "SEMESTERS_LIST", semesters);
+             } catch (Exception e) {
+                 log.error("Chyba pri načítaní semestrov", e);
+                 sendError(conn, "Chyba pri načítaní semestrov");
+             }
+         });
+     }
+
+     // -------------------------------------------------------------------------
+     // Student Handlery
+     // -------------------------------------------------------------------------
 
     private void handleEnrollSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {

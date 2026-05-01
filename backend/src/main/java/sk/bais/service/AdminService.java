@@ -146,6 +146,16 @@ public class AdminService {
         }
     }
 
+    // Vráti všetky semestre - potrebné pre frontend
+    public List<Semester> getAllSemesters(AuthContext ctx) {
+        try {
+            return semesterDAO.list();
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní semestrov", e);
+            return Collections.emptyList();
+        }
+    }
+
     /**
      * Priradí učiteľa ako garanta pre konkrétny predmet.
      */

@@ -56,15 +56,19 @@ public class LoginController implements Initializable {
             return;
         }
 
+        System.out.println("[LOGIN] Pokus o prihlásenie: " + user);
         WebSocketClientService ws = WebSocketClientService.getInstance();
         ws.connectAsync().thenRun(() -> {
+            System.out.println("[LOGIN] WebSocket pripojený, posielam LOGIN správu");
             ws.setOnMessageCallback(this::handleServerMessage);
             ws.sendAction("LOGIN", Map.of("email", user, "password", pass));
         }).exceptionally(ex -> {
+            System.out.println("[LOGIN] Chyba pripojenia: " + ex.getMessage());
+            ex.printStackTrace();
             Platform.runLater(() -> {
                 showAlert(Alert.AlertType.ERROR, 
                     isEnglish ? "Connection Error" : "Chyba pripojenia",
-                    isEnglish ? "Could not connect to the server." : "Nepodarilo sa pripojiť k serveru.");
+                    isEnglish ? "Could not connect to the server." : "Nepodarilo sa pripojiť k serveru.\n\nChyba: " + ex.getMessage());
             });
             return null;
         });
@@ -80,8 +84,10 @@ public class LoginController implements Initializable {
 
     private void handleServerMessage(JsonNode node) {
         String type = node.path("type").asText();
+        System.out.println("[LOGIN] Server odpovedal: type=" + type + ", data=" + node.path("data"));
         if ("LOGIN_SUCCESS".equals(type)) {
             JsonNode data = node.path("data");
+            System.out.println("[LOGIN] Prihlásenie úspešné!");
             Platform.runLater(() -> {
                 UserSession session = UserSession.get();
                 session.setUserId(data.path("userId").asInt());
@@ -99,11 +105,14 @@ public class LoginController implements Initializable {
             });
         } else if ("ERROR".equals(type)) {
             String message = node.path("message").asText();
+            System.out.println("[LOGIN] Chyba od servera: " + message);
             Platform.runLater(() -> {
                 showAlert(Alert.AlertType.ERROR, 
                     isEnglish ? "Login Failed" : "Prihlásenie zlyhalo", 
                     message);
             });
+        } else {
+            System.out.println("[LOGIN] Neznámy typ odpovede: " + type);
         }
     }
 
