@@ -397,8 +397,11 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             try {
                 sk.bais.model.Subject subject = mapper.treeToValue(payload.get("subject"), sk.bais.model.Subject.class);
-                
-                if (adminService.createSubject(subject, ctx)) {
+                String name = payload.get("name").asText();
+                String locale = payload.get("locale").asText();
+                String description = payload.get("description").asText();
+
+                if (adminService.createSubject(subject, name, locale, description, ctx)) {
                     sendResponse(conn, "SUBJECT_CREATED", subject);
                 } else {
                     sendError(conn, "Nepodarilo sa vytvoriť predmet (práva/DB)");

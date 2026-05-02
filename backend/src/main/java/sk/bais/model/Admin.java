@@ -2,6 +2,8 @@ package sk.bais.model;
 
 import java.time.OffsetDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +25,7 @@ public class Admin {
     private String firstName;
     private String lastName;
     private String passwordHash;
+    @JsonProperty("isActive")
     private boolean isActive;
     private String profilePictureUrl;
     private OffsetDateTime createdAt;

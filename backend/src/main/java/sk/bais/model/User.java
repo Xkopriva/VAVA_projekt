@@ -1,10 +1,12 @@
 package sk.bais.model;
 
+import java.time.OffsetDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku "user".
@@ -21,6 +23,7 @@ public class User {
     private String firstName;           // VARCHAR(100) NOT NULL
     private String lastName;            // VARCHAR(100) NOT NULL
     private String passwordHash;        // VARCHAR(255) NOT NULL — nikdy nezobrazovat!
+    @JsonProperty("isActive")
     private boolean isActive;           // DEFAULT TRUE
     private String profilePictureUrl;   // nullable VARCHAR(500)
     private OffsetDateTime createdAt;
