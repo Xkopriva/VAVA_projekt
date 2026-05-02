@@ -1,6 +1,7 @@
 package sk.bais.core;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
 import sk.bais.dao.UserDAO;
+import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.dto.UserProfileDTO;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
@@ -100,6 +102,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_MY_MARKS" -> handleGetMyMarks(conn);
                 case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
                 case "GET_MY_EVENTS" -> handleGetMyEvents(conn);
+                case "GET_MY_CALENDAR" -> handleGetMyCalendar(conn, payload);
 
                 // --- SPOLOCNE AKCIE ---
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
@@ -200,6 +203,27 @@ public class BaisWebSocketServer extends WebSocketServer {
     // -------------------------------------------------------------------------
     // Student Handlery
     // -------------------------------------------------------------------------
+
+    private void handleGetMyCalendar(WebSocket conn, JsonNode payload) {
+    // 1. Overenie autentifikácie a získanie kontextu[cite: 18]
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                // 2. Získanie locale z JSONu (napr. "sk"), defaultne "sk" ak chýba
+                String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
+
+                // 3. Volanie novej metódy v StudentService[cite: 18]
+                List<EventWithTranslationDTO> events = studentService.getMyCalendarEvents(ctx, locale);
+
+                // 4. Odoslanie úspešnej odpovede s dátami
+                sendResponse(conn, "MY_CALENDAR_DATA", events);
+                
+                log.info("Odoslaných {} udalostí kalendára pre userId={}", events.size(), ctx.getUserId());
+            } catch (Exception e) {
+                log.error("Chyba pri spracovaní požiadavky na kalendár", e);
+                sendError(conn, "Nepodarilo sa načítať dáta kalendára");
+            }
+        });
+    }
 
     private void handleEnrollSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {

@@ -12,18 +12,23 @@ import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.SubjectTranslationDAO;
 import sk.bais.dto.EnrollmentWithSubjectDTO;
-import sk.bais.model.SubjectTranslation;
+import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.model.Enrollment;
+import sk.bais.model.Event;
+import sk.bais.model.EventTranslation;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
 import sk.bais.model.Student;
 import sk.bais.model.Subject;
+import sk.bais.model.SubjectTranslation;
 
 /**
  * Service vrstva pre studenta.
@@ -47,6 +52,8 @@ public class StudentService {
     private final IndexRecordDAO indexRecordDAO;
     private final SubjectDAO subjectDAO;
     private final SubjectTranslationDAO subjectTranslationDAO;
+    private final EventDAO eventDAO;
+    private final EventTranslationDAO eventTranslationDAO;
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -208,4 +215,53 @@ public class StudentService {
         }
     }
     
+    /**
+     * Získa udalosti pre kalendár prihláseného študenta.
+     * Vracia udalosti len pre predmety, na ktoré je študent zapísaný.
+     */
+    public List<EventWithTranslationDTO> getMyCalendarEvents(AuthContext ctx, String locale) {
+        try {
+            // 1. Získame ID predmetov, na ktoré je študent zapísaný[cite: 18]
+            List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Integer> mySubjectIds = enrollments.stream()
+                    .map(Enrollment::getSubjectId)
+                    .toList();
+
+            List<EventWithTranslationDTO> calendar = new ArrayList<>();
+
+            // 2. Pre každý predmet vytiahneme jeho udalosti[cite: 16]
+            for (int subjectId : mySubjectIds) {
+                List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
+                
+                for (Event e : subjectEvents) {
+                    // Ignorujeme nepublikované udalosti (ak frontend nemá byť admin)
+                    if (!e.isPublished()) continue;
+
+                    // 3. Získame preklad pre daný event a locale
+                    String title = "Event " + e.getId();
+                    String description = "";
+
+                    Optional<EventTranslation> trans = eventTranslationDAO.get(e.getId(), locale);
+                    if (trans.isPresent()) {
+                        title = trans.get().getTitle();
+                        description = trans.get().getDescription();
+                    } else {
+                        // Fallback na iný jazyk, ak požadovaný neexistuje
+                        Optional<EventTranslation> fallback = eventTranslationDAO.get(e.getId(), "sk");
+                        if (fallback.isPresent()) {
+                            title = fallback.get().getTitle();
+                            description = fallback.get().getDescription();
+                        }
+                    }
+
+                    calendar.add(new EventWithTranslationDTO(e, title, description));
+                }
+            }
+            return calendar;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní kalendára pre študenta {}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
 }

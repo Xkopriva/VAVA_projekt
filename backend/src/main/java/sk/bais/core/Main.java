@@ -2,6 +2,8 @@ package sk.bais.core;
 
 import sk.bais.auth.AuthService;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
 import sk.bais.dao.SemesterDAO;
@@ -32,9 +34,11 @@ public class Main {
         SemesterDAO semesterDAO = new SemesterDAO();
         UserDAO userDAO = new UserDAO();
         IndexRecordDAO indexRecordDAO = new IndexRecordDAO();
-
+        EventDAO eventDAO = new EventDAO();
+        EventTranslationDAO eventTranslationDAO = new EventTranslationDAO();
+        
         // 2. Inicializácia Biznis logiky (Service vrstva)
-        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO, subjectDAO, subjectTranslationDAO);
+        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO, subjectDAO, subjectTranslationDAO, eventDAO, eventTranslationDAO);
         TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
         AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO); 
 
