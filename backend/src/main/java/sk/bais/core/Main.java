@@ -2,6 +2,8 @@ package sk.bais.core;
 
 import sk.bais.auth.AuthService;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
 import sk.bais.dao.SemesterDAO;
@@ -28,19 +30,21 @@ public class Main {
         EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
         MarkDAO markDAO = new MarkDAO();
         SubjectDAO subjectDAO = new SubjectDAO();
+        SubjectTranslationDAO subjectTranslationDAO = new SubjectTranslationDAO();
         SemesterDAO semesterDAO = new SemesterDAO();
         UserDAO userDAO = new UserDAO();
         IndexRecordDAO indexRecordDAO = new IndexRecordDAO();
-        SubjectTranslationDAO subjectTranslationDAO = new SubjectTranslationDAO();
-
+        EventDAO eventDAO = new EventDAO();
+        EventTranslationDAO eventTranslationDAO = new EventTranslationDAO();
+        
         // 2. Inicializácia Biznis logiky (Service vrstva)
-        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO);
+        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO, subjectDAO, subjectTranslationDAO, eventDAO, eventTranslationDAO);
         TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
         AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO); 
 
         // 3. Spustenie WebSocket servera na porte 8887
         int port = 8887;
-        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService, adminService);
+        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService, adminService, userDAO);
         server.start();
 
         System.out.println("Server beží na: ws://localhost:" + port);

@@ -1,6 +1,7 @@
 package sk.bais.service;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -11,13 +12,23 @@ import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
 import sk.bais.dao.StudentDAO;
+import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.SubjectTranslationDAO;
+import sk.bais.dto.EnrollmentWithSubjectDTO;
+import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.model.Enrollment;
+import sk.bais.model.Event;
+import sk.bais.model.EventTranslation;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
 import sk.bais.model.Student;
+import sk.bais.model.Subject;
+import sk.bais.model.SubjectTranslation;
 
 /**
  * Service vrstva pre studenta.
@@ -39,6 +50,10 @@ public class StudentService {
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
     private final IndexRecordDAO indexRecordDAO;
+    private final SubjectDAO subjectDAO;
+    private final SubjectTranslationDAO subjectTranslationDAO;
+    private final EventDAO eventDAO;
+    private final EventTranslationDAO eventTranslationDAO;
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -106,14 +121,75 @@ public class StudentService {
     }
 
     
-    // Moje zápisy — student vidí len svoje
-    public List<Enrollment> getMyEnrollments(AuthContext ctx) {
+    /**
+     * Moje zápisy — obohacené o polia predmetu (subjectCode, subjectName, credits).
+     * Fronted (GradesController, ProgressController, CoursesController) potrebuje tieto
+     * polia priamo v enrollment objekte.
+     */
+    public List<EnrollmentWithSubjectDTO> getMyEnrollments(AuthContext ctx) {
         try {
-            return enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Enrollment> raw = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<EnrollmentWithSubjectDTO> result = new ArrayList<>();
+
+            for (Enrollment e : raw) {
+                String code  = "";
+                String name  = "";
+                int    creds = 0;
+
+                try {
+                    Optional<Subject> subjectOpt = subjectDAO.getById(e.getSubjectId());
+                    if (subjectOpt.isPresent()) {
+                        Subject s = subjectOpt.get();
+                        code  = s.getCode() != null ? s.getCode() : "";
+                        name  = resolveSubjectName(s);
+                        creds = s.getCredits();
+                    }
+                } catch (SQLException ex) {
+                    log.warn("Nepodarilo sa načítať predmet subjectId={} pre enrollment id={}", e.getSubjectId(), e.getId());
+                }
+
+                result.add(new EnrollmentWithSubjectDTO(
+                        e.getId(),
+                        e.getStudentId(),
+                        e.getSubjectId(),
+                        e.getSemesterId(),
+                        e.getAttemptNumber(),
+                        e.getStatus() != null ? e.getStatus().name() : "ACTIVE",
+                        code,
+                        name,
+                        creds
+                ));
+            }
+
+            log.info("Načítaných {} zápisov (s predmetmi) pre userId={}", result.size(), ctx.getUserId());
+            return result;
         } catch (SQLException e) {
             log.error("Chyba pri načítaní zápisov pre userId={}", ctx.getUserId(), e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Vráti ľudsky čitateľný názov predmetu z tabuľky subject_translation.
+     * Priorita: slovenský preklad → anglický preklad → kód predmetu.
+     */
+    private String resolveSubjectName(Subject s) {
+        try {
+            // Skús SK preklad
+            java.util.Optional<SubjectTranslation> sk = subjectTranslationDAO.get(s.getId(), "sk");
+            if (sk.isPresent() && sk.get().getName() != null && !sk.get().getName().isBlank()) {
+                return sk.get().getName();
+            }
+            // Fallback EN preklad
+            java.util.Optional<SubjectTranslation> en = subjectTranslationDAO.get(s.getId(), "en");
+            if (en.isPresent() && en.get().getName() != null && !en.get().getName().isBlank()) {
+                return en.get().getName();
+            }
+        } catch (Exception ex) {
+            log.warn("Nepodarilo sa načítať preklad pre subjectId={}", s.getId());
+        }
+        // Posledný fallback — kód predmetu
+        return s.getCode() != null ? s.getCode() : "Predmet " + s.getId();
     }
 
     // ziska BODY v enrollmente pre daneho studenta
@@ -139,4 +215,53 @@ public class StudentService {
         }
     }
     
+    /**
+     * Získa udalosti pre kalendár prihláseného študenta.
+     * Vracia udalosti len pre predmety, na ktoré je študent zapísaný.
+     */
+    public List<EventWithTranslationDTO> getMyCalendarEvents(AuthContext ctx, String locale) {
+        try {
+            // 1. Získame ID predmetov, na ktoré je študent zapísaný[cite: 18]
+            List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Integer> mySubjectIds = enrollments.stream()
+                    .map(Enrollment::getSubjectId)
+                    .toList();
+
+            List<EventWithTranslationDTO> calendar = new ArrayList<>();
+
+            // 2. Pre každý predmet vytiahneme jeho udalosti[cite: 16]
+            for (int subjectId : mySubjectIds) {
+                List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
+                
+                for (Event e : subjectEvents) {
+                    // Ignorujeme nepublikované udalosti (ak frontend nemá byť admin)
+                    if (!e.isPublished()) continue;
+
+                    // 3. Získame preklad pre daný event a locale
+                    String title = "Event " + e.getId();
+                    String description = "";
+
+                    Optional<EventTranslation> trans = eventTranslationDAO.get(e.getId(), locale);
+                    if (trans.isPresent()) {
+                        title = trans.get().getTitle();
+                        description = trans.get().getDescription();
+                    } else {
+                        // Fallback na iný jazyk, ak požadovaný neexistuje
+                        Optional<EventTranslation> fallback = eventTranslationDAO.get(e.getId(), "sk");
+                        if (fallback.isPresent()) {
+                            title = fallback.get().getTitle();
+                            description = fallback.get().getDescription();
+                        }
+                    }
+
+                    calendar.add(new EventWithTranslationDTO(e, title, description));
+                }
+            }
+            return calendar;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní kalendára pre študenta {}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
 }
