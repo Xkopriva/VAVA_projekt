@@ -1,0 +1,111 @@
+/* Root pane - light gray/white background */
+.root-pane {
+    -fx-background-color: #f8fafc;
+}
+
+/* Header bar styling */
+.header-bar {
+    -fx-background-color: white;
+    -fx-padding: 15 25;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Header logo - graduation cap in square */
+.header-logo {
+    -fx-font-size: 24px;
+    -fx-background-color: #06b6d4;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+    -fx-text-fill: white;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-alignment: CENTER;
+}
+
+/* Header title */
+.header-title {
+    -fx-text-fill: #1e3a8a;
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-font-family: "Arial";
+}
+
+/* Header subtitle */
+.header-subtitle {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+    -fx-font-family: "Arial";
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-font-size: 20px;
+    -fx-padding: 8;
+}
+
+.dark-mode-toggle:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 8;
+}
+
+/* Login card - centered blue card with rounded corners */
+.login-card {
+    -fx-background-color: #1e3a8a;
+    -fx-background-radius: 16;
+    -fx-padding: 40;
+    -fx-alignment: CENTER;
+}
+
+/* Card logo - cyan graduation cap icon */
+.card-logo {
+    -fx-font-size: 32px;
+    -fx-background-color: #06b6d4;
+    -fx-background-radius: 12;
+    -fx-padding: 12;
+    -fx-text-fill: white;
+    -fx-min-width: 56;
+    -fx-min-height: 56;
+    -fx-alignment: CENTER;
+}
+
+/* Login title - main title in card */
+.login-title {
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER;
+}
+
+/* Login subtitle - instruction text */
+.login-subtitle {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+    -fx-font-family: "Arial";
+    -fx-alignment: CENTER;
+}
+
+/* Input fields styling */
+.login-input {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-padding: 12;
+    -fx-text-fill: #333333;
+    -fx-font-size: 14px;
+}
+
+/* Login button styling */
+.login-button {
+    -fx-background-color: #06b6d4;
+    -fx-background-radius: 10;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 12;
+    -fx-font-size: 14px;
+}
+
+.login-button:hover {
+    -fx-background-color: #0891b2;
+}

@@ -17,6 +17,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
+import sk.bais.dao.UserDAO;
+import sk.bais.dto.UserProfileDTO;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
 import sk.bais.service.TeacherService;
@@ -28,18 +30,20 @@ public class BaisWebSocketServer extends WebSocketServer {
     private final AuthService authService;
     private final StudentService studentService;
     private final TeacherService teacherService;
-    private final AdminService adminService;    
+    private final AdminService adminService;
+    private final UserDAO userDAO;
 
     // Mapa aktívnych sessions: každé WebSocket spojenie má svoj AuthContext
     private final Map<WebSocket, AuthContext> sessions = new ConcurrentHashMap<>();
 
     public BaisWebSocketServer(int port, AuthService authService, StudentService studentService, 
-                            TeacherService teacherService, AdminService adminService) {
+                            TeacherService teacherService, AdminService adminService, UserDAO userDAO) {
     super(new InetSocketAddress(port));
     this.authService = authService;
     this.studentService = studentService;
     this.teacherService = teacherService; 
-    this.adminService = adminService;   
+    this.adminService = adminService;
+    this.userDAO = userDAO;
     mapper.registerModule(new JavaTimeModule());  
 }
 
@@ -95,6 +99,13 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
                 case "GET_MY_MARKS" -> handleGetMyMarks(conn);
                 case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
+                case "GET_MY_EVENTS" -> handleGetMyEvents(conn);
+
+                // --- SPOLOCNE AKCIE ---
+                case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
+
+                // --- TEACHER AKCIE (rozsírené) ---
+                case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
 
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
@@ -120,6 +131,38 @@ public class BaisWebSocketServer extends WebSocketServer {
     // -------------------------------------------------------------------------
     // Handlery akcií
     // -------------------------------------------------------------------------
+
+    private void handleGetMyEvents(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                java.util.List<sk.bais.dto.EnrollmentWithSubjectDTO> enrollments = studentService.getMyEnrollments(ctx);
+                sk.bais.dao.EventDAO eventDAO = new sk.bais.dao.EventDAO();
+                
+                java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+                for (sk.bais.dto.EnrollmentWithSubjectDTO enr : enrollments) {
+                    java.util.List<sk.bais.model.Event> events = eventDAO.listBySubject(enr.getSubjectId());
+                    for (sk.bais.model.Event ev : events) {
+                        java.util.Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("type", ev.getType() != null ? ev.getType().name() : "PREDNASKA");
+                        map.put("subjectCode", enr.getSubjectCode());
+                        if (ev.getScheduledAt() != null) {
+                            map.put("scheduledAt", ev.getScheduledAt().toString());
+                        }
+                        map.put("durationMinutes", ev.getDurationMinutes() != null ? ev.getDurationMinutes() : 90);
+                        result.add(map);
+                    }
+                }
+                
+                conn.send(mapper.writeValueAsString(java.util.Map.of(
+                    "type", "MY_EVENTS_LIST",
+                    "data", result
+                )));
+            } catch (Exception e) {
+                log.error("Chyba pri nacitani eventov", e);
+                sendError(conn, "Nepodarilo sa načítať udalosti");
+            }
+        });
+    }
 
     private void handleLogin(WebSocket conn, JsonNode payload) {
         // Validácia – payload musí obsahovať email aj heslo
@@ -213,6 +256,33 @@ public class BaisWebSocketServer extends WebSocketServer {
 
 
     // -------------------------------------------------------------------------
+    // Spolocne handlery
+    // -------------------------------------------------------------------------
+
+    private void handleGetUserProfile(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                var userOpt = userDAO.getById(ctx.getUserId());
+                if (userOpt.isPresent()) {
+                    var u = userOpt.get();
+                    UserProfileDTO dto = new UserProfileDTO(
+                            u.getId(),
+                            u.getEmail(),
+                            u.getFirstName() != null ? u.getFirstName() : "",
+                            u.getLastName()  != null ? u.getLastName()  : ""
+                    );
+                    sendResponse(conn, "USER_PROFILE", dto);
+                } else {
+                    sendError(conn, "Používateľ nebol nájdený");
+                }
+            } catch (Exception e) {
+                log.error("Chyba pri načítaní profilu pre userId={}", ctx.getUserId(), e);
+                sendError(conn, "Nepodarilo sa načítať profil");
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // Teacher Handlery
     // -------------------------------------------------------------------------
 
@@ -220,6 +290,19 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             var subjects = teacherService.getMySubjects(ctx);
             sendResponse(conn, "TEACHER_SUBJECTS_LIST", subjects);
+        });
+    }
+
+    // GET_ENROLLMENTS_FOR_SUBJECT — vráti zápisy (sťudentov) pre daný predmet
+    private void handleGetEnrollmentsForSubject(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("subjectId")) {
+                sendError(conn, "Chýba subjectId");
+                return;
+            }
+            int subjectId = payload.get("subjectId").asInt();
+            var enrollments = teacherService.getEnrollmentsForSubject(subjectId, ctx);
+            sendResponse(conn, "SUBJECT_ENROLLMENTS", enrollments);
         });
     }
 
