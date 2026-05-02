@@ -37,7 +37,7 @@ public class AdminService {
 
     // Registruje noveho pouzivatela so zahashovanym heslom a priradi mu rolu
     public Optional<User> createUser(User newUser, String plainTextPassword, String roleName, AuthContext ctx) {
-        if (!ctx.hasPermission("users:write")) {
+        if (!ctx.hasPermission("users:manage")) {
             log.warn("Zamietnutý pokus o vytvorenie používateľa: userId={} nemá oprávnenie", ctx.getUserId());
             return Optional.empty();
         }

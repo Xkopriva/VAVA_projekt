@@ -32,7 +32,6 @@ public class Main {
         SemesterDAO semesterDAO = new SemesterDAO();
         UserDAO userDAO = new UserDAO();
         IndexRecordDAO indexRecordDAO = new IndexRecordDAO();
-        SubjectTranslationDAO subjectTranslationDAO = new SubjectTranslationDAO();
 
         // 2. Inicializácia Biznis logiky (Service vrstva)
         StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO, subjectDAO, subjectTranslationDAO);
