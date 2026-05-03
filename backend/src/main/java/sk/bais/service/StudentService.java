@@ -3,7 +3,9 @@ package sk.bais.service;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -165,6 +167,49 @@ public class StudentService {
             return result;
         } catch (SQLException e) {
             log.error("Chyba pri načítaní zápisov pre userId={}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Vyčistená verzia pôvodného handleGetMyEvents.
+     * Získava udalosti študenta transformované na jednoduchý zoznam pre UI.
+     */
+    public List<Map<String, Object>> getMyEventsSimpleList(AuthContext ctx, String locale) {
+        try {
+            // Využijeme už existujúcu čistú metódu getMyEnrollments[cite: 15]
+            List<EnrollmentWithSubjectDTO> enrollments = getMyEnrollments(ctx);
+            List<Map<String, Object>> result = new ArrayList<>();
+
+            for (EnrollmentWithSubjectDTO enr : enrollments) {
+                // Používame injektované eventDAO[cite: 13, 15]
+                List<Event> events = eventDAO.listBySubject(enr.getSubjectId());
+                
+                for (Event ev : events) {
+                    Map<String, Object> map = new HashMap<>();
+                    
+                    // Skúsime získať preložený titulok, inak použijeme typ[cite: 14]
+                    String displayTitle = ev.getType() != null ? ev.getType().name() : "EVENT";
+                    Optional<EventTranslation> trans = eventTranslationDAO.get(ev.getId(), locale);
+                    if (trans.isPresent()) {
+                        displayTitle = trans.get().getTitle();
+                    }
+
+                    map.put("title", displayTitle);
+                    map.put("type", ev.getType() != null ? ev.getType().name() : "PREDNASKA");
+                    map.put("subjectCode", enr.getSubjectCode());
+                    
+                    if (ev.getScheduledAt() != null) {
+                        map.put("scheduledAt", ev.getScheduledAt().toString());
+                    }
+                    
+                    map.put("durationMinutes", ev.getDurationMinutes() != null ? ev.getDurationMinutes() : 90);
+                    result.add(map);
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            log.error("Chyba v getMyEventsSimpleList pre studenta {}", ctx.getUserId(), e);
             return Collections.emptyList();
         }
     }
