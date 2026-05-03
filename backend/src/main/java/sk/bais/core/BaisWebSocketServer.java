@@ -101,7 +101,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
                 case "GET_MY_MARKS" -> handleGetMyMarks(conn);
                 case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
-                case "GET_MY_EVENTS" -> handleGetMyEvents(conn);
+                case "GET_MY_EVENTS" -> handleGetMyEvents(conn, payload);
                 case "GET_MY_CALENDAR" -> handleGetMyCalendar(conn, payload);
 
                 // --- SPOLOCNE AKCIE ---
@@ -135,35 +135,14 @@ public class BaisWebSocketServer extends WebSocketServer {
     // Handlery akcií
     // -------------------------------------------------------------------------
 
-    private void handleGetMyEvents(WebSocket conn) {
+    private void handleGetMyEvents(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
-            try {
-                java.util.List<sk.bais.dto.EnrollmentWithSubjectDTO> enrollments = studentService.getMyEnrollments(ctx);
-                sk.bais.dao.EventDAO eventDAO = new sk.bais.dao.EventDAO();
-                
-                java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
-                for (sk.bais.dto.EnrollmentWithSubjectDTO enr : enrollments) {
-                    java.util.List<sk.bais.model.Event> events = eventDAO.listBySubject(enr.getSubjectId());
-                    for (sk.bais.model.Event ev : events) {
-                        java.util.Map<String, Object> map = new java.util.HashMap<>();
-                        map.put("type", ev.getType() != null ? ev.getType().name() : "PREDNASKA");
-                        map.put("subjectCode", enr.getSubjectCode());
-                        if (ev.getScheduledAt() != null) {
-                            map.put("scheduledAt", ev.getScheduledAt().toString());
-                        }
-                        map.put("durationMinutes", ev.getDurationMinutes() != null ? ev.getDurationMinutes() : 90);
-                        result.add(map);
-                    }
-                }
-                
-                conn.send(mapper.writeValueAsString(java.util.Map.of(
-                    "type", "MY_EVENTS_LIST",
-                    "data", result
-                )));
-            } catch (Exception e) {
-                log.error("Chyba pri nacitani eventov", e);
-                sendError(conn, "Nepodarilo sa načítať udalosti");
-            }
+            String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
+            
+            // Všetka špina je teraz schovaná v servise
+            List<Map<String, Object>> events = studentService.getMyEventsSimpleList(ctx, locale);
+            
+            sendResponse(conn, "MY_EVENTS_LIST", events);
         });
     }
 
