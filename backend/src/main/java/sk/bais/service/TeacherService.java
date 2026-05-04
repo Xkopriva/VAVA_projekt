@@ -55,9 +55,9 @@ public class TeacherService {
         try {
             List<Subject> all = subjectDAO.list();
             List<Subject> mine = all.stream()
-                    .filter(s -> s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId())
+                    .filter(s -> ctx.hasRole("ADMIN") || (s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId()))
                     .toList();
-            log.info("Teacher userId={} má {} predmetov", ctx.getUserId(), mine.size());
+            log.info("Teacher/Admin userId={} má {} predmetov", ctx.getUserId(), mine.size());
             return mine;
         } catch (SQLException e) {
             log.error("Chyba pri načítaní predmetov pre userId={}", ctx.getUserId(), e);

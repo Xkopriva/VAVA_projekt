@@ -8,10 +8,10 @@ public class MigrationRunner {
 
     // zmenit z configu pre superuser, neshipovat s aplikaciou, ktora bezi s normalnym userom
     public static void main(String[] args) {
-        boolean seedEnabled = false;
-        if (args.length > 0 && args[0].equals("seed")) {
-            seedEnabled = true;
-        }
+        java.util.List<String> argList = java.util.Arrays.asList(args);
+        boolean seedEnabled = argList.contains("seed");
+        boolean cleanEnabled = argList.contains("clean");
+        System.out.println("Running with args: " + argList);
 
         java.util.Properties props = new java.util.Properties();
         try (java.io.InputStream is = MigrationRunner.class.getClassLoader().getResourceAsStream("application.properties")) {
@@ -38,6 +38,7 @@ public class MigrationRunner {
                     .dataSource(dbUrl, dbUser, dbPassword)
                     .schemas("public")
                     .locations(locations)
+                    .cleanDisabled(false)
                     .load();
 
             System.out.println("Flyway Info:");
@@ -52,6 +53,11 @@ public class MigrationRunner {
             System.out.println("  Pending migrations: " + pending.length);
             for (MigrationInfo info : pending) {
                 System.out.println("    - " + info.getVersion() + " " + info.getDescription());
+            }
+
+            if (cleanEnabled) {
+                System.out.println("Cleaning database...");
+                flyway.clean();
             }
 
             System.out.println("\nRunning migrations...");

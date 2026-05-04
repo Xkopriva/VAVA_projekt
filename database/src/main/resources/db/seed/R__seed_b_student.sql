@@ -261,3 +261,11 @@ SELECT
 FROM subject s, semester sem
 WHERE s.code IN ('DBS_B','VAVA_B','DMBLOCK_B','WTECH_B','PSI_B','PAS_B')
   AND sem.code = 'SS_2025_2026';
+-- ============================================================
+-- ASSIGN GUARANTOR
+-- Teacher jan.novak@stuba.sk will guarantee the current subjects
+-- ============================================================
+
+UPDATE subject
+SET guarantor_id = (SELECT id FROM "user" WHERE email = 'jan.novak@stuba.sk')
+WHERE code IN ('DBS_B','VAVA_B','DMBLOCK_B','WTECH_B','PSI_B','PAS_B', 'PKS_B', 'UI_B', 'OOP_B', 'PRPR_B');

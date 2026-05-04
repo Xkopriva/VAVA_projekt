@@ -41,7 +41,20 @@ public class NotificationWindow {
         markAllBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #06b6d4; " +
             "-fx-font-size: 12px; -fx-cursor: hand; -fx-border-color: #06b6d4; " +
             "-fx-border-radius: 6; -fx-padding: 4 10;");
-        header.getChildren().addAll(title, spacer, markAllBtn);
+            
+        header.getChildren().addAll(title, spacer);
+        
+        if (UserSession.get().hasRole("TEACHER") || UserSession.get().hasRole("ADMIN")) {
+            Button newNotifBtn = new Button(en ? "+ New" : "+ Nová");
+            newNotifBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; " +
+                "-fx-font-size: 12px; -fx-font-weight: bold; -fx-cursor: hand; " +
+                "-fx-background-radius: 6; -fx-padding: 4 10;");
+            newNotifBtn.setOnAction(e -> showCreateNotificationDialog(en));
+            header.getChildren().add(newNotifBtn);
+            HBox.setMargin(newNotifBtn, new Insets(0, 8, 0, 0));
+        }
+        
+        header.getChildren().add(markAllBtn);
 
         // Loading indicator
         Label loadingLbl = new Label(en ? "⏳ Loading..." : "⏳ Načítavam...");
@@ -196,5 +209,54 @@ public class NotificationWindow {
 
         notification.getChildren().addAll(titleLabel, messageLabel);
         return notification;
+    }
+
+    private static void showCreateNotificationDialog(boolean en) {
+        Stage stage = new Stage();
+        stage.setTitle(en ? "Create Notification" : "Vytvoriť upozornenie");
+        stage.initModality(Modality.APPLICATION_MODAL);
+        
+        VBox root = new VBox(12);
+        root.setPadding(new Insets(20));
+        root.setStyle("-fx-background-color: #ffffff;");
+        
+        Label titleLbl = new Label(en ? "Title:" : "Názov:");
+        TextField titleField = new TextField();
+        
+        Label msgLbl = new Label(en ? "Message:" : "Správa:");
+        TextArea msgField = new TextArea();
+        msgField.setWrapText(true);
+        msgField.setPrefRowCount(4);
+        
+        HBox btnBox = new HBox(8);
+        btnBox.setAlignment(Pos.CENTER_RIGHT);
+        
+        Button cancelBtn = new Button(en ? "Cancel" : "Zrušiť");
+        cancelBtn.setOnAction(e -> stage.close());
+        
+        Button sendBtn = new Button(en ? "Send to All" : "Odoslať všetkým");
+        sendBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;");
+        sendBtn.setOnAction(e -> {
+            String t = titleField.getText().trim();
+            String m = msgField.getText().trim();
+            if (t.isEmpty() || m.isEmpty()) return;
+            
+            WebSocketClientService.getInstance().sendAction("CREATE_NOTIFICATION", 
+                java.util.Map.of("title", t, "message", m));
+                
+            stage.close();
+            // Show alert
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(en ? "Success" : "Úspech");
+            alert.setHeaderText(null);
+            alert.setContentText(en ? "Notification sent!" : "Upozornenie bolo odoslané!");
+            alert.showAndWait();
+        });
+        
+        btnBox.getChildren().addAll(cancelBtn, sendBtn);
+        root.getChildren().addAll(titleLbl, titleField, msgLbl, msgField, btnBox);
+        
+        stage.setScene(new Scene(root, 350, 300));
+        stage.show();
     }
 }

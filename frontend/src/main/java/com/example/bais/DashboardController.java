@@ -77,8 +77,36 @@ public class DashboardController implements Initializable {
     private String subDashCalendar;
     private String subDashMarks;
 
+    private void loadSettings() {
+        try {
+            java.io.File file = new java.io.File(System.getProperty("user.home"), ".bais-settings.json");
+            if (file.exists()) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(file);
+                this.isDarkMode = root.path("isDarkMode").asBoolean(false);
+            }
+        } catch (Exception e) {}
+    }
+
+    private void saveSettingsToJson() {
+        try {
+            java.io.File file = new java.io.File(System.getProperty("user.home"), ".bais-settings.json");
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.node.ObjectNode root;
+            if (file.exists()) {
+                root = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(file);
+            } else {
+                root = mapper.createObjectNode();
+            }
+            root.put("isEnglish", isEnglish);
+            root.put("isDarkMode", isDarkMode);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(file, root);
+        } catch (Exception e) {}
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        loadSettings();
         isEnglish = UserSession.get().isEnglish();
 
         updateLanguage();
@@ -429,6 +457,8 @@ public class DashboardController implements Initializable {
 
     // ── Helper: načítaj FXML do scroll pane ──────────────────────
 
+    private SettingsController currentSettingsController;
+
     private void loadView(String fxmlName) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlName));
@@ -436,7 +466,10 @@ public class DashboardController implements Initializable {
 
             Object controller = loader.getController();
             if (controller instanceof SettingsController sc) {
+                currentSettingsController = sc;
                 sc.setDashboardController(this);
+            } else {
+                currentSettingsController = null;
             }
 
             if (mainScroll != null) mainScroll.setContent(view);
@@ -484,10 +517,16 @@ public class DashboardController implements Initializable {
         updateLanguage();
         if (UserSession.get().isTeacher() || UserSession.get().isAdmin()) applyTeacherUI();
         updateWelcomeBanner();
+        saveSettingsToJson();
+        if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
     }
 
     public void toggleDarkMode() {
-        isDarkMode = !isDarkMode;
+        setDarkMode(!isDarkMode);
+    }
+
+    public void setDarkMode(boolean enableDark) {
+        isDarkMode = enableDark;
         Scene scene = darkModeToggle.getScene();
         if (scene != null) {
             scene.getStylesheets().clear();
@@ -495,6 +534,8 @@ public class DashboardController implements Initializable {
                 getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
         }
         updateDarkModeButton();
+        saveSettingsToJson();
+        if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
     }
 
     private void applyTeacherUI() {

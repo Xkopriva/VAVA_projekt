@@ -138,6 +138,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 
                 // --- SPOLOCNE AKCIE ---
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
+                case "CREATE_NOTIFICATION" -> handleCreateNotification(conn, payload);
 
                 
 
@@ -148,6 +149,26 @@ public class BaisWebSocketServer extends WebSocketServer {
             log.error("Chyba pri spracovaní správy", e);
             sendError(conn, "Neplatný formát správy");
         }
+    }
+
+    private void handleCreateNotification(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (!payload.hasNonNull("title") || !payload.hasNonNull("message")) {
+                sendError(conn, "Chýba title alebo message");
+                return;
+            }
+            String title = payload.get("title").asText();
+            String message = payload.get("message").asText();
+            teacherService.createBroadcastNotification(title, message, ctx);
+            sendResponse(conn, "NOTIFICATION_CREATED", null);
+            
+            // Push to connected clients using the correct active connections
+            for (Map.Entry<WebSocket, AuthContext> entry : sessions.entrySet()) {
+                if (entry.getValue().hasRole("STUDENT")) {
+                    sendResponse(entry.getKey(), "NEW_NOTIFICATION", null);
+                }
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -408,7 +429,6 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
-    // GET_ENROLLMENTS_FOR_SUBJECT — vráti zápisy (sťudentov) pre daný predmet
     private void handleGetEnrollmentsForSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             if (payload == null || !payload.has("subjectId")) {
@@ -417,7 +437,11 @@ public class BaisWebSocketServer extends WebSocketServer {
             }
             int subjectId = payload.get("subjectId").asInt();
             var enrollments = teacherService.getEnrollmentsForSubject(subjectId, ctx);
-            sendResponse(conn, "SUBJECT_ENROLLMENTS", enrollments);
+            
+            Map<String, Object> resp = new java.util.HashMap<>();
+            resp.put("subjectId", subjectId);
+            resp.put("enrollments", enrollments);
+            sendResponse(conn, "SUBJECT_ENROLLMENTS", resp);
         });
     }
 
@@ -448,12 +472,10 @@ public class BaisWebSocketServer extends WebSocketServer {
             int eid = payload.get("enrollmentId").asInt();
             var record = teacherService.getIndexRecordForEnrollment(eid, ctx);
             
-            if (record.isPresent()) {
-                sendResponse(conn, "INDEX_RECORD_DETAIL", record.get());
-            } else {
-                // Ak neexistuje finálna známka, vrátime prázdny úspech alebo info
-                sendResponse(conn, "INDEX_RECORD_DETAIL", null);
-            }
+            Map<String, Object> resp = new java.util.HashMap<>();
+            resp.put("enrollmentId", eid);
+            resp.put("record", record.orElse(null));
+            sendResponse(conn, "INDEX_RECORD_DETAIL", resp);
         });
     }
 

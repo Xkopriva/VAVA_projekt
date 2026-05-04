@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -97,23 +98,35 @@ public class TeacherGradesController implements Initializable {
             return;
         }
 
-        // Step 2 — for each subject, load its enrollments
+        // Step 2 — fetch enrollments and marks
+        fetchEnrollmentsAndMarks();
+    }
+
+    // We use a single permanent listener instead of one per request
+    private String subjectEnrollmentSubId;
+    private String markSubId;
+
+    private void fetchEnrollmentsAndMarks() {
+        WebSocketClientService ws = WebSocketClientService.getInstance();
+        
+        // Single permanent listener for all enrollments
+        subjectEnrollmentSubId = ws.subscribe("SUBJECT_ENROLLMENTS", this::handleEnrollments);
+        // Single permanent listener for all marks
+        markSubId = ws.subscribe("INDEX_RECORD_DETAIL", this::handleMark);
+
         pendingSubjectLoads = subjects.size();
         for (SubjectInfo si : subjects) {
-            final int subjectId = si.subjectId();
-            String subId = ws.subscribe("SUBJECT_ENROLLMENTS", node2 -> handleEnrollments(node2, subjectId));
-            subjectEnrollmentSubs.put(subjectId, subId);
-            ws.sendAction("GET_ENROLLMENTS_FOR_SUBJECT", Map.of("subjectId", subjectId));
+            ws.sendAction("GET_ENROLLMENTS_FOR_SUBJECT", Map.of("subjectId", si.subjectId()));
         }
     }
 
-    // Step 2 — receive enrollments for one subject
-    private void handleEnrollments(JsonNode node, int subjectId) {
+    private void handleEnrollments(JsonNode node) {
         WebSocketClientService ws = WebSocketClientService.getInstance();
-        String subId = subjectEnrollmentSubs.remove(subjectId);
-        if (subId != null) ws.unsubscribe(subId);
+        JsonNode payload = node.path("data");
+        int subjectId = payload.path("subjectId").asInt(-1);
+        if (subjectId == -1) return;
 
-        JsonNode data = node.path("data");
+        JsonNode data = payload.path("enrollments");
         List<StudentRow> rows = enrollmentMap.computeIfAbsent(subjectId, k -> new ArrayList<>());
         rows.clear();
 
@@ -124,32 +137,32 @@ public class TeacherGradesController implements Initializable {
                 String status    = e.path("status").asText("ACTIVE");
                 rows.add(new StudentRow(enrollmentId, studentId, status));
 
-                // Step 3 — fetch final mark for each enrollment
-                String markSubId = ws.subscribe("INDEX_RECORD_DETAIL", node3 -> handleMark(node3, enrollmentId));
-                markSubs.put(enrollmentId, markSubId);
+                // Mark that we expect a final mark for this enrollment
+                markSubs.put(enrollmentId, "pending");
                 ws.sendAction("GET_MARKS_FOR_ENROLLMENT", Map.of("enrollmentId", enrollmentId));
             }
         }
 
         pendingSubjectLoads--;
-        if (pendingSubjectLoads <= 0 && rows.isEmpty()) {
-            // No enrollments to load marks for — build now
+        if (pendingSubjectLoads <= 0 && markSubs.isEmpty()) {
+            // No marks to wait for — build now
             Platform.runLater(this::buildUI);
         }
     }
 
-    // Step 3 — receive final mark for one enrollment
-    private void handleMark(JsonNode node, int enrollmentId) {
-        WebSocketClientService ws = WebSocketClientService.getInstance();
-        String subId = markSubs.remove(enrollmentId);
-        if (subId != null) ws.unsubscribe(subId);
+    private void handleMark(JsonNode node) {
+        JsonNode payload = node.path("data");
+        int enrollmentId = payload.path("enrollmentId").asInt(-1);
+        if (enrollmentId == -1) return;
 
-        JsonNode data = node.path("data");
+        JsonNode record = payload.path("record");
         String finalMark = "—";
-        if (!data.isNull() && data.has("finalMark")) {
-            finalMark = data.path("finalMark").asText("—");
+
+        if (!record.isNull() && record.has("finalMark")) {
+            finalMark = record.path("finalMark").asText("—");
         }
         markMap.put(enrollmentId, finalMark);
+        markSubs.remove(enrollmentId);
 
         // If all marks and subjects loaded, build UI
         if (markSubs.isEmpty() && pendingSubjectLoads <= 0) {
@@ -293,23 +306,80 @@ public class TeacherGradesController implements Initializable {
 
             boolean passed = "PASSED".equals(row.status());
             boolean active = "ACTIVE".equals(row.status());
-            String  statusText = passed ? (en ? "Finished" : "Ukončené")
-                               : active ? (en ? "Active"   : "Aktívny")
-                               : row.status();
+            boolean failed = "FAILED".equals(row.status());
+            
+            String statusText;
+            if (passed) statusText = en ? "Finished" : "Ukončené";
+            else if (failed) statusText = en ? "Failed" : "Neúspešne";
+            else if (active) statusText = en ? "Active" : "Aktívny";
+            else statusText = row.status();
+            
             Label statusLbl = new Label(statusText);
+            
+            String bg = passed ? "#dcfce7" : (failed ? "#fee2e2" : "#fff7ed");
+            String tc = passed ? "#15803d" : (failed ? "#b91c1c" : "#d97706");
             statusLbl.setStyle("-fx-font-size:11px;-fx-font-weight:bold;-fx-padding:3 8 3 8;" +
-                "-fx-background-radius:6;" +
-                (passed ? "-fx-background-color:#dcfce7;-fx-text-fill:#15803d;"
-                        : "-fx-background-color:#fff7ed;-fx-text-fill:#d97706;"));
+                "-fx-background-radius:6;-fx-background-color:" + bg + ";-fx-text-fill:" + tc + ";");
             statusLbl.setMinWidth(90);
 
             String finalMark = markMap.getOrDefault(row.enrollmentId(), "—");
-            Label markLbl = new Label(finalMark);
-            markLbl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:" +
-                gradeColor(finalMark) + ";");
-            markLbl.setMinWidth(80);
+            Node markNode;
+            if ("—".equals(finalMark)) {
+                ComboBox<String> gradeCombo = new ComboBox<>();
+                gradeCombo.getItems().addAll("A", "B", "C", "D", "E", "FX");
+                gradeCombo.setPromptText("Známka");
+                gradeCombo.setMinWidth(90);
+                
+                Button saveBtn = new Button("Uložiť");
+                saveBtn.getStyleClass().addAll("btn-primary", "btn-sm");
+                
+                HBox editBox = new HBox(6, gradeCombo, saveBtn);
+                editBox.setAlignment(Pos.CENTER_LEFT);
+                
+                saveBtn.setOnAction(e -> {
+                    String selected = gradeCombo.getValue();
+                    if (selected != null) {
+                        Map<String, Object> payload = Map.of(
+                            "enrollmentId", row.enrollmentId(),
+                            "finalMark", selected
+                        );
+                        WebSocketClientService.getInstance().sendAction("RECORD_FINAL_MARK", payload);
+                        
+                        // Dynamically update the UI
+                        Label newMarkLbl = new Label(selected);
+                        newMarkLbl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:" +
+                            gradeColor(selected) + ";");
+                        newMarkLbl.setMinWidth(80);
+                        
+                        int index = rowBox.getChildren().indexOf(editBox);
+                        if (index != -1) {
+                            rowBox.getChildren().set(index, newMarkLbl);
+                        }
+                        
+                        boolean isFailed = "FX".equals(selected) || "FAIL".equals(selected);
+                        String newStatusText;
+                        if (isFailed) newStatusText = en ? "Failed" : "Neúspešne";
+                        else newStatusText = en ? "Finished" : "Ukončené";
+                        
+                        String newBg = isFailed ? "#fee2e2" : "#dcfce7";
+                        String newTc = isFailed ? "#b91c1c" : "#15803d";
+                        
+                        statusLbl.setText(newStatusText);
+                        statusLbl.setStyle("-fx-font-size:11px;-fx-font-weight:bold;-fx-padding:3 8 3 8;" +
+                            "-fx-background-radius:6;-fx-background-color:" + newBg + ";-fx-text-fill:" + newTc + ";");
+                    }
+                });
+                
+                markNode = editBox;
+            } else {
+                Label markLbl = new Label(finalMark);
+                markLbl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:" +
+                    gradeColor(finalMark) + ";");
+                markLbl.setMinWidth(80);
+                markNode = markLbl;
+            }
 
-            rowBox.getChildren().addAll(nameBox, enrollLbl, statusLbl, markLbl);
+            rowBox.getChildren().addAll(nameBox, enrollLbl, statusLbl, markNode);
             card.getChildren().add(rowBox);
         }
 

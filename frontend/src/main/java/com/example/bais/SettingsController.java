@@ -42,10 +42,14 @@ public class SettingsController implements Initializable {
 
     public void setDashboardController(DashboardController dc) {
         this.dashboardController = dc;
-        // Po priradení kontroléra skúsime aplikovať dark mode, ak je zapnutý
-        if (isDarkMode && dashboardController != null) {
-            Platform.runLater(() -> dashboardController.toggleDarkMode());
+        if (dashboardController != null) {
+            Platform.runLater(() -> dashboardController.setDarkMode(isDarkMode));
         }
+    }
+
+    public void syncFromDashboard() {
+        loadSettingsFromJson();
+        Platform.runLater(this::buildUI);
     }
 
     @Override
@@ -180,7 +184,7 @@ public class SettingsController implements Initializable {
                 separator(),
                 toggleRow(en ? "Dark mode" : "Tmavý režim", isDarkMode, en ? "Switch between dark and light theme" : "Prepínanie medzi tmavou a svetlou témou", () -> {
                     isDarkMode = !isDarkMode;
-                    if (dashboardController != null) dashboardController.toggleDarkMode();
+                    if (dashboardController != null) dashboardController.setDarkMode(isDarkMode);
                     updateAndSave();
                 })
         );
