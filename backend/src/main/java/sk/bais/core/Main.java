@@ -48,7 +48,9 @@ public class Main {
             studentDAO, enrollmentDAO, markDAO, indexRecordDAO, 
             subjectDAO, subjectTranslationDAO, eventDAO, 
             eventTranslationDAO, notificationDAO, taskDAO, taskSubmissionDAO);
-        TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
+        TeacherService teacherService = new TeacherService(
+            subjectDAO, enrollmentDAO, markDAO, indexRecordDAO, 
+            notificationDAO, taskDAO, taskSubmissionDAO); 
         AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO); 
 
         // 3. Spustenie WebSocket servera na porte 8887

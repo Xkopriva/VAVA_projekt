@@ -21,6 +21,8 @@ import sk.bais.auth.AuthService;
 import sk.bais.dao.UserDAO;
 import sk.bais.dto.CalendarItemDTO;
 import sk.bais.dto.UserProfileDTO;
+import sk.bais.model.Enrollment;
+import sk.bais.model.IndexRecord;
 import sk.bais.model.Notification;
 import sk.bais.model.Task;
 import sk.bais.model.TaskSubmission;
@@ -98,7 +100,12 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "ADD_MARK" -> handleAddMark(conn, payload);
                 case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
                 case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
-                
+                case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
+                case "CREATE_ENROLLMENT" -> handleCreateEnrollment(conn, payload);
+                case "CREATE_TASK" -> handleCreateTask(conn, payload);
+                case "GRADE_SUBMISSION" -> handleGradeSubmission(conn, payload);
+                case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
+
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
@@ -119,8 +126,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 // --- SPOLOCNE AKCIE ---
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
 
-                // --- TEACHER AKCIE (rozsírené) ---
-                case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
+                
 
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
@@ -454,6 +460,48 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
+    // CREATE_ENROLLMENT
+    private void handleCreateEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            Enrollment e = mapper.convertValue(payload, Enrollment.class);
+            teacherService.createEnrollment(e, ctx).ifPresentOrElse(
+                created -> sendResponse(conn, "ENROLLMENT_CREATED", created),
+                () -> sendError(conn, "Could not create enrollment")
+            );
+        });
+    }
+
+    // CREATE_TASK
+    private void handleCreateTask(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            Task t = mapper.convertValue(payload, Task.class);
+            teacherService.createTask(t, ctx).ifPresentOrElse(
+                created -> sendResponse(conn, "TASK_CREATED", created),
+                () -> sendError(conn, "Could not create task")
+            );
+        });
+    }
+
+    // GRADE_SUBMISSION
+    private void handleGradeSubmission(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            int sid = payload.get("submissionId").asInt();
+            TaskSubmission.Status status = TaskSubmission.Status.valueOf(payload.get("status").asText());
+            boolean success = teacherService.gradeSubmission(sid, status, ctx);
+            sendResponse(conn, "SUBMISSION_GRADED", success);
+        });
+    }
+
+    // RECORD_FINAL_MARK 
+    private void handleRecordFinalMark(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            IndexRecord record = mapper.convertValue(payload, IndexRecord.class);
+            teacherService.recordFinalMark(record, ctx).ifPresentOrElse(
+                created -> sendResponse(conn, "FINAL_MARK_RECORDED", created),
+                () -> sendError(conn, "Could not record final mark")
+            );
+        });
+    }
 
     // -------------------------------------------------------------------------
     // Admin Handlery
