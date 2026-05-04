@@ -18,6 +18,7 @@ import sk.bais.dao.EventDAO;
 import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.SubjectTranslationDAO;
@@ -28,6 +29,7 @@ import sk.bais.model.Event;
 import sk.bais.model.EventTranslation;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
+import sk.bais.model.Notification;
 import sk.bais.model.Student;
 import sk.bais.model.Subject;
 import sk.bais.model.SubjectTranslation;
@@ -56,6 +58,7 @@ public class StudentService {
     private final SubjectTranslationDAO subjectTranslationDAO;
     private final EventDAO eventDAO;
     private final EventTranslationDAO eventTranslationDAO;
+    private final NotificationDAO notificationDAO;
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -97,18 +100,18 @@ public class StudentService {
      */
     public List<Map<String, Object>> getMyEventsSimpleList(AuthContext ctx, String locale) {
         try {
-            // Využijeme už existujúcu čistú metódu getMyEnrollments[cite: 15]
+            // Využijeme už existujúcu čistú metódu getMyEnrollments
             List<EnrollmentWithSubjectDTO> enrollments = getMyEnrollments(ctx);
             List<Map<String, Object>> result = new ArrayList<>();
 
             for (EnrollmentWithSubjectDTO enr : enrollments) {
-                // Používame injektované eventDAO[cite: 13, 15]
+                // Používame injektované eventDAO
                 List<Event> events = eventDAO.listBySubject(enr.getSubjectId());
                 
                 for (Event ev : events) {
                     Map<String, Object> map = new HashMap<>();
                     
-                    // Skúsime získať preložený titulok, inak použijeme typ[cite: 14]
+                    // Skúsime získať preložený titulok, inak použijeme typ
                     String displayTitle = ev.getType() != null ? ev.getType().name() : "EVENT";
                     Optional<EventTranslation> trans = eventTranslationDAO.get(ev.getId(), locale);
                     if (trans.isPresent()) {
@@ -252,7 +255,7 @@ public class StudentService {
             return Collections.emptyList();
         }
         try {
-            // studentId berieme z kontextu prihláseného užívateľa[cite: 9]
+            // studentId berieme z kontextu prihláseného užívateľa
             return indexRecordDAO.listByStudentId(ctx.getUserId());
         } catch (SQLException e) {
             log.error("Chyba pri načítaní známok z indexu", e);
@@ -266,7 +269,7 @@ public class StudentService {
      */
     public List<EventWithTranslationDTO> getMyCalendarEvents(AuthContext ctx, String locale) {
         try {
-            // 1. Získame ID predmetov, na ktoré je študent zapísaný[cite: 18]
+            // 1. Získame ID predmetov, na ktoré je študent zapísaný
             List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
             List<Integer> mySubjectIds = enrollments.stream()
                     .map(Enrollment::getSubjectId)
@@ -274,7 +277,7 @@ public class StudentService {
 
             List<EventWithTranslationDTO> calendar = new ArrayList<>();
 
-            // 2. Pre každý predmet vytiahneme jeho udalosti[cite: 16]
+            // 2. Pre každý predmet vytiahneme jeho udalosti
             for (int subjectId : mySubjectIds) {
                 List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
                 
@@ -309,4 +312,52 @@ public class StudentService {
         }
     }
 
+    /**
+     * Získa úplne všetky notifikácie študenta (aj prečítané).
+     */
+    public List<Notification> getMyNotifications(AuthContext ctx) {
+        try {
+            return notificationDAO.listByRecipient(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní notifikácií pre userId={}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Získa len tie notifikácie, ktoré študent ešte neotvoril.
+     */
+    public List<Notification> getMyUnreadNotifications(AuthContext ctx) {
+        try {
+            return notificationDAO.listUnreadByRecipient(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní neprečítaných notifikácií pre userId={}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Označí jednu konkrétnu notifikáciu za prečítanú.
+     */
+    public boolean markNotificationAsRead(int notificationId, AuthContext ctx) {
+        try {
+            // Druhý parameter (ctx.getUserId()) slúži ako bezpečnostná poistka v DAO
+            return notificationDAO.markAsRead(notificationId, ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri označovaní notifikácie {} ako prečítanej", notificationId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Hromadné označenie všetkých notifikácií daného študenta za prečítané.
+     */
+    public int markAllMyNotificationsAsRead(AuthContext ctx) {
+        try {
+            return notificationDAO.markAllRead(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri hromadnom označovaní notifikácií pre userId={}", ctx.getUserId(), e);
+            return 0;
+        }
+    }
 }

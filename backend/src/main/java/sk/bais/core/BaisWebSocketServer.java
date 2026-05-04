@@ -21,6 +21,7 @@ import sk.bais.auth.AuthService;
 import sk.bais.dao.UserDAO;
 import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.dto.UserProfileDTO;
+import sk.bais.model.Notification;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
 import sk.bais.service.TeacherService;
@@ -104,6 +105,11 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_MY_EVENTS" -> handleGetMyEvents(conn, payload);
                 case "GET_MY_CALENDAR" -> handleGetMyCalendar(conn, payload);
 
+                case "GET_ALL_NOTIFICATIONS" -> handleGetNotifications(conn);
+                case "GET_UNDREAD_NOTIFICATIONS" -> handleGetUnreadNotifications(conn);
+                case "MARK_READ_NOTIFICATION" -> handleMarkRead(conn, payload);
+                case "MARK_ALL_UNREAD" -> handleMarkAllRead(conn);
+                
                 // --- SPOLOCNE AKCIE ---
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
 
@@ -184,13 +190,13 @@ public class BaisWebSocketServer extends WebSocketServer {
     // -------------------------------------------------------------------------
 
     private void handleGetMyCalendar(WebSocket conn, JsonNode payload) {
-    // 1. Overenie autentifikácie a získanie kontextu[cite: 18]
+    // 1. Overenie autentifikácie a získanie kontextu
         requireAuth(conn).ifPresent(ctx -> {
             try {
                 // 2. Získanie locale z JSONu (napr. "sk"), defaultne "sk" ak chýba
                 String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
 
-                // 3. Volanie novej metódy v StudentService[cite: 18]
+                // 3. Volanie novej metódy v StudentService
                 List<EventWithTranslationDTO> events = studentService.getMyCalendarEvents(ctx, locale);
 
                 // 4. Odoslanie úspešnej odpovede s dátami
@@ -254,6 +260,48 @@ public class BaisWebSocketServer extends WebSocketServer {
             } else {
                 sendError(conn, "Nepodarilo sa načítať body pre daný zápis");
             }
+        });
+    }
+
+    // GET_ALL_NOTIFICATIONS Zoznam všetkých notifikácií
+    private void handleGetNotifications(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            List<Notification> list = studentService.getMyNotifications(ctx);
+            sendResponse(conn, "NOTIFICATIONS_LIST", list);
+        });
+    }
+
+    // GET_UNDREAD_NOTIFICATIONS Zoznam len notifikacii
+    private void handleGetUnreadNotifications(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            List<Notification> list = studentService.getMyUnreadNotifications(ctx);
+            sendResponse(conn, "UNREAD_NOTIFICATIONS_LIST", list);
+        });
+    }
+
+    // MARK_READ_NOTIFICATION Označenie jednej notifikácie za precitanu
+    private void handleMarkRead(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (!payload.has("id")) {
+                sendError(conn, "Chýba ID notifikácie");
+                return;
+            }
+            int id = payload.get("id").asInt();
+            boolean success = studentService.markNotificationAsRead(id, ctx);
+            
+            if (success) {
+                sendResponse(conn, "NOTIFICATION_MARKED_READ", Map.of("id", id));
+            } else {
+                sendError(conn, "Nepodarilo sa označiť notifikáciu za prečítanú");
+            }
+        });
+    }
+
+    // MARK_ALL_UNREAD oznacit vsetky notifikacie za precitane
+    private void handleMarkAllRead(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            int count = studentService.markAllMyNotificationsAsRead(ctx);
+            sendResponse(conn, "ALL_NOTIFICATIONS_MARKED_READ", Map.of("count", count));
         });
     }
 
