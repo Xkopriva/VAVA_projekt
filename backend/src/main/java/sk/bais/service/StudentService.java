@@ -24,8 +24,8 @@ import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.SubjectTranslationDAO;
 import sk.bais.dao.TaskDAO;
 import sk.bais.dao.TaskSubmissionDAO;
+import sk.bais.dto.CalendarItemDTO;
 import sk.bais.dto.EnrollmentWithSubjectDTO;
-import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.model.Enrollment;
 import sk.bais.model.Event;
 import sk.bais.model.EventTranslation;
@@ -269,54 +269,118 @@ public class StudentService {
         }
     }
     
-    /**
-     * Získa udalosti pre kalendár prihláseného študenta.
-     * Vracia udalosti len pre predmety, na ktoré je študent zapísaný.
-     */
-    public List<EventWithTranslationDTO> getMyCalendarEvents(AuthContext ctx, String locale) {
-        try {
-            // 1. Získame ID predmetov, na ktoré je študent zapísaný
-            List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
-            List<Integer> mySubjectIds = enrollments.stream()
-                    .map(Enrollment::getSubjectId)
-                    .toList();
+    // /**
+    //  * Získa udalosti pre kalendár prihláseného študenta.
+    //  * Vracia udalosti len pre predmety, na ktoré je študent zapísaný.
+    //  */
+    // public List<EventWithTranslationDTO> getMyCalendarEvents(AuthContext ctx, String locale) {
+    //     try {
+    //         // 1. Získame ID predmetov, na ktoré je študent zapísaný
+    //         List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+    //         List<Integer> mySubjectIds = enrollments.stream()
+    //                 .map(Enrollment::getSubjectId)
+    //                 .toList();
 
-            List<EventWithTranslationDTO> calendar = new ArrayList<>();
+    //         List<EventWithTranslationDTO> calendar = new ArrayList<>();
 
-            // 2. Pre každý predmet vytiahneme jeho udalosti
-            for (int subjectId : mySubjectIds) {
-                List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
+    //         // 2. Pre každý predmet vytiahneme jeho udalosti
+    //         for (int subjectId : mySubjectIds) {
+    //             List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
                 
-                for (Event e : subjectEvents) {
-                    // Ignorujeme nepublikované udalosti (ak frontend nemá byť admin)
-                    if (!e.isPublished()) continue;
+    //             for (Event e : subjectEvents) {
+    //                 // Ignorujeme nepublikované udalosti (ak frontend nemá byť admin)
+    //                 if (!e.isPublished()) continue;
 
-                    // 3. Získame preklad pre daný event a locale
-                    String title = "Event " + e.getId();
-                    String description = "";
+    //                 // 3. Získame preklad pre daný event a locale
+    //                 String title = "Event " + e.getId();
+    //                 String description = "";
 
-                    Optional<EventTranslation> trans = eventTranslationDAO.get(e.getId(), locale);
-                    if (trans.isPresent()) {
-                        title = trans.get().getTitle();
-                        description = trans.get().getDescription();
-                    } else {
-                        // Fallback na iný jazyk, ak požadovaný neexistuje
-                        Optional<EventTranslation> fallback = eventTranslationDAO.get(e.getId(), "sk");
-                        if (fallback.isPresent()) {
-                            title = fallback.get().getTitle();
-                            description = fallback.get().getDescription();
-                        }
-                    }
+    //                 Optional<EventTranslation> trans = eventTranslationDAO.get(e.getId(), locale);
+    //                 if (trans.isPresent()) {
+    //                     title = trans.get().getTitle();
+    //                     description = trans.get().getDescription();
+    //                 } else {
+    //                     // Fallback na iný jazyk, ak požadovaný neexistuje
+    //                     Optional<EventTranslation> fallback = eventTranslationDAO.get(e.getId(), "sk");
+    //                     if (fallback.isPresent()) {
+    //                         title = fallback.get().getTitle();
+    //                         description = fallback.get().getDescription();
+    //                     }
+    //                 }
 
-                    calendar.add(new EventWithTranslationDTO(e, title, description));
+    //                 calendar.add(new EventWithTranslationDTO(e, title, description));
+    //             }
+    //         }
+    //         return calendar;
+    //     } catch (SQLException e) {
+    //         log.error("Chyba pri načítaní kalendára pre študenta {}", ctx.getUserId(), e);
+    //         return Collections.emptyList();
+    //     }
+    // }
+
+    public List<CalendarItemDTO> getMyCalendar(AuthContext ctx, String locale) {
+    try {
+        // 1. Získame ID predmetov študenta
+        List<Integer> mySubjectIds = enrollmentDAO.listByStudent(ctx.getUserId()).stream()
+                .map(Enrollment::getSubjectId)
+                .toList();
+
+        List<CalendarItemDTO> calendar = new ArrayList<>();
+
+        for (int subjectId : mySubjectIds) {
+            // 2. Spracovanie EVENTOV (prednášky, cvičenia...)
+            List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
+            for (Event e : subjectEvents) {
+                if (!e.isPublished()) continue;
+
+                // Získanie prekladu (s fallbackom na SK)
+                // 1. Skúsime získať požadovaný jazyk
+                Optional<EventTranslation> transOpt = eventTranslationDAO.get(e.getId(), locale);
+
+                // 2. Ak neexistuje, skúsime fallback na "sk"
+                if (transOpt.isEmpty() && !locale.equals("sk")) {
+                    transOpt = eventTranslationDAO.get(e.getId(), "sk");
                 }
+
+                // 3. Vytiahneme objekt alebo null
+                EventTranslation trans = transOpt.orElse(null);
+                
+                calendar.add(CalendarItemDTO.builder()
+                        .sourceType("EVENT")
+                        .sourceId(e.getId())
+                        .type(e.getType().name())
+                        .title(trans != null ? trans.getTitle() : "Event " + e.getId())
+                        .description(trans != null ? trans.getDescription() : "")
+                        .scheduledAt(e.getScheduledAt())
+                        .durationMinutes(e.getDurationMinutes())
+                        .room(e.getRoom())
+                        .subjectId(subjectId)
+                        .build());
             }
-            return calendar;
-        } catch (SQLException e) {
-            log.error("Chyba pri načítaní kalendára pre študenta {}", ctx.getUserId(), e);
-            return Collections.emptyList();
+
+            // 3. Spracovanie TASKOV (termíny odovzdania)
+            List<Task> subjectTasks = taskDAO.listBySubject(subjectId);
+            for (Task t : subjectTasks) {
+                if (!t.isPublished()) continue;
+
+                calendar.add(CalendarItemDTO.builder()
+                        .sourceType("TASK")
+                        .sourceId(t.getId())
+                        .type("TASK_DUE") // Špeciálny typ pre kalendár
+                        .title(t.getTitle()) // Tasky nie sú lokalizované v DB
+                        .description(t.getDescription())
+                        .scheduledAt(t.getDueAt()) // Tu je tá dôležitá zmena: termín odovzdania
+                        .durationMinutes(30) // Fixné trvanie v kalendári
+                        .subjectId(subjectId)
+                        .build());
+            }
         }
+        return calendar;
+    } catch (SQLException e) {
+        log.error("Chyba pri zostavovaní kalendára pre študenta {}", ctx.getUserId(), e);
+        return Collections.emptyList();
     }
+}
 
     /**
      * Získa úplne všetky notifikácie študenta (aj prečítané).
