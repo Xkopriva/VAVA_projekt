@@ -53,9 +53,15 @@ public final class DatabaseConnection {
      */
     public static Connection getConnection() throws SQLException {
         try {
-            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            // Nastavenie autoCommitu na true je default, ale explicitnosť nezaškodí
-            conn.setAutoCommit(true); 
+            // Explicitné nastavenie UTF-8 pre správne zobrazenie diakritiky
+            Properties connProps = new Properties();
+            connProps.setProperty("user",    USER);
+            connProps.setProperty("password", PASSWORD);
+            connProps.setProperty("charSet",  "UTF-8");
+            connProps.setProperty("unicode",  "true");
+
+            Connection conn = DriverManager.getConnection(URL, connProps);
+            conn.setAutoCommit(true);
             return conn;
         } catch (SQLException e) {
             System.err.println("Chyba pri vytváraní spojenia k DB: " + e.getMessage());

@@ -1,27 +1,40 @@
 package com.example.bais;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
+
+import java.nio.charset.StandardCharsets;
 
 public class LoginView extends Application {
 
-    private void handleLogin(String username, String password) {
-        if ("test".equals(username) && "test".equals(password)) {
-            System.out.println("Login úspešný! Prepínam na Dashboard...");
-        } else {
-            System.out.println("Nesprávne meno alebo heslo.");
-        }
-    }
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("login-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 1920, 1080);
+        FXMLLoader fxmlLoader = new FXMLLoader();
+        // Explicitne UTF-8 encoding pre správnu diakritiku
+        fxmlLoader.setLocation(getClass().getResource("login-view.fxml"));
+        fxmlLoader.setCharset(StandardCharsets.UTF_8);
+        Scene scene = new Scene(fxmlLoader.load(), 1280, 800);
         scene.getStylesheets().add(getClass().getResource("/light.css").toExternalForm());
+
+        stage.setTitle("BAIS – Lepší Akademický Systém");
         stage.setScene(scene);
-        stage.setFullScreen(true);
+
+        // Maximized windowed – žiadny fullscreen, bez ESC banner
+        stage.setMaximized(true);
+
+        // Uložíme referenciu pre ostatné controllery
+        UserSession.get().setPrimaryStage(stage);
+
         stage.show();
+
+        // Workaround pre fullscreen problém: rýchlo prepne maximalizovaný stav
+        // Toto sa vykoná po zobrazení okna, aby sa zabezpečilo, že sa UI vlákno správne spracuje.
+        Platform.runLater(() -> {
+            stage.setMaximized(false); // Zmenší okno na normálny stav
+            stage.setMaximized(true);  // Okamžite ho znova maximalizuje
+        });
     }
 }

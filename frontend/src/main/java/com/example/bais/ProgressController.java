@@ -6,7 +6,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 
@@ -44,7 +43,6 @@ public class ProgressController implements Initializable {
 
         WebSocketClientService ws = WebSocketClientService.getInstance();
 
-        // Subscribe na všetky typy ktoré nás zaujímajú
         subEnrollments = ws.subscribe("MY_ENROLLMENTS",   this::handleEnrollments);
         subMarks       = ws.subscribe("MY_INDEX_RECORDS", this::handleMarks);
         subProfile     = ws.subscribe("USER_PROFILE",     this::handleProfile);
@@ -53,10 +51,8 @@ public class ProgressController implements Initializable {
         ws.sendAction("GET_MY_MARKS",       null);
         ws.sendAction("GET_USER_PROFILE",   null);
 
-        // Timeout 5s — ak niektorá odpoveď nepríde, pokračujeme s tým čo máme
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-            ws.unsubscribe(subProfile);
-            // Ak enrollmenty alebo marks neprisli, zobraz čo máme
+            if (!profileReceived) ws.unsubscribe(subProfile);
             if (!enrollmentsLoaded.get() || !marksLoaded.get()) {
                 enrollmentsLoaded.set(true);
                 marksLoaded.set(true);
@@ -65,14 +61,16 @@ public class ProgressController implements Initializable {
         }, 5, TimeUnit.SECONDS);
     }
 
+    private boolean profileReceived = false;
+
     private void handleProfile(JsonNode node) {
+        profileReceived = true;
         WebSocketClientService.getInstance().unsubscribe(subProfile);
         JsonNode data    = node.path("data");
         String firstName = data.path("firstName").asText("");
         String lastName  = data.path("lastName").asText("");
         UserSession.get().setFirstName(firstName);
         UserSession.get().setLastName(lastName);
-        // Ak sú dáta hotové, prekreslíme UI s menom
         if (enrollmentsLoaded.get() && marksLoaded.get()) {
             Platform.runLater(this::buildUI);
         }
@@ -105,7 +103,6 @@ public class ProgressController implements Initializable {
     private synchronized void tryBuild() {
         if (!enrollmentsLoaded.get() || !marksLoaded.get()) return;
 
-        // Zoraď enrollmenty do semestrov
         Map<Integer, List<JsonNode>> bySemester = new HashMap<>();
         for (JsonNode e : rawEnrollments) {
             int semId = e.path("semesterId").asInt();
@@ -141,8 +138,6 @@ public class ProgressController implements Initializable {
         Platform.runLater(this::buildUI);
     }
 
-    // ── UI ────────────────────────────────────────────────────────
-
     private void showLoading() {
         Platform.runLater(() -> {
             progressRoot.getChildren().clear();
@@ -158,7 +153,6 @@ public class ProgressController implements Initializable {
         progressRoot.setSpacing(16);
         progressRoot.setPadding(new Insets(24, 28, 24, 28));
 
-        // Vypočítaj kredity
         int earnedCredits = 0;
         for (Semester sem : semesters) earnedCredits += sem.totalCredits();
         final int TOTAL = 180;
@@ -168,42 +162,20 @@ public class ProgressController implements Initializable {
         String name  = UserSession.get().getFullName();
         String email = UserSession.get().getUserEmail();
 
-        // ── Štúdijný plán ─────────────────────────────────────────
-        VBox studyPlanBox = new VBox(12);
-        studyPlanBox.getStyleClass().add("section-card");
-
-        Label spTitle = new Label("Študijný plán");
-        spTitle.setStyle("-fx-font-size:20px;-fx-font-weight:bold;");
-        HBox.setHgrow(spTitle, Priority.ALWAYS);
-
-        Button planBtn = new Button("📋 Plánovať štúdium");
-        planBtn.setStyle("-fx-background-color:#06b6d4;-fx-text-fill:white;-fx-font-weight:bold;" +
-                "-fx-padding:8 16;-fx-font-size:12px;-fx-background-radius:8;-fx-cursor:hand;");
-
-        HBox spHeader = new HBox(spTitle, planBtn);
-        spHeader.setAlignment(Pos.CENTER_LEFT);
-
-        Label creditsLbl = new Label(String.format(
-                "Kredity: %d získaných z %d povinných (CHÝBA %d kr.)",
-                earnedCredits, TOTAL, Math.max(0, TOTAL - earnedCredits)));
-        creditsLbl.setStyle("-fx-font-size:13px;");
-
-        studyPlanBox.getChildren().addAll(spHeader, creditsLbl);
-
-        // ── Nadpis + štatistiky ───────────────────────────────────
-        HBox titleRow = new HBox(16);
+        HBox titleRow = new HBox(24);
         titleRow.setAlignment(Pos.CENTER_LEFT);
+        titleRow.setPadding(new Insets(12, 0, 12, 0));
 
-        VBox titleBlock = new VBox(4);
-        Label title = new Label("Progres štúdium");
-        title.setStyle("-fx-font-size:32px;-fx-font-weight:bold;");
+        VBox titleBlock = new VBox(10);
+        Label title = new Label("Progres štúdia");
         title.getStyleClass().add("welcome-title");
-        Label sub = new Label(name + (email != null && !name.equals(email) ? " • " + email : ""));
+        Label sub = new Label(name + (email != null && !name.equals(email) ? "  •  " + email : ""));
         sub.getStyleClass().add("welcome-sub");
+        sub.setPadding(new Insets(4, 0, 0, 0)); // Apply padding directly
         titleBlock.getChildren().addAll(title, sub);
         HBox.setHgrow(titleBlock, Priority.ALWAYS);
 
-        HBox statsRow = new HBox(12);
+        HBox statsRow = new HBox(16);
         statsRow.setAlignment(Pos.CENTER_RIGHT);
         statsRow.getChildren().addAll(
                 miniStat(earnedCredits + " / " + TOTAL, "Kreditov"),
@@ -211,68 +183,76 @@ public class ProgressController implements Initializable {
         );
         titleRow.getChildren().addAll(titleBlock, statsRow);
 
-        // ── Progress bar ──────────────────────────────────────────
-        VBox progressSection = new VBox(8);
+        // Progress bar section
+        VBox progressSection = new VBox(12);
         progressSection.getStyleClass().add("section-card");
 
         HBox barHeader = new HBox();
         barHeader.setAlignment(Pos.CENTER_LEFT);
         Label barLabel = new Label("Celkový progres štúdia");
         barLabel.getStyleClass().add("section-title");
+        barLabel.setPadding(new Insets(0, 15, 0, 0));
         HBox.setHgrow(barLabel, Priority.ALWAYS);
         Label barPct = new Label(pctStr + "  (" + earnedCredits + " / " + TOTAL + " kreditov)");
         barPct.getStyleClass().add("schedule-date");
         barHeader.getChildren().addAll(barLabel, barPct);
 
         StackPane barBg = new StackPane();
-        barBg.setPrefHeight(10);
-        barBg.setStyle("-fx-background-color:#e2e8f0;-fx-background-radius:5;");
+        barBg.setPrefHeight(12);
+        barBg.setStyle("-fx-background-color:#e2e8f0;-fx-background-radius:6;");
         StackPane barFill = new StackPane();
-        barFill.setStyle("-fx-background-color:#06b6d4;-fx-background-radius:5;");
-        barFill.setPrefHeight(10);
+        barFill.setStyle("-fx-background-color:#06b6d4;-fx-background-radius:6;");
+        barFill.setPrefHeight(12);
         barFill.prefWidthProperty().bind(barBg.widthProperty().multiply(pct));
         barBg.getChildren().add(barFill);
         StackPane.setAlignment(barFill, Pos.CENTER_LEFT);
         progressSection.getChildren().addAll(barHeader, barBg);
 
-        // ── Karty semestrov ───────────────────────────────────────
-        VBox semCards = new VBox(14);
+        // Semester cards
+        VBox semCards = new VBox(20);
+        semCards.setPadding(new Insets(8, 0, 0, 0));
         for (Semester sem : semesters) semCards.getChildren().add(buildSemCard(sem));
 
         if (semesters.isEmpty()) {
             Label noData = new Label("Žiadne záznamy o štúdiu neboli nájdené v databáze.");
             noData.getStyleClass().add("schedule-loc");
-            noData.setPadding(new Insets(8, 0, 0, 0));
+            noData.setPadding(new Insets(12, 0, 0, 0));
             semCards.getChildren().add(noData);
         }
 
-        progressRoot.getChildren().addAll(studyPlanBox, titleRow, progressSection, semCards);
+        progressRoot.getChildren().addAll(titleRow, progressSection, semCards);
     }
 
     private VBox buildSemCard(Semester sem) {
-        VBox card = new VBox(12);
+        VBox card = new VBox(14);
         card.getStyleClass().add("section-card");
 
-        HBox header = new HBox();
+        HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
         Label badge = new Label(sem.term());
-        badge.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-padding:3 8;" +
+        badge.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-padding:4 10;" +
                 "-fx-background-radius:6;-fx-background-color:#dbeafe;-fx-text-fill:#1d4ed8;");
         Label name = new Label("  " + sem.name());
         name.getStyleClass().add("section-title");
-        HBox.setHgrow(name, Priority.ALWAYS);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
         Label cr = new Label(sem.totalCredits() + " kreditov");
         cr.getStyleClass().add("schedule-date");
         cr.setPadding(new Insets(0, 12, 0, 0));
-        header.getChildren().addAll(badge, name, cr);
+        header.getChildren().addAll(badge, name, spacer, cr);
         card.getChildren().add(header);
 
         Region sep = new Region();
         sep.setPrefHeight(1);
+        sep.setMaxWidth(Double.MAX_VALUE);
         sep.setStyle("-fx-background-color:#e2e8f0;");
         card.getChildren().add(sep);
 
-        card.getChildren().add(courseRow("Predmet", "Kredity", "Zn.", true));
+        HBox courseHeader = courseRow("Predmet", "Kredity", "Zn.", true);
+        courseHeader.setPadding(new Insets(8, 0, 8, 0));
+        card.getChildren().add(courseHeader);
 
         for (int i = 0; i < sem.courses().size(); i++) {
             SemCourse c = sem.courses().get(i);
@@ -285,35 +265,53 @@ public class ProgressController implements Initializable {
     }
 
     private HBox courseRow(String name, String credits, String grade, boolean header) {
-        HBox row = new HBox();
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(header ? 4 : 8, 0, header ? 4 : 8, 0));
-        Label nl = new Label(name);
-        if (header) nl.getStyleClass().add("schedule-date"); else nl.getStyleClass().add("schedule-name");
-        HBox.setHgrow(nl, Priority.ALWAYS);
-        Label cl = new Label(credits);
-        if (header) cl.getStyleClass().add("schedule-date"); else cl.getStyleClass().add("schedule-loc");
-        cl.setMinWidth(70);
-        Label gl = new Label(grade);
-        gl.setMinWidth(50);
-        if (header) gl.getStyleClass().add("schedule-date");
-        else gl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:" + gradeColor(grade) + ";");
-        row.getChildren().addAll(nl, cl, gl);
-        return row;
-    }
+         HBox row = new HBox(12);
+         row.setAlignment(Pos.CENTER_LEFT);
+         row.setPadding(new Insets(header ? 8 : 12, 0, header ? 8 : 12, 0));
+ 
+         Label nl = new Label(name);
+         if (header) nl.getStyleClass().add("schedule-date"); else nl.getStyleClass().add("schedule-name");
+ 
+         Label cl = new Label(credits);
+         cl.setPrefWidth(70);
+         cl.setAlignment(Pos.CENTER_RIGHT);
+         if (header) {
+             cl.getStyleClass().add("schedule-date");
+         } else {
+             cl.getStyleClass().add("progress-credits");
+         }
+ 
+         Label gl = new Label(grade);
+         gl.setPrefWidth(50);
+         gl.setAlignment(Pos.CENTER_RIGHT);
+         if (header) {
+             gl.getStyleClass().add("schedule-date");
+         } else {
+             gl.setStyle("-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:" + gradeColor(grade) + "; -fx-alignment: center-right;");
+         }
+ 
+         Region spacer = new Region();
+         HBox.setHgrow(spacer, Priority.ALWAYS);
+ 
+         row.getChildren().addAll(nl, spacer, cl, gl);
+         return row;
+     }
 
     private VBox miniStat(String value, String label) {
-        VBox card = new VBox(2);
-        card.getStyleClass().add("section-card");
-        card.setAlignment(Pos.CENTER);
-        card.setMinWidth(110);
-        Label val = new Label(value);
-        val.setStyle("-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#06b6d4;");
-        Label lbl = new Label(label);
-        lbl.getStyleClass().add("perf-course");
-        card.getChildren().addAll(val, lbl);
-        return card;
-    }
+         VBox card = new VBox(4);
+         card.getStyleClass().add("section-card");
+         card.setAlignment(Pos.CENTER);
+         card.setMinWidth(110);
+ 
+         Label val = new Label(value);
+         val.getStyleClass().add("progress-credits-value");
+ 
+         Label lbl = new Label(label);
+         lbl.getStyleClass().add("perf-course");
+ 
+         card.getChildren().addAll(val, lbl);
+         return card;
+     }
 
     private String gradeColor(String g) {
         if (g == null || g.equals("—"))          return "#94a3b8";
