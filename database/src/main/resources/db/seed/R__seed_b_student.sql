@@ -19,7 +19,11 @@ INSERT INTO "user" (email, first_name, last_name, password_hash, is_active) VALU
     -- Student: Jožko Mrkvička
     ('jozko.mrkvicka@stuba.sk', 'Jožko', 'Mrkvička',
      '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
-     TRUE);
+     TRUE),
+    --Teacher: jan novak
+    ('jan.novak@stuba.sk', 'Ján', 'Novák',
+    '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
+    TRUE);
 
 -- ============================================================
 -- ROLE ASSIGNMENTS
@@ -36,6 +40,12 @@ INSERT INTO user_role (user_id, role_id)
 SELECT u.id, r.id
 FROM "user" u, role r
 WHERE u.email = 'jozko.mrkvicka@stuba.sk' AND r.name = 'STUDENT';
+
+-- Teacher gets Teacher role
+INSERT INTO user_role (user_id, role_id)
+SELECT u.id, r.id
+FROM "user" u, role r
+WHERE u.email = 'jan.novak@stuba.sk' AND r.name = 'TEACHER';
 
 -- ============================================================
 -- ENROLLMENTS + INDEX RECORDS
