@@ -58,14 +58,24 @@ public class DashboardController implements Initializable {
 
     @FXML private ScrollPane mainScroll;
 
+    @FXML private VBox dashboardMiniCalendar;
+    @FXML private VBox dashboardMiniTasks;
+    @FXML private VBox dashboardAlertsContainer;
+    @FXML private javafx.scene.layout.HBox dashboardPerfContainer;
+    @FXML private Label dashboardDateLabel;
+    @FXML private Label dashboardProgressLabel;
+    @FXML private Label dashboardProgressPct;
+
     private Node    dashboardContent;
     private boolean isDarkMode = false;
     private boolean isEnglish  = false;
 
     // Subscription IDs for dashboard data
     private String subProfile;
-    private String subDashMarks;
     private String subDashEnrollments;
+    private String subUnreadNotifs;
+    private String subDashCalendar;
+    private String subDashMarks;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -98,9 +108,9 @@ public class DashboardController implements Initializable {
             loadUserProfile();
         }
 
-        // Load real grades and enrollments for dashboard
         if (!UserSession.get().isAdmin()) {
             loadDashboardData();
+            loadUnreadNotifications();
         }
     }
 
@@ -129,21 +139,93 @@ public class DashboardController implements Initializable {
         subDashEnrollments = ws.subscribe("MY_ENROLLMENTS", this::handleDashboardEnrollments);
         ws.sendAction("GET_MY_ENROLLMENTS", null);
 
-        // Načítaj záverečné hodnotenia → perf cards
+        // Načítaj kalendár
+        subDashCalendar = ws.subscribe("MY_CALENDAR_EVENTS", this::handleDashboardCalendar);
+        ws.sendAction("GET_MY_CALENDAR", null);
+
+        // Načítaj hodnotenia
         subDashMarks = ws.subscribe("MY_INDEX_RECORDS", this::handleDashboardMarks);
         ws.sendAction("GET_MY_MARKS", null);
+
+    }
+
+    private void loadUnreadNotifications() {
+        WebSocketClientService ws = WebSocketClientService.getInstance();
+        subUnreadNotifs = ws.subscribe("UNREAD_NOTIFICATIONS_LIST", this::handleUnreadNotifs);
+        ws.sendAction("GET_UNDREAD_NOTIFICATIONS", null);
+
+        ws.subscribe("ALL_NOTIFICATIONS_MARKED_READ", node -> {
+            Platform.runLater(() -> {
+                if (notificationsAction != null) {
+                    notificationsAction.getChildren().stream()
+                        .filter(n -> n instanceof javafx.scene.control.Label lbl
+                            && lbl.getStyleClass().contains("notification-badge"))
+                        .findFirst()
+                        .ifPresent(n -> n.setVisible(false));
+                }
+            });
+        });
+    }
+
+    private void handleUnreadNotifs(JsonNode node) {
+        WebSocketClientService.getInstance().unsubscribe(subUnreadNotifs);
+        JsonNode data = node.path("data");
+        int count = data.isArray() ? data.size() : 0;
+        Platform.runLater(() -> {
+            if (notificationsAction != null) {
+                notificationsAction.getChildren().stream()
+                    .filter(n -> n instanceof javafx.scene.control.Label lbl
+                        && lbl.getStyleClass().contains("notification-badge"))
+                    .findFirst()
+                    .ifPresent(n -> {
+                        javafx.scene.control.Label badge = (javafx.scene.control.Label) n;
+                        if (count > 0) {
+                            badge.setText(String.valueOf(Math.min(count, 9)));
+                            badge.setVisible(true);
+                        } else {
+                            badge.setVisible(false);
+                        }
+                    });
+            }
+
+            if (dashboardAlertsContainer != null) {
+                dashboardAlertsContainer.getChildren().clear();
+                if (count == 0) {
+                    Label l = new Label(isEnglish ? "No new alerts." : "Žiadne nové upozornenia.");
+                    l.setStyle("-fx-text-fill: #94a3b8;");
+                    dashboardAlertsContainer.getChildren().add(l);
+                } else {
+                    int i = 0;
+                    for (JsonNode n : data) {
+                        if (i++ >= 3) break; // Zobrazi len 3 notifikacie
+                        VBox alertBox = new VBox(4);
+                        alertBox.getStyleClass().addAll("alert-item", "alert-blue");
+                        Label t = new Label("🔔 " + n.path("title").asText("Upozornenie"));
+                        t.getStyleClass().add("alert-title");
+                        Label b = new Label(n.path("message").asText(""));
+                        b.getStyleClass().add("alert-body");
+                        b.setWrapText(true);
+                        alertBox.getChildren().addAll(t, b);
+                        dashboardAlertsContainer.getChildren().add(alertBox);
+                    }
+                }
+            }
+        });
     }
 
     private void handleDashboardEnrollments(JsonNode node) {
         WebSocketClientService.getInstance().unsubscribe(subDashEnrollments);
         JsonNode data = node.path("data");
         int active = 0;
+        int credits = 0;
         if (data.isArray()) {
             for (JsonNode e : data) {
                 if ("ACTIVE".equals(e.path("status").asText())) active++;
+                if ("PASSED".equals(e.path("status").asText())) credits += e.path("credits").asInt(0);
             }
         }
         final int activeCount = active;
+        final int passedCredits = credits;
         Platform.runLater(() -> {
             if (welcomeSub != null) {
                 boolean en = isEnglish;
@@ -153,23 +235,109 @@ public class DashboardController implements Initializable {
                     : (en ? "You have upcoming deadlines this week."
                           : "Máš nadchádzajúce termíny tento týždeň."));
             }
+            if (dashboardProgressLabel != null) {
+                dashboardProgressLabel.setText(isEnglish
+                    ? "Completed " + passedCredits + " out of 180 required credits."
+                    : "Dokončil si " + passedCredits + " z 180 požadovaných kreditov pre Bc. Informatiku.");
+                if (dashboardProgressPct != null) {
+                    dashboardProgressPct.setText(Math.round((passedCredits / 180.0) * 100) + "%");
+                }
+            }
+        });
+    }
+
+    private void handleDashboardCalendar(JsonNode node) {
+        WebSocketClientService.getInstance().unsubscribe(subDashCalendar);
+        JsonNode data = node.path("data");
+        Platform.runLater(() -> {
+            if (dashboardMiniCalendar != null) dashboardMiniCalendar.getChildren().clear();
+            if (dashboardMiniTasks != null) dashboardMiniTasks.getChildren().clear();
+
+            int calCount = 0;
+            int taskCount = 0;
+
+            if (data.isArray()) {
+                // Sort by time
+                java.util.List<JsonNode> sorted = new java.util.ArrayList<>();
+                data.forEach(sorted::add);
+                sorted.sort((a, b) -> a.path("scheduledAt").asText("").compareTo(b.path("scheduledAt").asText("")));
+
+                for (JsonNode ev : sorted) {
+                    String type = ev.path("type").asText("EVENT");
+                    String title = ev.path("title").asText("Neznáma");
+                    String time = ev.path("scheduledAt").asText("");
+                    if (time.isEmpty()) continue;
+
+                    try {
+                        java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(time);
+                        // Len buduce
+                        if (odt.isBefore(java.time.OffsetDateTime.now())) continue;
+
+                        String dateStr = odt.format(java.time.format.DateTimeFormatter.ofPattern("d.M. HH:mm"));
+
+                        if ((type.equals("PREDNASKA") || type.equals("CVICENIE")) && calCount < 2) {
+                            Label l = new Label(title + " (" + dateStr + ")");
+                            l.setStyle("-fx-text-fill: #06b6d4; -fx-font-size: 13px; -fx-font-weight: bold;");
+                            l.setWrapText(true);
+                            if (dashboardMiniCalendar != null) dashboardMiniCalendar.getChildren().add(l);
+                            calCount++;
+                        }
+                        if ((type.equals("ODOVZDANIE") || type.equals("TASK_DUE") || type.equals("PISOMKA") || type.equals("EXAM")) && taskCount < 2) {
+                            Label l = new Label(title + " (" + dateStr + ")");
+                            l.setStyle("-fx-text-fill: #06b6d4; -fx-font-size: 13px; -fx-font-weight: bold;");
+                            l.setWrapText(true);
+                            if (dashboardMiniTasks != null) dashboardMiniTasks.getChildren().add(l);
+                            taskCount++;
+                        }
+                    } catch (Exception e) {}
+                }
+            }
+
+            if (calCount == 0 && dashboardMiniCalendar != null) {
+                Label l = new Label("Voľno");
+                l.setStyle("-fx-text-fill: #94a3b8;");
+                dashboardMiniCalendar.getChildren().add(l);
+            }
+            if (taskCount == 0 && dashboardMiniTasks != null) {
+                Label l = new Label("Žiadne zadania");
+                l.setStyle("-fx-text-fill: #94a3b8;");
+                dashboardMiniTasks.getChildren().add(l);
+            }
         });
     }
 
     private void handleDashboardMarks(JsonNode node) {
         WebSocketClientService.getInstance().unsubscribe(subDashMarks);
-        // Marks are displayed in GradesController – here we just update badge count
         JsonNode data = node.path("data");
-        int count = data.isArray() ? data.size() : 0;
         Platform.runLater(() -> {
-            // Update notification badge with real marks count if > 0
-            if (notificationsAction != null && count > 0) {
-                // Find badge label and update
-                notificationsAction.getChildren().stream()
-                    .filter(n -> n instanceof javafx.scene.control.Label lbl
-                        && lbl.getStyleClass().contains("notification-badge"))
-                    .findFirst()
-                    .ifPresent(n -> ((javafx.scene.control.Label) n).setText(String.valueOf(Math.min(count, 9))));
+            if (dashboardPerfContainer != null) {
+                dashboardPerfContainer.getChildren().clear();
+                if (data.isArray() && data.size() > 0) {
+                    int i = 0;
+                    for (JsonNode m : data) {
+                        if (i++ >= 4) break;
+                        VBox pCard = new VBox(4);
+                        pCard.getStyleClass().add("perf-card");
+                        pCard.setMinWidth(220); // Make grades wider so text fits
+                        javafx.scene.layout.HBox.setHgrow(pCard, javafx.scene.layout.Priority.ALWAYS);
+                        
+                        Label crs = new Label("Predmet " + m.path("enrollmentId").asText());
+                        crs.getStyleClass().add("perf-course");
+                        Label gr = new Label(m.path("finalMark").asText());
+                        gr.getStyleClass().add("perf-grade");
+                        Label itm = new Label(isEnglish ? "Final Grade" : "Záverečná známka");
+                        itm.getStyleClass().add("perf-item");
+                        javafx.scene.layout.Region bar = new javafx.scene.layout.Region();
+                        bar.getStyleClass().addAll("perf-bar", "perf-bar-hi");
+                        
+                        pCard.getChildren().addAll(crs, gr, itm, bar);
+                        dashboardPerfContainer.getChildren().add(pCard);
+                    }
+                } else {
+                    Label l = new Label(isEnglish ? "No recent grades." : "Žiadne nedávne hodnotenia.");
+                    l.setStyle("-fx-text-fill: #94a3b8;");
+                    dashboardPerfContainer.getChildren().add(l);
+                }
             }
         });
     }

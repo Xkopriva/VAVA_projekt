@@ -12,8 +12,10 @@ import javafx.scene.paint.Color;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +27,7 @@ public class GradesController implements Initializable {
 
     @FXML private VBox gradesRoot;
 
-    record Course(String code, String name, int credits, String finalGrade, String statusText, boolean done) {}
+    record Course(int enrollmentId, String code, String name, int credits, String finalGrade, String statusText, boolean done) {}
 
     private final List<Course>              courses                = new ArrayList<>();
     private final Map<Integer, String>      finalMarksByEnrollment = new HashMap<>();
@@ -37,9 +39,15 @@ public class GradesController implements Initializable {
 
     private String subEnrollments;
     private String subMarks;
+    private String subPoints;
+
+    private int expectedPointsResponses = 0;
+    private int receivedPointsResponses = 0;
 
     record SubjectInfo(String code, String name, int credits) {}
     record EnrollmentInfo(int enrollmentId, int subjectId, String status) {}
+    record MarkInfo(String title, double points, double maxPoints) {}
+    private final Map<Integer, List<MarkInfo>> pointsByEnrollment = new HashMap<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -48,6 +56,7 @@ public class GradesController implements Initializable {
         WebSocketClientService ws = WebSocketClientService.getInstance();
         subEnrollments = ws.subscribe("MY_ENROLLMENTS",   this::handleEnrollments);
         subMarks       = ws.subscribe("MY_INDEX_RECORDS", this::handleMarks);
+        subPoints      = ws.subscribe("MY_POINTS_LIST",   this::handlePoints);
 
         ws.sendAction("GET_MY_ENROLLMENTS", null);
         ws.sendAction("GET_MY_MARKS",       null);
@@ -56,6 +65,7 @@ public class GradesController implements Initializable {
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             ws.unsubscribe(subEnrollments);
             ws.unsubscribe(subMarks);
+            ws.unsubscribe(subPoints);
             if (!enrollmentsLoaded.get() || !marksLoaded.get()) {
                 enrollmentsLoaded.set(true);
                 marksLoaded.set(true);
@@ -86,8 +96,40 @@ public class GradesController implements Initializable {
                 enrollmentInfos.add(new EnrollmentInfo(enrollmentId, subjectId, status));
             }
         }
-        enrollmentsLoaded.set(true);
-        tryBuild();
+        
+        expectedPointsResponses = enrollmentInfos.size();
+        if (expectedPointsResponses == 0) {
+            enrollmentsLoaded.set(true);
+            tryBuild();
+        } else {
+            WebSocketClientService ws = WebSocketClientService.getInstance();
+            for (EnrollmentInfo ei : enrollmentInfos) {
+                ws.sendAction("GET_MY_POINTS", java.util.Map.of("enrollmentId", ei.enrollmentId()));
+            }
+        }
+    }
+
+    private void handlePoints(JsonNode node) {
+        JsonNode data = node.path("data");
+        if (data.isArray()) {
+            for (JsonNode m : data) {
+                int eid = m.path("enrollmentId").asInt(-1);
+                if (eid != -1) {
+                    pointsByEnrollment.computeIfAbsent(eid, k -> new ArrayList<>())
+                        .add(new MarkInfo(
+                            m.path("title").asText("Neznáme hodnotenie"),
+                            m.path("points").asDouble(0),
+                            m.path("maxPoints").asDouble(0)
+                        ));
+                }
+            }
+        }
+        receivedPointsResponses++;
+        if (receivedPointsResponses >= expectedPointsResponses) {
+            WebSocketClientService.getInstance().unsubscribe(subPoints);
+            enrollmentsLoaded.set(true);
+            tryBuild();
+        }
     }
 
     private void handleMarks(JsonNode node) {
@@ -119,9 +161,13 @@ public class GradesController implements Initializable {
             String  finalGrade  = finalMarksByEnrollment.getOrDefault(ei.enrollmentId(), "—");
             boolean passed      = "PASSED".equals(ei.status());
             boolean active      = "ACTIVE".equals(ei.status());
+            
+            // Užívateľ chce vidieť len práve prebiehajúce (aktívne) predmety
+            if (!active) continue;
+
             String  statusText  = passed ? "Absolvované" : (active ? "Prebieha" : ei.status());
 
-            courses.add(new Course(si.code(), si.name(), si.credits(), finalGrade, statusText, passed));
+            courses.add(new Course(ei.enrollmentId(), si.code(), si.name(), si.credits(), finalGrade, statusText, passed));
             totalCredits += si.credits();
             if (passed) passedCount++;
         }
@@ -225,7 +271,53 @@ public class GradesController implements Initializable {
                         : "-fx-background-color:#fff7ed;-fx-text-fill:#d97706;"));
 
             row.getChildren().addAll(code, name, cred, fin, status);
-            tableCard.getChildren().add(row);
+            
+            // Sub-box pre body z daného predmetu
+            VBox subjectBox = new VBox();
+            subjectBox.getChildren().add(row);
+            
+            List<MarkInfo> points = pointsByEnrollment.getOrDefault(c.enrollmentId, Collections.emptyList());
+            if (!points.isEmpty()) {
+                VBox pointsBox = new VBox(4);
+                pointsBox.setPadding(new Insets(0, 0, 10, 50)); // Odsadenie sprava a zlava pod nazov predmetu
+                
+                double totalGot = 0;
+                double totalMax = 0;
+
+                for (MarkInfo p : points) {
+                    HBox pRow = new HBox(10);
+                    pRow.setAlignment(Pos.CENTER_LEFT);
+                    
+                    Label pTitle = new Label("• " + p.title());
+                    pTitle.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
+                    pTitle.setPrefWidth(200);
+
+                    Label pPts = new Label(fmt(p.points()) + " / " + fmt(p.maxPoints()) + " b.");
+                    pPts.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 12px; -fx-font-weight: bold;");
+                    
+                    totalGot += p.points();
+                    totalMax += p.maxPoints();
+
+                    pRow.getChildren().addAll(pTitle, pPts);
+                    pointsBox.getChildren().add(pRow);
+                }
+                
+                // Celkovy sucet bodov za predmet
+                HBox sumRow = new HBox(10);
+                sumRow.setAlignment(Pos.CENTER_LEFT);
+                sumRow.setPadding(new Insets(4, 0, 0, 0));
+                Label sumTitle = new Label("Spolu:");
+                sumTitle.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 12px; -fx-font-weight: bold;");
+                sumTitle.setPrefWidth(200);
+                Label sumPts = new Label(fmt(totalGot) + " / " + fmt(totalMax) + " b.");
+                sumPts.setStyle("-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;");
+                sumRow.getChildren().addAll(sumTitle, sumPts);
+                pointsBox.getChildren().add(sumRow);
+                
+                subjectBox.getChildren().add(pointsBox);
+            }
+
+            tableCard.getChildren().add(subjectBox);
         }
 
         // Legenda
@@ -290,5 +382,10 @@ public class GradesController implements Initializable {
         if (g.startsWith("B"))                       return "#2563eb";
         if (g.equals("FX") || g.equals("FAIL"))      return "#dc2626";
         return "#d97706";
+    }
+
+    private String fmt(double d) {
+        if (d == (long) d) return String.format("%d", (long) d);
+        else return String.format("%s", d);
     }
 }

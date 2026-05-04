@@ -36,6 +36,7 @@ public class MigrationRunner {
 
             Flyway flyway = Flyway.configure()
                     .dataSource(dbUrl, dbUser, dbPassword)
+                    .schemas("public")
                     .locations(locations)
                     .load();
 

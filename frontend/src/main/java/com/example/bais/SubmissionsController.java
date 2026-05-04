@@ -123,7 +123,13 @@ public class SubmissionsController implements Initializable {
 
         if (!dueAtRaw.isBlank()) {
             try {
-                OffsetDateTime due = OffsetDateTime.parse(dueAtRaw);
+                OffsetDateTime due;
+                if (dueAtRaw.contains("T")) {
+                    due = OffsetDateTime.parse(dueAtRaw);
+                } else {
+                    long epochMillis = (long) (Double.parseDouble(dueAtRaw.replace(",", ".")) * 1000);
+                    due = OffsetDateTime.ofInstant(java.time.Instant.ofEpochMilli(epochMillis), java.time.ZoneId.systemDefault());
+                }
                 DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d.M.yyyy HH:mm");
                 Label deadlineLbl = new Label("⏰ " + due.format(fmt));
                 deadlineLbl.getStyleClass().add("submission-deadline");
@@ -228,7 +234,13 @@ public class SubmissionsController implements Initializable {
         HBox meta = new HBox(16);
         if (!dueRaw.isBlank()) {
             try {
-                OffsetDateTime due = OffsetDateTime.parse(dueRaw);
+                OffsetDateTime due;
+                if (dueRaw.contains("T")) {
+                    due = OffsetDateTime.parse(dueRaw);
+                } else {
+                    long epochMillis = (long) (Double.parseDouble(dueRaw.replace(",", ".")) * 1000);
+                    due = OffsetDateTime.ofInstant(java.time.Instant.ofEpochMilli(epochMillis), java.time.ZoneId.systemDefault());
+                }
                 Label dl = new Label("⏰ " + due.format(DateTimeFormatter.ofPattern("d.M.yyyy HH:mm")));
                 dl.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 13px;");
                 meta.getChildren().add(dl);
@@ -275,7 +287,13 @@ public class SubmissionsController implements Initializable {
             }
             if (!subAtRaw.isBlank()) {
                 try {
-                    OffsetDateTime sat = OffsetDateTime.parse(subAtRaw);
+                    OffsetDateTime sat;
+                    if (subAtRaw.contains("T")) {
+                        sat = OffsetDateTime.parse(subAtRaw);
+                    } else {
+                        long epochMillis = (long) (Double.parseDouble(subAtRaw.replace(",", ".")) * 1000);
+                        sat = OffsetDateTime.ofInstant(java.time.Instant.ofEpochMilli(epochMillis), java.time.ZoneId.systemDefault());
+                    }
                     Label satLbl = new Label((en ? "Submitted: " : "Odovzdané: ")
                             + sat.format(DateTimeFormatter.ofPattern("d.M.yyyy HH:mm")));
                     satLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");

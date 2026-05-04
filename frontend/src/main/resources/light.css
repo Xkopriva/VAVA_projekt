@@ -249,6 +249,35 @@
 .perf-bar-hi  { -fx-background-color: #06b6d4; }
 .perf-bar-mid { -fx-background-color: #94a3b8; }
 
+/* ── DASHBOARD TILES ───────────────────── */
+.dashboard-tile {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16;
+    -fx-padding: 32;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 4);
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-radius: 14;
+}
+.dashboard-tile:hover {
+    -fx-border-color: #0ea5e9;
+    -fx-background-color: #f0f9ff;
+    -fx-effect: dropshadow(gaussian, rgba(14, 165, 233, 0.2), 12, 0, 0, 6);
+}
+.dashboard-tile-icon {
+    -fx-font-size: 48px;
+}
+.dashboard-tile-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+.dashboard-tile-sub {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+}
+
 /* ── DEGREE PROGRESS ────────────────────── */
 .progress-ring {
     -fx-min-width: 72; -fx-min-height: 72; -fx-background-radius: 36;
@@ -308,8 +337,8 @@
 }
 
 .calendar-grid             { -fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-border-width: 1; }
-.calendar-day-header       { -fx-background-color: #f0f2f8; }
-.calendar-day-header-today { -fx-background-color: #e0f2fe; }
+.calendar-day-header-box       { -fx-background-color: #f0f2f8; }
+.calendar-day-header-box-today { -fx-background-color: #e0f2fe; }
 .calendar-day-name         { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b; }
 .calendar-day-name-today   { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #0369a1; }
 .calendar-day-num          { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
@@ -373,6 +402,47 @@
     -fx-text-fill: #1e293b;
     -fx-font-weight: 600;
     -fx-font-size: 13px;
+}
+
+/* ── ADD REMINDER DIALOG ─────────────────────────────────── */
+.add-reminder-dialog {
+    -fx-background-color: #ffffff;
+}
+.add-reminder-dialog .label {
+    -fx-text-fill: #1e293b;
+}
+.add-reminder-dialog .input-label {
+    -fx-text-fill: #64748b;
+}
+.add-reminder-dialog .text-field {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+    -fx-text-fill: #1e293b;
+    -fx-prompt-text-fill: #94a3b8;
+}
+.add-reminder-dialog .combo-box {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+}
+.add-reminder-dialog .combo-box .list-cell {
+    -fx-text-fill: #1e293b;
+}
+.add-reminder-dialog .button.cancel-button {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #475569;
+}
+.add-reminder-dialog .button.cancel-button:hover {
+    -fx-background-color: #e2e8f0;
+}
+.add-reminder-dialog .button.save-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+}
+.add-reminder-dialog .button.save-button:hover {
+    -fx-background-color: #1d4ed8;
+}
+.add-reminder-dialog .error-label {
+    -fx-text-fill: #ef4444;
 }
 
 /* ════════════════════════════════════════════════

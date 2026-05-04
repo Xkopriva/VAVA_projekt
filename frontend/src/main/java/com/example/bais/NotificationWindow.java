@@ -33,12 +33,15 @@ public class NotificationWindow {
         header.setAlignment(Pos.CENTER_LEFT);
         Label title = new Label(en ? "Your Notifications" : "Vaše upozornenia");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
-        HBox.setHgrow(title, Priority.ALWAYS);
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
         Button markAllBtn = new Button(en ? "Mark all read" : "Označiť všetky");
         markAllBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #06b6d4; " +
             "-fx-font-size: 12px; -fx-cursor: hand; -fx-border-color: #06b6d4; " +
             "-fx-border-radius: 6; -fx-padding: 4 10;");
-        header.getChildren().addAll(title, markAllBtn);
+        header.getChildren().addAll(title, spacer, markAllBtn);
 
         // Loading indicator
         Label loadingLbl = new Label(en ? "⏳ Loading..." : "⏳ Načítavam...");
@@ -71,14 +74,14 @@ public class NotificationWindow {
         loadNotifications(notificationsList, en);
 
         markAllBtn.setOnAction(e -> {
-            // Correct backend action name is MARK_ALL_UNREAD
             WebSocketClientService.getInstance().sendAction("MARK_ALL_UNREAD", null);
-            // Visual feedback
-            notificationsList.getChildren().forEach(child -> {
-                if (child instanceof VBox vb) {
-                    vb.setOpacity(0.6);
-                }
-            });
+            // Zmazanie vsetkych z okna
+            notificationsList.getChildren().clear();
+            Label empty = new Label(en ? "✅  No notifications" : "✅  Žiadne upozornenia");
+            empty.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b; -fx-padding: 20;");
+            notificationsList.getChildren().add(empty);
+            
+            // Dispatch event to local window if needed (but DashboardController listens to WS)
         });
     }
 

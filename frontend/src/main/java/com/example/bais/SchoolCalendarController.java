@@ -148,7 +148,7 @@ public class SchoolCalendarController implements Initializable {
         boolean en = UserSession.get().isEnglish();
         calendarRoot.getChildren().clear();
         calendarRoot.setSpacing(24);
-        calendarRoot.setPadding(new Insets(32, 40, 80, 40));
+        calendarRoot.setPadding(new Insets(32, 40, 200, 40));
 
         HBox titleRow = new HBox();
         titleRow.setAlignment(Pos.CENTER_LEFT);
@@ -184,7 +184,7 @@ public class SchoolCalendarController implements Initializable {
         titleRow.getChildren().addAll(titleBlock, addBtn);
 
         gridContainer = new VBox(4);
-        gridContainer.setPadding(new Insets(4));
+        gridContainer.setPadding(new Insets(4, 4, 32, 4));
         gridContainer.getStyleClass().add("calendar-grid-container");
 
         calendarGrid = buildGrid();

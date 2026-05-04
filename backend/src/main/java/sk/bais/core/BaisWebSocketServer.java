@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import sk.bais.auth.AuthContext;
@@ -53,6 +54,7 @@ public class BaisWebSocketServer extends WebSocketServer {
     this.adminService = adminService;
     this.userDAO = userDAO;
     mapper.registerModule(new JavaTimeModule());  
+    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 }
 
     @Override

@@ -111,138 +111,78 @@
                         </VBox>
                     </HBox>
 
-                    <!-- SCHEDULE + ALERTS -->
-                    <HBox spacing="16" alignment="TOP_LEFT">
-
-                        <!-- TODAY'S SCHEDULE -->
-                        <VBox styleClass="section-card" HBox.hgrow="ALWAYS" spacing="0">
-                            <HBox styleClass="section-header-row" alignment="CENTER_LEFT">
-                                <Label fx:id="schedTitle" text="Rozvrh dnes" styleClass="section-title" HBox.hgrow="ALWAYS" />
-                                <Label text="Pondelok, 14. apríl" styleClass="schedule-date" />
-                            </HBox>
-                            <HBox styleClass="schedule-row" alignment="CENTER_LEFT" spacing="14">
-                                <Label text="08:30" styleClass="schedule-time time-blue" minWidth="55" />
-                                <VBox HBox.hgrow="ALWAYS" spacing="2">
-                                    <Label text="Programovanie a softvér I" styleClass="schedule-name" />
-                                    <Label text="D-105 • Prednáška"          styleClass="schedule-loc" />
-                                </VBox>
-                                <Label text="PREDNÁŠKA" styleClass="badge badge-lecture" />
-                            </HBox>
-                            <HBox styleClass="schedule-row" alignment="CENTER_LEFT" spacing="14">
-                                <Label text="10:00" styleClass="schedule-time time-red" minWidth="55" />
-                                <VBox HBox.hgrow="ALWAYS" spacing="2">
-                                    <Label text="Databázové systémy" styleClass="schedule-name" />
-                                    <Label text="A-204 • Cvičenie"    styleClass="schedule-loc" />
-                                </VBox>
-                                <Label text="CVIČENIE" styleClass="badge badge-lab" />
-                            </HBox>
-                            <HBox styleClass="schedule-row" alignment="CENTER_LEFT" spacing="14">
-                                <Label text="13:00" styleClass="schedule-time time-blue" minWidth="55" />
-                                <VBox HBox.hgrow="ALWAYS" spacing="2">
-                                    <Label text="Algebra a matematika" styleClass="schedule-name" />
-                                    <Label text="B-301 • Prednáška"    styleClass="schedule-loc" />
-                                </VBox>
-                                <Label text="PREDNÁŠKA" styleClass="badge badge-lecture" />
-                            </HBox>
-                            <HBox styleClass="schedule-row schedule-row-last" alignment="CENTER_LEFT" spacing="14">
-                                <Label text="15:30" styleClass="schedule-time time-green" minWidth="55" />
-                                <VBox HBox.hgrow="ALWAYS" spacing="2">
-                                    <Label text="Vývoj aplikácií VAVA" styleClass="schedule-name" />
-                                    <Label text="D-101 • Cvičenie"      styleClass="schedule-loc" />
-                                </VBox>
-                                <Label text="CVIČENIE" styleClass="badge badge-lab" />
-                            </HBox>
-                        </VBox>
-
-                        <!-- ALERTS -->
-                        <VBox styleClass="section-card" spacing="10" minWidth="240" maxWidth="260">
-                            <Label fx:id="alertsTitle" text="Upozornenia" styleClass="section-title" />
-                            <VBox styleClass="alert-item alert-red" spacing="4">
-                                <Label text="⚠  Odovzdanie projektu – PAS" styleClass="alert-title" />
-                                <Label text="Deadline: piatok 23:59. Nahraj cez AIS." styleClass="alert-body" wrapText="true" />
-                            </VBox>
-                            <VBox styleClass="alert-item alert-blue" spacing="4">
-                                <Label text="📋  Nové materiály – DBS" styleClass="alert-title" />
-                                <Label text="Prednáška 7 bola nahraná na portál." styleClass="alert-body" wrapText="true" />
-                            </VBox>
-                            <VBox styleClass="alert-item alert-orange" spacing="4">
-                                <Label text="📚  Skúška – Algebra" styleClass="alert-title" />
-                                <Label text="Dátum: 28.1.2025 o 9:00 v D-302." styleClass="alert-body" wrapText="true" />
+                    <!-- SHORTCUT TILES -->
+                    <HBox spacing="16" alignment="CENTER">
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="8" onMouseClicked="#handleCalendar" HBox.hgrow="ALWAYS">
+                            <Label text="◫" styleClass="dashboard-tile-icon" style="-fx-font-size: 32px;" />
+                            <Label text="Kalendár" styleClass="dashboard-tile-title" style="-fx-font-size: 16px;" />
+                            <VBox fx:id="dashboardMiniCalendar" alignment="CENTER" spacing="4">
+                                <!-- Zoznam 2 najbližších udalostí -->
                             </VBox>
                         </VBox>
-
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="8" onMouseClicked="#handleNotifications" HBox.hgrow="ALWAYS">
+                            <Label text="⚑" styleClass="dashboard-tile-icon" style="-fx-font-size: 32px;" />
+                            <Label text="Upozornenia" styleClass="dashboard-tile-title" style="-fx-font-size: 16px;" />
+                        </VBox>
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="8" onMouseClicked="#handleGrades" HBox.hgrow="ALWAYS">
+                            <Label text="☆" styleClass="dashboard-tile-icon" style="-fx-font-size: 32px;" />
+                            <Label text="Známky" styleClass="dashboard-tile-title" style="-fx-font-size: 16px;" />
+                        </VBox>
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="8" onMouseClicked="#handleAlgebra" HBox.hgrow="ALWAYS">
+                            <Label text="✎" styleClass="dashboard-tile-icon" style="-fx-font-size: 32px;" />
+                            <Label text="Odovzdania" styleClass="dashboard-tile-title" style="-fx-font-size: 16px;" />
+                            <VBox fx:id="dashboardMiniTasks" alignment="CENTER" spacing="4">
+                                <!-- Zoznam 2 najbližších zadaní -->
+                            </VBox>
+                        </VBox>
                     </HBox>
 
                     <!-- RECENT PERFORMANCE -->
-                    <VBox styleClass="section-card" spacing="14">
+                    <VBox styleClass="section-card" spacing="18" onMouseClicked="#handleGrades" style="-fx-cursor: hand;">
                         <HBox alignment="CENTER_LEFT" styleClass="section-header-row">
                             <Label fx:id="perfTitle" text="Výsledky predmetov" styleClass="section-title" HBox.hgrow="ALWAYS" />
                             <Label text="Zobraziť všetky →" styleClass="link-label" />
                         </HBox>
-                        <HBox spacing="12">
-                            <VBox styleClass="perf-card" HBox.hgrow="ALWAYS" spacing="4">
-                                <Label text="PAS"  styleClass="perf-course" />
-                                <Label text="A"    styleClass="perf-grade" />
-                                <Label text="Projekt – fáza 1" styleClass="perf-item" />
-                                <Region styleClass="perf-bar perf-bar-hi" />
-                            </VBox>
-                            <VBox styleClass="perf-card" HBox.hgrow="ALWAYS" spacing="4">
-                                <Label text="DBS"  styleClass="perf-course" />
-                                <Label text="B+"   styleClass="perf-grade" />
-                                <Label text="Semestrálka" styleClass="perf-item" />
-                                <Region styleClass="perf-bar perf-bar-mid" />
-                            </VBox>
-                            <VBox styleClass="perf-card" HBox.hgrow="ALWAYS" spacing="4">
-                                <Label text="ALM"  styleClass="perf-course" />
-                                <Label text="A"    styleClass="perf-grade" />
-                                <Label text="Midterm test" styleClass="perf-item" />
-                                <Region styleClass="perf-bar perf-bar-hi" />
-                            </VBox>
-                            <VBox styleClass="perf-card" HBox.hgrow="ALWAYS" spacing="4">
-                                <Label text="VAVA" styleClass="perf-course" />
-                                <Label text="A-"   styleClass="perf-grade" />
-                                <Label text="Live coding" styleClass="perf-item" />
-                                <Region styleClass="perf-bar perf-bar-hi" />
-                            </VBox>
+                        <HBox fx:id="dashboardPerfContainer" spacing="20">
+                            <!-- Dynamic performance cards will go here -->
                         </HBox>
                     </VBox>
 
                     <!-- DEGREE PROGRESS + QUICK LINKS -->
-                    <HBox spacing="16" alignment="TOP_LEFT">
-                        <VBox styleClass="section-card" HBox.hgrow="ALWAYS" spacing="10">
+                    <HBox spacing="20" alignment="TOP_LEFT">
+                        <VBox styleClass="section-card" HBox.hgrow="ALWAYS" spacing="16" onMouseClicked="#handleProgress" style="-fx-cursor: hand;">
                             <Label fx:id="degreeTitle" text="Progres štúdium" styleClass="section-title" />
-                            <Label text="Dokončil si 58 z 180 požadovaných kreditov pre Bc. Informatiku."
+                            <Label fx:id="dashboardProgressLabel" text="Dokončil si 0 z 180 požadovaných kreditov pre Bc. Informatiku."
                                    styleClass="perf-item" wrapText="true" />
                             <HBox alignment="CENTER_LEFT" spacing="0">
-                                <HBox spacing="10">
+                                <HBox spacing="14">
                                     <Button text="Zobraziť plán" styleClass="btn-primary"  onAction="#handleProgress" />
-                                    <Button text="Poradca"       styleClass="btn-secondary" />
                                 </HBox>
                                 <Region HBox.hgrow="ALWAYS" />
                                 <StackPane styleClass="progress-ring" minWidth="72" minHeight="72">
-                                    <Label text="32%" styleClass="progress-pct" StackPane.alignment="CENTER" />
+                                    <Label fx:id="dashboardProgressPct" text="0%" styleClass="progress-pct" StackPane.alignment="CENTER" />
                                 </StackPane>
                             </HBox>
                         </VBox>
-                        <VBox styleClass="section-card" spacing="12" minWidth="200" maxWidth="215">
+                        <VBox styleClass="section-card" spacing="16" minWidth="200" maxWidth="215">
                             <Label fx:id="quickTitle" text="Rýchle odkazy" styleClass="section-title" />
-                            <GridPane hgap="8" vgap="8">
-                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="5"
+                            <GridPane hgap="12" vgap="12">
+                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="8" onMouseClicked="#handleGrades" style="-fx-cursor: hand;"
                                       GridPane.columnIndex="0" GridPane.rowIndex="0" minWidth="82">
                                     <Label text="📄" styleClass="ql-icon" />
                                     <Label text="Výpis"   styleClass="ql-label" />
                                 </VBox>
-                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="5"
+                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="8" onMouseClicked="#handleCalendar" style="-fx-cursor: hand;"
                                       GridPane.columnIndex="1" GridPane.rowIndex="0" minWidth="82">
                                     <Label text="📅" styleClass="ql-icon" />
                                     <Label text="Skúšky"  styleClass="ql-label" />
                                 </VBox>
-                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="5"
+                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="8" onMouseClicked="#handleAlgebra" style="-fx-cursor: hand;"
                                       GridPane.columnIndex="0" GridPane.rowIndex="1" minWidth="82">
                                     <Label text="🪪" styleClass="ql-icon" />
                                     <Label text="ISIC"    styleClass="ql-label" />
                                 </VBox>
-                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="5"
+                                <VBox styleClass="quick-link-card" alignment="CENTER" spacing="8" onMouseClicked="#handleCourses" style="-fx-cursor: hand;"
                                       GridPane.columnIndex="1" GridPane.rowIndex="1" minWidth="82">
                                     <Label text="🏫" styleClass="ql-icon" />
                                     <Label text="Kampus"  styleClass="ql-label" />
