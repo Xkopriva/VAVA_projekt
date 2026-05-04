@@ -19,7 +19,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import sk.bais.auth.AuthContext;
 import sk.bais.auth.AuthService;
 import sk.bais.dao.UserDAO;
-import sk.bais.dto.EventWithTranslationDTO;
+import sk.bais.dto.CalendarItemDTO;
 import sk.bais.dto.UserProfileDTO;
 import sk.bais.model.Notification;
 import sk.bais.model.Task;
@@ -196,23 +196,14 @@ public class BaisWebSocketServer extends WebSocketServer {
     // -------------------------------------------------------------------------
 
     private void handleGetMyCalendar(WebSocket conn, JsonNode payload) {
-    // 1. Overenie autentifikácie a získanie kontextu
         requireAuth(conn).ifPresent(ctx -> {
-            try {
-                // 2. Získanie locale z JSONu (napr. "sk"), defaultne "sk" ak chýba
-                String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
-
-                // 3. Volanie novej metódy v StudentService
-                List<EventWithTranslationDTO> events = studentService.getMyCalendarEvents(ctx, locale);
-
-                // 4. Odoslanie úspešnej odpovede s dátami
-                sendResponse(conn, "MY_CALENDAR_DATA", events);
-                
-                log.info("Odoslaných {} udalostí kalendára pre userId={}", events.size(), ctx.getUserId());
-            } catch (Exception e) {
-                log.error("Chyba pri spracovaní požiadavky na kalendár", e);
-                sendError(conn, "Nepodarilo sa načítať dáta kalendára");
-            }
+            // Jazyk skúsime vytiahnuť z payloadu alebo použijeme default
+            String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
+            
+            List<CalendarItemDTO> calendar = studentService.getMyCalendar(ctx, locale);
+            
+            log.info("Posielam kalendár pre študenta {} (položiek: {})", ctx.getUserId(), calendar.size());
+            sendResponse(conn, "MY_CALENDAR_EVENTS", calendar);
         });
     }
 
