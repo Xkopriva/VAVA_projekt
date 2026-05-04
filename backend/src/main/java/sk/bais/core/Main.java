@@ -11,6 +11,8 @@ import sk.bais.dao.SemesterDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.SubjectTranslationDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
 import sk.bais.dao.UserDAO;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
@@ -38,12 +40,14 @@ public class Main {
         EventDAO eventDAO = new EventDAO();
         EventTranslationDAO eventTranslationDAO = new EventTranslationDAO();
         NotificationDAO notificationDAO = new NotificationDAO();
+        TaskDAO taskDAO = new TaskDAO();
+        TaskSubmissionDAO taskSubmissionDAO = new TaskSubmissionDAO();
         
         // 2. Inicializácia Biznis logiky (Service vrstva)
         StudentService studentService = new StudentService(
             studentDAO, enrollmentDAO, markDAO, indexRecordDAO, 
             subjectDAO, subjectTranslationDAO, eventDAO, 
-            eventTranslationDAO, notificationDAO);
+            eventTranslationDAO, notificationDAO, taskDAO, taskSubmissionDAO);
         TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
         AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO); 
 

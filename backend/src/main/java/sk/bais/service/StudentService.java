@@ -22,6 +22,8 @@ import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
 import sk.bais.dao.SubjectTranslationDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
 import sk.bais.dto.EnrollmentWithSubjectDTO;
 import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.model.Enrollment;
@@ -33,6 +35,8 @@ import sk.bais.model.Notification;
 import sk.bais.model.Student;
 import sk.bais.model.Subject;
 import sk.bais.model.SubjectTranslation;
+import sk.bais.model.Task;
+import sk.bais.model.TaskSubmission;
 
 /**
  * Service vrstva pre studenta.
@@ -59,6 +63,8 @@ public class StudentService {
     private final EventDAO eventDAO;
     private final EventTranslationDAO eventTranslationDAO;
     private final NotificationDAO notificationDAO;
+    private final TaskDAO taskDAO;
+    private final TaskSubmissionDAO taskSubmissionDAO;
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -358,6 +364,70 @@ public class StudentService {
         } catch (SQLException e) {
             log.error("Chyba pri hromadnom označovaní notifikácií pre userId={}", ctx.getUserId(), e);
             return 0;
+        }
+    }
+
+    /**
+     * Získa všetky publikované úlohy pre predmety, na ktoré je študent zapísaný.
+     */
+    public List<Task> getMyTasks(AuthContext ctx) {
+        try {
+            List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Task> allMyTasks = new ArrayList<>();
+            
+            for (Enrollment enr : enrollments) {
+                List<Task> subjectTasks = taskDAO.listBySubject(enr.getSubjectId());
+                // Filtrujeme len publikované úlohy
+                subjectTasks.stream()
+                    .filter(Task::isPublished)
+                    .forEach(allMyTasks::add);
+            }
+            return allMyTasks;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní úloh pre študenta {}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Získa detail úlohy spolu s aktuálnym stavom odovzdania študenta.
+     */
+    public Map<String, Object> getTaskDetail(int taskId, AuthContext ctx) {
+        try {
+            Optional<Task> task = taskDAO.getById(taskId);
+            if (task.isEmpty()) return Collections.emptyMap();
+
+            Optional<TaskSubmission> submission = taskSubmissionDAO.getByTaskAndStudent(taskId, ctx.getUserId());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("task", task.get());
+            response.put("submission", submission.orElse(null));
+            return response;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní detailu úlohy {} pre študenta {}", taskId, ctx.getUserId(), e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Spracuje odovzdanie úlohy (vytvorenie alebo prepísanie).
+     */
+    public Optional<TaskSubmission> submitTask(int taskId, String content, String fileUrl, AuthContext ctx) {
+        try {
+            TaskSubmission ts = new TaskSubmission();
+            ts.setTaskId(taskId);
+            ts.setStudentId(ctx.getUserId());
+            ts.setContent(content);
+            ts.setFileUrl(fileUrl);
+            ts.setSubmittedAt(java.time.OffsetDateTime.now());
+            ts.setStatus(TaskSubmission.Status.SUBMITTED);
+
+            TaskSubmission saved = taskSubmissionDAO.updateOrInsert(ts);
+            log.info("Študent {} úspešne odovzdal task {}", ctx.getUserId(), taskId);
+            return Optional.of(saved);
+        } catch (SQLException e) {
+            log.error("Chyba pri odovzdávaní tasku {} študentom {}", taskId, ctx.getUserId(), e);
+            return Optional.empty();
         }
     }
 }

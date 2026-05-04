@@ -22,6 +22,8 @@ import sk.bais.dao.UserDAO;
 import sk.bais.dto.EventWithTranslationDTO;
 import sk.bais.dto.UserProfileDTO;
 import sk.bais.model.Notification;
+import sk.bais.model.Task;
+import sk.bais.model.TaskSubmission;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
 import sk.bais.service.TeacherService;
@@ -109,6 +111,10 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_UNDREAD_NOTIFICATIONS" -> handleGetUnreadNotifications(conn);
                 case "MARK_READ_NOTIFICATION" -> handleMarkRead(conn, payload);
                 case "MARK_ALL_UNREAD" -> handleMarkAllRead(conn);
+
+                case "GET_MY_TASKS" -> handleGetMyTasks(conn);
+                case "GET_TASK_DETAIL" -> handleGetTaskDetail(conn, payload);
+                case "SUBMIT_TASK" -> handleSaveSubmission(conn, payload);
                 
                 // --- SPOLOCNE AKCIE ---
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
@@ -302,6 +308,54 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             int count = studentService.markAllMyNotificationsAsRead(ctx);
             sendResponse(conn, "ALL_NOTIFICATIONS_MARKED_READ", Map.of("count", count));
+        });
+    }
+
+    // GET_MY_TASKS Získanie zoznamu úloh
+    private void handleGetMyTasks(WebSocket conn) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                List<Task> tasks = studentService.getMyTasks(ctx);
+                sendResponse(conn, "MY_TASKS_LIST", tasks);
+            } catch (Exception e) {
+                log.error("Fatal error v handleGetMyTasks", e);
+                sendError(conn, "Nepodarilo sa načítať zoznam úloh");
+            }
+        });
+    }
+
+    // GET_TASK_DETAIL Detail konkrétnej úlohy a odovzdania
+    private void handleGetTaskDetail(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int taskId = payload.get("taskId").asInt();
+                Map<String, Object> detail = studentService.getTaskDetail(taskId, ctx);
+                sendResponse(conn, "TASK_DETAIL", detail);
+            } catch (Exception e) {
+                log.error("Chyba v handleGetTaskDetail pre task {}", payload.get("taskId"), e);
+                sendError(conn, "Nepodarilo sa načítať detail úlohy");
+            }
+        });
+    }
+
+    // SUBMIT_TASK Odoslanie (Submit) úlohy
+    private void handleSaveSubmission(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                int taskId = payload.get("taskId").asInt();
+                String content = payload.has("content") ? payload.get("content").asText() : null;
+                String fileUrl = payload.has("fileUrl") ? payload.get("fileUrl").asText() : null;
+
+                Optional<TaskSubmission> res = studentService.submitTask(taskId, content, fileUrl, ctx);
+                if (res.isPresent()) {
+                    sendResponse(conn, "SUBMISSION_SAVED", res.get());
+                } else {
+                    sendError(conn, "Odovzdanie sa nepodarilo uložiť");
+                }
+            } catch (Exception e) {
+                log.error("Kritická chyba pri ukladaní submission", e);
+                sendError(conn, "Chyba na strane servera pri ukladaní");
+            }
         });
     }
 
