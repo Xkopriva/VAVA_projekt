@@ -61,7 +61,11 @@ public class DashboardController implements Initializable {
     private Node    dashboardContent;
     private boolean isDarkMode = false;
     private boolean isEnglish  = false;
-    private String  subProfile;  // ID sub na USER_PROFILE
+
+    // Subscription IDs for dashboard data
+    private String subProfile;
+    private String subDashMarks;
+    private String subDashEnrollments;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -88,10 +92,15 @@ public class DashboardController implements Initializable {
             if (mainScroll != null) dashboardContent = mainScroll.getContent();
         });
 
-        // Načítaj skutočné meno používateľa z backendu (ak ešte nie je v session)
+        // Load user profile if needed
         if (UserSession.get().getFullName().equals(UserSession.get().getUserEmail())
                 || UserSession.get().getFirstName().isEmpty()) {
             loadUserProfile();
+        }
+
+        // Load real grades and enrollments for dashboard
+        if (!UserSession.get().isAdmin()) {
+            loadDashboardData();
         }
     }
 
@@ -112,7 +121,60 @@ public class DashboardController implements Initializable {
         Platform.runLater(this::updateWelcomeBanner);
     }
 
-    /** Aktualizuje len welcome banner s aktuálnym menom zo session. */
+    /** Načíta reálne hodnotenia a enrollmenty pre dashboard. */
+    private void loadDashboardData() {
+        WebSocketClientService ws = WebSocketClientService.getInstance();
+
+        // Načítaj enrollmenty (počet predmetov → welcome subtitle)
+        subDashEnrollments = ws.subscribe("MY_ENROLLMENTS", this::handleDashboardEnrollments);
+        ws.sendAction("GET_MY_ENROLLMENTS", null);
+
+        // Načítaj záverečné hodnotenia → perf cards
+        subDashMarks = ws.subscribe("MY_INDEX_RECORDS", this::handleDashboardMarks);
+        ws.sendAction("GET_MY_MARKS", null);
+    }
+
+    private void handleDashboardEnrollments(JsonNode node) {
+        WebSocketClientService.getInstance().unsubscribe(subDashEnrollments);
+        JsonNode data = node.path("data");
+        int active = 0;
+        if (data.isArray()) {
+            for (JsonNode e : data) {
+                if ("ACTIVE".equals(e.path("status").asText())) active++;
+            }
+        }
+        final int activeCount = active;
+        Platform.runLater(() -> {
+            if (welcomeSub != null) {
+                boolean en = isEnglish;
+                welcomeSub.setText(activeCount > 0
+                    ? (en ? "You have " + activeCount + " active subjects this semester."
+                          : "Máš " + activeCount + " aktívnych predmetov tento semester.")
+                    : (en ? "You have upcoming deadlines this week."
+                          : "Máš nadchádzajúce termíny tento týždeň."));
+            }
+        });
+    }
+
+    private void handleDashboardMarks(JsonNode node) {
+        WebSocketClientService.getInstance().unsubscribe(subDashMarks);
+        // Marks are displayed in GradesController – here we just update badge count
+        JsonNode data = node.path("data");
+        int count = data.isArray() ? data.size() : 0;
+        Platform.runLater(() -> {
+            // Update notification badge with real marks count if > 0
+            if (notificationsAction != null && count > 0) {
+                // Find badge label and update
+                notificationsAction.getChildren().stream()
+                    .filter(n -> n instanceof javafx.scene.control.Label lbl
+                        && lbl.getStyleClass().contains("notification-badge"))
+                    .findFirst()
+                    .ifPresent(n -> ((javafx.scene.control.Label) n).setText(String.valueOf(Math.min(count, 9))));
+            }
+        });
+    }
+
+    /** Aktualizuje welcome banner s menom používateľa. */
     private void updateWelcomeBanner() {
         boolean en      = isEnglish;
         boolean teacher = UserSession.get().isTeacher();
@@ -159,7 +221,7 @@ public class DashboardController implements Initializable {
 
     @FXML private void handleAlgebra() {
         setActiveNavItem("algebra");
-        loadView("course-detail-view.fxml");
+        loadView("submissions-view.fxml"); // Changed from course-detail-view.fxml
     }
 
     @FXML private void handleCourses() {
@@ -174,17 +236,26 @@ public class DashboardController implements Initializable {
 
     @FXML private void handleLogout() {
         try {
-            // Vymaž session
             UserSession.get().setRole(UserSession.Role.STUDENT);
             UserSession.get().setFirstName("");
             UserSession.get().setLastName("");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("login-view.fxml"));
-            Scene loginScene  = new Scene(loader.load(), 1920, 1080);
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource("login-view.fxml"));
+            loader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
+            Scene loginScene = new Scene(loader.load(), 1280, 800);
             loginScene.getStylesheets().add(
                 getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
             javafx.stage.Stage stage = (javafx.stage.Stage) darkModeToggle.getScene().getWindow();
+            stage.setTitle("BAIS – Lepší Akademický Systém");
             stage.setScene(loginScene);
-            stage.setFullScreen(true);
+            if (!stage.isMaximized()) stage.setMaximized(true);
+
+            // Workaround pre fullscreen problém po odhlásení
+            Platform.runLater(() -> {
+                stage.setMaximized(false); // Zmenší okno na normálny stav
+                stage.setMaximized(true);  // Okamžite ho znova maximalizuje
+            });
+
         } catch (IOException e) { e.printStackTrace(); }
     }
 

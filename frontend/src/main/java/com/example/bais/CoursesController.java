@@ -57,13 +57,16 @@ public class CoursesController implements Initializable {
         if (data.isArray()) {
             int idx = 0;
             for (JsonNode e : data) {
-                String code   = e.path("subjectCode").asText("");
-                String name   = e.path("subjectName").asText("");
+                String code    = e.path("subjectCode").asText("");
+                String name    = e.path("subjectName").asText("");
                 int    credits = e.path("credits").asInt(0);
-                String status = e.path("status").asText("ACTIVE");
+                String status  = e.path("status").asText("ACTIVE");
 
                 if (code.isEmpty()) code = "Sub " + e.path("subjectId").asInt();
                 if (name.isEmpty()) name = code;
+
+                // Zobrazujeme len kurzy v aktuálnom semestri (ACTIVE)
+                if (!"ACTIVE".equals(status)) continue;
 
                 String accent = ACCENTS[idx % ACCENTS.length];
                 courses.add(new CourseItem(code, name, credits, status, accent));
@@ -73,6 +76,7 @@ public class CoursesController implements Initializable {
 
         Platform.runLater(this::buildUI);
     }
+
 
     private void showLoading() {
         coursesRoot.getChildren().clear();
@@ -85,10 +89,8 @@ public class CoursesController implements Initializable {
     private void buildUI() {
         boolean en = UserSession.get().isEnglish();
 
-        // Count only active / passed enrollments
-        long activeCount  = courses.stream().filter(c -> "ACTIVE".equals(c.status())).count();
-        long passedCount  = courses.stream().filter(c -> "PASSED".equals(c.status())).count();
-        int  totalCredits = courses.stream().mapToInt(CourseItem::credits).sum();
+        // Všetky sú ACTIVE (filtrujeme v handleEnrollments)
+        int totalCredits = courses.stream().mapToInt(CourseItem::credits).sum();
 
         coursesRoot.getChildren().clear();
         coursesRoot.setSpacing(16);
@@ -98,13 +100,14 @@ public class CoursesController implements Initializable {
         HBox titleRow = new HBox(16);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
-        VBox titleBlock = new VBox(4);
-        Label title = new Label(en ? "Enrolled Courses" : "Zapísané kurzy");
+        VBox titleBlock = new VBox(6);
+        Label title = new Label(en ? "Current Courses" : "Aktuálne kurzy");
         title.setStyle("-fx-font-size:32px;-fx-font-weight:bold;");
         title.getStyleClass().add("welcome-title");
         Label sub = new Label(
             courses.size() + " " + (en ? "subjects" : "predmetov") + " • " +
-            totalCredits   + " " + (en ? "credits"  : "kreditov"));
+            totalCredits   + " " + (en ? "credits"  : "kreditov") + " • " +
+            (en ? "Current semester" : "Aktuálny semester"));
         sub.getStyleClass().add("welcome-sub");
         titleBlock.getChildren().addAll(title, sub);
         HBox.setHgrow(titleBlock, Priority.ALWAYS);
@@ -113,11 +116,12 @@ public class CoursesController implements Initializable {
         // Summary stats
         HBox stats = new HBox(12);
         stats.getChildren().addAll(
-            statCard(String.valueOf(courses.size()), en ? "Subjects"   : "Predmetov"),
-            statCard(String.valueOf(totalCredits),   en ? "Credits"    : "Kreditov"),
-            statCard(String.valueOf(activeCount),    en ? "In Progress": "Prebieha"),
-            statCard(String.valueOf(passedCount),    en ? "Completed"  : "Ukončené")
+            statCard(String.valueOf(courses.size()), en ? "Subjects"    : "Predmetov"),
+            statCard(String.valueOf(totalCredits),   en ? "Credits"     : "Kreditov"),
+            statCard(String.valueOf(courses.size()), en ? "In Progress" : "Prebieha"),
+            statCard("0",                            en ? "Completed"   : "Ukončené")
         );
+
 
         // Course cards
         VBox cardList = new VBox(12);

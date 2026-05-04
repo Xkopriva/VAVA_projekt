@@ -1,5 +1,7 @@
 package com.example.bais;
 
+import javafx.stage.Stage;
+
 /**
  * Simple session singleton that carries login-time state
  * (role, language, user name) across controllers without a framework.
@@ -14,9 +16,11 @@ public class UserSession {
     private boolean english   = false;
     private String  userEmail;
     private int     userId;
-    // Meno načítané z backendu po prihlásení
     private String  firstName = "";
     private String  lastName  = "";
+
+    // Referencie na primárne okno – pre navigáciu bez fullscreen
+    private Stage   primaryStage;
 
     private UserSession() {}
 
@@ -41,6 +45,9 @@ public class UserSession {
     public void   setFirstName(String n)       { this.firstName = n == null ? "" : n; }
     public String getLastName()                { return lastName; }
     public void   setLastName(String n)        { this.lastName = n == null ? "" : n; }
+
+    public Stage  getPrimaryStage()            { return primaryStage; }
+    public void   setPrimaryStage(Stage s)     { this.primaryStage = s; }
 
     /** Celé meno alebo fallback na email. */
     public String getFullName() {

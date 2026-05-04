@@ -204,6 +204,17 @@
 .perf-bar-hi  { -fx-background-color: #06b6d4; }
 .perf-bar-mid { -fx-background-color: #475569; }
 
+/* ── PROGRESS CREDITS (Dark Mode) ──────────────── */
+.progress-credits {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-weight: bold;
+}
+.progress-credits-value {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+
 /* ── DEGREE PROGRESS ── */
 .progress-ring {
     -fx-min-width: 72; -fx-min-height: 72; -fx-background-radius: 36;
@@ -236,18 +247,176 @@
 .view-toggle-group  { -fx-border-color: #334155; -fx-border-radius: 8; -fx-background-color: #1e293b; -fx-background-radius: 8; }
 .view-toggle-btn    { -fx-text-fill: #94a3b8; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 5 14; }
 .view-toggle-active { -fx-background-color: #334155; -fx-background-radius: 8; -fx-text-fill: #e2e8f0; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5 14; }
-.calendar-grid             { -fx-background-color: #1a2744; -fx-border-color: #2d3f5e; -fx-border-radius: 12; -fx-border-width: 1; }
-.calendar-day-header       { -fx-background-color: #1e2d4a; }
-.calendar-day-header-today { -fx-background-color: #0c2a3f; }
-.calendar-day-name         { -fx-text-fill: #94a3b8; }
-.calendar-day-name-today   { -fx-text-fill: #06b6d4; }
-.calendar-day-num          { -fx-text-fill: #e2e8f0; }
-.calendar-day-num-today    { -fx-text-fill: #06b6d4; }
-.calendar-cell             { -fx-background-color: #1a2744; -fx-border-color: #2d3f5e; -fx-border-width: 1 0 0 0; }
-.calendar-event-prednaska  { -fx-background-color: #93c5fd; -fx-background-radius: 8; }
-.calendar-event-cvicenie   { -fx-background-color: #86efac; -fx-background-radius: 8; }
-.calendar-event-odovzdanie { -fx-background-color: #fde68a; -fx-background-radius: 8; }
-.calendar-event-taskdue    { -fx-background-color: #fca5a5; -fx-background-radius: 8; }
-.calendar-event-default    { -fx-background-color: #e2e8f0; -fx-background-radius: 8; }
 
-.content-placeholder { -fx-font-size: 16px; -fx-text-fill: #64748b; }
+/* DARK MODE CALENDAR FIX - bolo biele, teraz tmavé */
+.calendar-grid-container {
+    -fx-background-color: #1e293b; /* Dark background for the container */
+    -fx-background-radius: 8;
+}
+.calendar-grid {
+    -fx-background-color: #1e293b; /* Dark background for the grid itself */
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+.calendar-day-header-box { /* New style for the VBox holding day/num */
+    -fx-background-color: #1e293b;
+}
+.calendar-day-header-box-today { /* New style for today's day header */
+    -fx-background-color: #0c2a40;
+}
+.calendar-day-name { -fx-text-fill: #94a3b8; }
+.calendar-day-name-today { -fx-text-fill: #06b6d4; }
+.calendar-day-num { -fx-text-fill: #e2e8f0; }
+.calendar-day-num-today { -fx-text-fill: #06b6d4; }
+.calendar-time-header { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; }
+.calendar-cell { -fx-background-color: #1a2744; -fx-border-color: #475569; -fx-border-width: 1 0 1 0; }
+
+/* Event cards in dark mode */
+.event-card {
+    -fx-background-radius: 6;
+    -fx-padding: 6 8;
+}
+.event-card-prednaska {
+    -fx-background-color: #1e3a5f; /* Darker blue */
+    -fx-border-color: transparent transparent transparent #60a5fa;
+    -fx-border-width: 0 0 0 3;
+    -fx-text-fill: #e0f2fe;
+}
+.event-card-cvicenie {
+    -fx-background-color: #14291f; /* Darker green */
+    -fx-border-color: transparent transparent transparent #4ade80;
+    -fx-border-width: 0 0 0 3;
+    -fx-text-fill: #dcfce7;
+}
+.event-card-odovzdanie {
+    -fx-background-color: #3d1515; /* Darker red */
+    -fx-border-color: transparent transparent transparent #f87171;
+    -fx-border-width: 0 0 0 3;
+    -fx-text-fill: #fee2e2;
+}
+.event-card-reminder {
+    -fx-background-color: #2a1d3f; /* Darker purple */
+    -fx-border-color: transparent transparent transparent #a78bfa;
+    -fx-border-width: 0 0 0 3;
+    -fx-text-fill: #ede9fe;
+}
+.event-card-type {
+    -fx-font-weight: 700;
+    -fx-font-size: 9px;
+    -fx-text-fill: #e2e8f0;
+}
+.event-card-title {
+    -fx-font-weight: 600;
+    -fx-font-size: 11px;
+    -fx-text-fill: #e2e8f0;
+}
+.event-card-time {
+    -fx-font-size: 9px;
+    -fx-text-fill: #cbd5e1;
+    -fx-font-weight: 500;
+}
+
+/* Add Reminder Dialog in dark mode */
+.add-reminder-dialog {
+    -fx-background-color: #1e293b; /* Dark background */
+}
+.add-reminder-dialog .label {
+    -fx-text-fill: #e2e8f0; /* Light text for labels */
+}
+.add-reminder-dialog .text-field {
+    -fx-background-color: #334155; /* Darker input field */
+    -fx-border-color: #475569;
+    -fx-text-fill: #e2e8f0;
+    -fx-prompt-text-fill: #94a3b8;
+}
+.add-reminder-dialog .combo-box {
+    -fx-background-color: #334155;
+    -fx-border-color: #475569;
+    -fx-text-fill: #e2e8f0;
+}
+.add-reminder-dialog .combo-box .list-cell {
+    -fx-background-color: #334155;
+    -fx-text-fill: #e2e8f0;
+}
+.add-reminder-dialog .combo-box .list-cell:hover {
+    -fx-background-color: #475569;
+}
+.add-reminder-dialog .button {
+    -fx-text-fill: white;
+}
+.add-reminder-dialog .button.cancel-button { /* Specific style for cancel button */
+    -fx-background-color: #475569;
+    -fx-text-fill: #e2e8f0;
+}
+.add-reminder-dialog .button.cancel-button:hover {
+    -fx-background-color: #64748b;
+}
+.add-reminder-dialog .button.save-button { /* Specific style for save button */
+    -fx-background-color: #7c3aed;
+}
+.add-reminder-dialog .button.save-button:hover {
+    -fx-background-color: #6d28d9;
+}
+.add-reminder-dialog .separator {
+    -fx-background-color: #334155;
+}
+.add-reminder-dialog .error-label {
+    -fx-text-fill: #f87171; /* Red for errors */
+}
+
+/* Legend in dark mode */
+.calendar-legend-label {
+    -fx-text-fill: #e2e8f0; /* Light text for legend labels */
+}
+
+/* Add Reminder Button */
+.add-reminder-button {
+    -fx-background-color: #7c3aed;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 8 18;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+.add-reminder-button:hover {
+    -fx-background-color: #6d28d9;
+}
+
+
+/* ════════════════════════════════════════════════
+   SUBMISSIONS
+   ════════════════════════════════════════════════ */
+.submission-item {
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 12;
+    -fx-padding: 15 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0, 0, 2);
+    -fx-alignment: CENTER_LEFT;
+}
+
+.submission-course-assignment {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e2e8f0;
+}
+
+.submission-deadline, .submission-status {
+    -fx-font-size: 13px;
+    -fx-text-fill: #94a3b8;
+}
+
+.submission-button {
+    -fx-background-color: #06b6d4;
+    -fx-background-radius: 8;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+
+.submission-button:hover {
+    -fx-background-color: #0891b2;
+}

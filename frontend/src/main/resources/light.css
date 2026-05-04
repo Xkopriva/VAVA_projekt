@@ -270,6 +270,17 @@
 }
 .btn-secondary:hover { -fx-background-color: #e0f2fe; }
 
+/* ── PROGRESS CREDITS (Light Mode) ──────────────── */
+.progress-credits {
+    -fx-text-fill: #1e293b;
+    -fx-font-weight: bold;
+}
+.progress-credits-value {
+    -fx-text-fill: #1e293b;
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+
 /* ── QUICK LINKS ────────────────────────── */
 .quick-link-card {
     -fx-background-color: #f0f9ff; -fx-background-radius: 10;
@@ -303,7 +314,51 @@
 .calendar-day-name-today   { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #0369a1; }
 .calendar-day-num          { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
 .calendar-day-num-today    { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #0369a1; }
-.calendar-cell             { -fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0; }
+.calendar-cell             { -fx-background-color: #ffffff; -fx-border-color: #c7d2e0; -fx-border-width: 1 0 1 0; }
+
+.calendar-grid-container { -fx-background-color: #ffffff; }
+.calendar-time-header { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b; }
+
+/* Event cards in light mode */
+.event-card {
+    -fx-background-radius: 6;
+    -fx-padding: 6 8;
+}
+.event-card-prednaska {
+    -fx-background-color: #bfdbfe;
+    -fx-border-color: transparent transparent transparent #2563eb;
+    -fx-border-width: 0 0 0 3;
+}
+.event-card-cvicenie {
+    -fx-background-color: #bbf7d0;
+    -fx-border-color: transparent transparent transparent #16a34a;
+    -fx-border-width: 0 0 0 3;
+}
+.event-card-odovzdanie {
+    -fx-background-color: #fed7aa;
+    -fx-border-color: transparent transparent transparent #dc2626;
+    -fx-border-width: 0 0 0 3;
+}
+.event-card-reminder {
+    -fx-background-color: #ddd6fe;
+    -fx-border-color: transparent transparent transparent #7c3aed;
+    -fx-border-width: 0 0 0 3;
+}
+.event-card-type {
+    -fx-font-weight: 700;
+    -fx-font-size: 9px;
+    -fx-text-fill: #1e293b;
+}
+.event-card-title {
+    -fx-font-weight: 600;
+    -fx-font-size: 11px;
+    -fx-text-fill: #1e293b;
+}
+.event-card-time {
+    -fx-font-size: 9px;
+    -fx-text-fill: #334155;
+    -fx-font-weight: 500;
+}
 
 .calendar-event-prednaska  { -fx-background-color: #93c5fd; -fx-background-radius: 8; }
 .calendar-event-cvicenie   { -fx-background-color: #86efac; -fx-background-radius: 8; }
@@ -312,3 +367,46 @@
 .calendar-event-default    { -fx-background-color: #e2e8f0; -fx-background-radius: 8; }
 
 .content-placeholder { -fx-font-size: 16px; -fx-text-fill: #94a3b8; }
+
+/* ── CALENDAR LEGEND ─────────────────────────────────── */
+.calendar-legend-label {
+    -fx-text-fill: #1e293b;
+    -fx-font-weight: 600;
+    -fx-font-size: 13px;
+}
+
+/* ════════════════════════════════════════════════
+   SUBMISSIONS
+   ════════════════════════════════════════════════ */
+.submission-item {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-padding: 15 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);
+    -fx-alignment: CENTER_LEFT;
+}
+
+.submission-course-assignment {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.submission-deadline, .submission-status {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748b;
+}
+
+.submission-button {
+    -fx-background-color: #06b6d4;
+    -fx-background-radius: 8;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+
+.submission-button:hover {
+    -fx-background-color: #0891b2;
+}

@@ -16,6 +16,7 @@
 
     <properties>
         <main.class>sk.bais.core.Main</main.class>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
@@ -56,7 +57,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.17.0</version> 
+            <version>2.17.0</version>
         </dependency>
     </dependencies>
 
@@ -75,6 +76,7 @@
                             <version>1.18.40</version>
                         </path>
                     </annotationProcessorPaths>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
             <plugin>
@@ -83,6 +85,12 @@
                 <version>3.1.1</version>
                 <configuration>
                     <mainClass>${main.class}</mainClass>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>file.encoding</key>
+                            <value>UTF-8</value>
+                        </systemProperty>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <!-- plugin pre fat jar, aby pridal vsetky kniznice aj do jaru -->
