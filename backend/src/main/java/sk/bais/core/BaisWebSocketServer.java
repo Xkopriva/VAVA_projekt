@@ -23,6 +23,7 @@ import sk.bais.dto.CalendarItemDTO;
 import sk.bais.dto.UserProfileDTO;
 import sk.bais.model.Enrollment;
 import sk.bais.model.IndexRecord;
+import sk.bais.model.Mark;
 import sk.bais.model.Notification;
 import sk.bais.model.Task;
 import sk.bais.model.TaskSubmission;
@@ -97,15 +98,23 @@ public class BaisWebSocketServer extends WebSocketServer {
 
                 // --- TEACHER AKCIE ---
                 case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
+
                 case "ADD_MARK" -> handleAddMark(conn, payload);
+                case "UPDATE_MARK" -> handleUpdateMark(conn, payload);
+                case "DELETE_MARK" -> handleDeleteMark(conn, payload);
+                
                 case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
                 case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
                 case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
+
                 case "CREATE_ENROLLMENT" -> handleCreateEnrollment(conn, payload);
+                case "UPDATE_ENROLLMENT" -> handleUpdateEnrollment(conn, payload);
+                case "DELETE_ENROLLMENT" -> handleDeleteEnrollment(conn, payload);
+
                 case "CREATE_TASK" -> handleCreateTask(conn, payload);
                 case "GRADE_SUBMISSION" -> handleGradeSubmission(conn, payload);
                 case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
-
+                
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
@@ -500,6 +509,87 @@ public class BaisWebSocketServer extends WebSocketServer {
                 created -> sendResponse(conn, "FINAL_MARK_RECORDED", created),
                 () -> sendError(conn, "Could not record final mark")
             );
+        });
+    }
+
+    /**
+     * Handler pre UPDATE_ENROLLMENT
+     */
+    private void handleUpdateEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                Enrollment e = mapper.convertValue(payload, Enrollment.class);
+                boolean success = teacherService.updateEnrollment(e, ctx);
+                if (success) {
+                    sendResponse(conn, "ENROLLMENT_UPDATED", e);
+                } else {
+                    sendError(conn, "Nepodarilo sa upraviť zápis.");
+                }
+            } catch (Exception ex) {
+                log.error("Chyba pri spracovaní UPDATE_ENROLLMENT", ex);
+                sendError(conn, "Neplatné dáta pre zápis.");
+            }
+        });
+    }
+
+    /**
+     * Handler pre DELETE_ENROLLMENT
+     */
+    private void handleDeleteEnrollment(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (!payload.has("id")) {
+                sendError(conn, "Chýba ID zápisu pre vymazanie.");
+                return;
+            }
+            
+            int enrollmentId = payload.get("id").asInt();
+            
+            // Predpokladáme, že service metóda deleteEnrollment už obsahuje isGuarantor kontrolu
+            boolean success = teacherService.deleteEnrollment(enrollmentId, ctx);
+            
+            if (success) {
+                log.info("Enrollment {} úspešne vymazaný cez WS (userId={})", enrollmentId, ctx.getUserId());
+                sendResponse(conn, "ENROLLMENT_DELETED", enrollmentId);
+            } else {
+                sendError(conn, "Nepodarilo sa vymazať zápis. Overte svoje oprávnenia.");
+            }
+        });
+    }
+
+    /**
+     * Handler pre DELETE_MARK
+     */
+    private void handleDeleteMark(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload.has("markId")) {
+                int mid = payload.get("markId").asInt();
+                boolean success = teacherService.deleteMark(mid, ctx);
+                if (success) {
+                    sendResponse(conn, "MARK_DELETED", mid);
+                } else {
+                    sendError(conn, "Znamku sa nepodarilo vymazať.");
+                }
+            }
+        });
+    }
+
+    /**
+     * Handler pre UPDATE_MARK
+     */
+    private void handleUpdateMark(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            try {
+                Mark m = mapper.convertValue(payload, Mark.class);
+                boolean success = teacherService.updateMark(m, ctx);
+                if (success) {
+                    sendResponse(conn, "MARK_UPDATED", m);
+                } else {
+                    sendError(conn, "Nepodarilo sa upraviť známku.");
+                }
+            } catch (Exception ex) {
+                log.error("Chyba pri spracovaní UPDATE_MARK", ex);
+                sendError(conn, "Neplatné dáta pre známku.");
+            }
         });
     }
 

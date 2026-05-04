@@ -120,8 +120,8 @@ public class TeacherService {
     }
 
     /**
-     * Upraví existujúce hodnotenie.
-     * Vyžaduje oprávnenie marks:write.
+     * Upraví existujúce hodnotenie a informuje študenta.
+     * Vyžaduje oprávnenie marks:write a učiteľ musí byť garantom predmetu.
      */
     public boolean updateMark(Mark mark, AuthContext ctx) {
         if (!ctx.hasPermission("marks:write")) {
@@ -129,14 +129,87 @@ public class TeacherService {
             return false;
         }
         try {
+            // 1. Bezpečnostné overenie: Má učiteľ právo meniť známky pre tento enrollment?
+            if (!isGuarantorOfEnrollment(mark.getEnrollmentId(), ctx)) {
+                log.warn("Teacher {} nie je autorizovaný upraviť známku pre enrollment {}", ctx.getUserId(), mark.getEnrollmentId());
+                return false;
+            }
+
+            // 2. Samotná aktualizácia v DB
             boolean updated = markDAO.update(mark);
-            if (updated) log.info("Teacher userId={} upravil známku id={}", ctx.getUserId(), mark.getId());
+            
+            if (updated) {
+                log.info("Teacher userId={} upravil známku id={}", ctx.getUserId(), mark.getId());
+                
+                // 3. Notifikácia pre študenta o zmene hodnotenia
+                Optional<Enrollment> enrOpt = enrollmentDAO.getById(mark.getEnrollmentId());
+                enrOpt.ifPresent(enr -> {
+                    createNotification(
+                        enr.getStudentId(), 
+                        ctx.getUserId(), 
+                        Notification.Type.MARK_ADDED,
+                        "Zmena hodnotenia", 
+                        "Vaše body za '" + mark.getTitle() + "' boli aktualizované.", 
+                        mark.getId(), 
+                        enr.getSubjectId(), 
+                        mark.getTaskSubmissionId()
+                    );
+                });
+            }
             return updated;
         } catch (SQLException e) {
             log.error("Chyba pri úprave známky id={}", mark.getId(), e);
             return false;
         }
     }
+
+    /**
+     * Upraví existujúci zápis (napr. zmena pokusu alebo manuálna zmena statusu).
+     */
+    public boolean updateEnrollment(Enrollment e, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write")) {
+            log.warn("Teacher {} nemá právo upravovať zápisy", ctx.getUserId());
+            return false;
+        }
+        try {
+            // Overenie, či učiteľ garantuje predmet daného zápisu
+            if (!isGuarantorOfEnrollment(e.getId(), ctx)) return false;
+
+            boolean updated = enrollmentDAO.update(e);
+            if (updated) {
+                log.info("Teacher {} upravil enrollment id={}", ctx.getUserId(), e.getId());
+            }
+            return updated;
+        } catch (SQLException ex) {
+            log.error("Chyba pri úprave enrollmentu {}", e.getId(), ex);
+            return false;
+        }
+    }
+
+    /**
+     * Vymaže čiastkové hodnotenie (Mark).
+     */
+    public boolean deleteMark(int markId, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:write")) return false;
+        try {
+            Optional<Mark> markOpt = markDAO.getById(markId);
+            if (markOpt.isEmpty()) return false;
+
+            // Kontrola, či učiteľ môže manipulovať so známkami tohto enrollmentu
+            if (!isGuarantorOfEnrollment(markOpt.get().getEnrollmentId(), ctx)) return false;
+
+            boolean deleted = markDAO.delete(markId);
+            if (deleted) {
+                log.info("Teacher {} vymazal známku id={}", ctx.getUserId(), markId);
+                // Tu by sa dala poslať notifikácia študentovi, že známka bola odstránená
+            }
+            return deleted;
+        } catch (SQLException e) {
+            log.error("Chyba pri mazaní známky id={}", markId, e);
+            return false;
+        }
+    }
+
 
     /**
      * Zapíše finálnu známku do indexu (IndexRecord).
