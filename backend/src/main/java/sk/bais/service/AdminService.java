@@ -185,6 +185,12 @@ public class AdminService {
             return false;
         }
 
+        // Ochrana: Admin nemôže deaktivovať sám seba
+        if (ctx.getUserId() == targetUserId) {
+            log.warn("Admin id={} sa pokúsil deaktivovať svoj vlastný účet. Operácia zamietnutá.", ctx.getUserId());
+            return false;
+        }
+
         try {
             return userDAO.setActive(targetUserId, false);
         } catch (SQLException e) {
@@ -207,16 +213,26 @@ public class AdminService {
         }
     }
 
-    // Pre Admin prehlad, pridava moznost zobrazit vsetkych zaregistrovanych uzivatelov
     public List<User> getAllUsers(AuthContext ctx) {
         if (!ctx.hasPermission("users:read")) {
             log.warn("Zamietnutý prístup k zoznamu: userId={}", ctx.getUserId());
             return Collections.emptyList();
         }
+
         try {
-            return userDAO.list();
+            // 1. Získame základný zoznam userov
+            List<User> users = userDAO.list();
+
+            // 2. Pre každého usera dohráme jeho role z prepojovacej tabuľky
+            for (User user : users) {
+                // Tu voláme tvoju existujúcu metódu z UserDAO, ktorá robí JOIN na role
+                List<String> roles = userDAO.getUserRoles(user.getId());
+                user.setRoles(roles); 
+            }
+
+            return users;
         } catch (SQLException e) {
-            log.error("Chyba pri načítaní používateľov", e);
+            log.error("Chyba pri načítaní používateľov s rolami", e);
             return Collections.emptyList();
         }
     }

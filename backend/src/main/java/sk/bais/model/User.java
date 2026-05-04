@@ -1,6 +1,7 @@
 package sk.bais.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,6 +29,7 @@ public class User {
     private String profilePictureUrl;   // nullable VARCHAR(500)
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private List<String> roles;         // nepekne, ale pridal som sem pomocny atribut aby sa dali lepsie posielat role na frontend
 
     // Konstruktor pre INSERT — bez id, createdAt, updatedAt (generuje DB)
     public User(String email, String firstName, String lastName,
