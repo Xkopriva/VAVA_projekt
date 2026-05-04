@@ -94,6 +94,8 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
                 case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
                 case "DELETE_SUBJECT" -> handleDeleteSubject(conn, payload);
+                case "ACTIVATE_USER" -> handleActivateUser(conn, payload);
+                case "REMOVE_GUARANTOR" -> handleRemoveGuarantor(conn, payload);
                 
 
                 // --- TEACHER AKCIE ---
@@ -102,7 +104,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "ADD_MARK" -> handleAddMark(conn, payload);
                 case "UPDATE_MARK" -> handleUpdateMark(conn, payload);
                 case "DELETE_MARK" -> handleDeleteMark(conn, payload);
-                
+
                 case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
                 case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
                 case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
@@ -734,6 +736,41 @@ public class BaisWebSocketServer extends WebSocketServer {
         });
     }
 
+    /**
+     * Handler pre ACTIVATE_USER
+     */
+    private void handleActivateUser(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload.has("userId")) {
+                int targetId = payload.get("userId").asInt();
+                boolean success = adminService.activateUser(targetId, ctx);
+                
+                if (success) {
+                    sendResponse(conn, "USER_ACTIVATED", targetId);
+                } else {
+                    sendError(conn, "Nepodarilo sa aktivovať používateľa.");
+                }
+            }
+        });
+    }
+
+    /**
+     * Handler pre REMOVE_GUARANTOR
+     */
+    private void handleRemoveGuarantor(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload.has("subjectId")) {
+                int subjectId = payload.get("subjectId").asInt();
+                boolean success = adminService.removeGuarantor(subjectId, ctx);
+                
+                if (success) {
+                    sendResponse(conn, "GUARANTOR_REMOVED", subjectId);
+                } else {
+                    sendError(conn, "Nepodarilo sa odstrániť garanta z predmetu.");
+                }
+            }
+        });
+    }
 
 
     // -------------------------------------------------------------------------

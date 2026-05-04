@@ -124,6 +124,60 @@ public class AdminService {
         }
     }
 
+    /**
+     * Opätovne aktivuje deaktivované konto používateľa.
+     */
+    public boolean activateUser(int targetUserId, AuthContext ctx) {
+        if (!ctx.hasPermission("users:manage")) {
+            log.warn("Zamietnutý pokus o aktiváciu používateľa: userId={}", ctx.getUserId());
+            return false;
+        }
+
+        try {
+            boolean success = userDAO.setActive(targetUserId, true);
+            if (success) {
+                log.info("Admin id={} aktivoval používateľa id={}", ctx.getUserId(), targetUserId);
+            }
+            return success;
+        } catch (SQLException e) {
+            log.error("Chyba pri aktivácii používateľa id={}", targetUserId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Odstráni garanta z predmetu (nastaví guarantor_id na NULL).
+     */
+    public boolean removeGuarantor(int subjectId, AuthContext ctx) {
+        if (!ctx.hasPermission("subjects:manage")) {
+            log.warn("Zamietnutý pokus o odstránenie garanta: userId={}", ctx.getUserId());
+            return false;
+        }
+
+        try {
+            Optional<Subject> subjectOpt = subjectDAO.getById(subjectId);
+            if (subjectOpt.isEmpty()) {
+                log.error("Nepodarilo sa odstrániť garanta: Predmet id={} neexistuje", subjectId);
+                return false;
+            }
+
+            Subject subject = subjectOpt.get();
+            Integer oldGuarantor = subject.getGuarantorId();
+            subject.setGuarantorId(null); // Odstránenie garanta
+
+            boolean success = subjectDAO.update(subject);
+            if (success) {
+                log.info("Admin id={} odstránil garanta (pôvodne id={}) z predmetu id={}", 
+                        ctx.getUserId(), oldGuarantor, subjectId);
+            }
+            return success;
+
+        } catch (SQLException e) {
+            log.error("Chyba pri odstraňovaní garanta z predmetu id={}", subjectId, e);
+            return false;
+        }
+    }
+
     // Deaktivuje uzivatela v DB
     public boolean deactivateUser(int targetUserId, AuthContext ctx) {
         if (!ctx.hasPermission("users:manage")) {

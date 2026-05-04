@@ -24,4 +24,5 @@ public class CalendarItemDTO {
     private Integer durationMinutes;    // Pre tasky môžeme dať default napr. 0 alebo 30
     private String room;                // Len pre eventy
     private int subjectId;
+    private String subjectCode;         // posielame aj subjectId, ale lepsie poslat aj subjectCode
 }
