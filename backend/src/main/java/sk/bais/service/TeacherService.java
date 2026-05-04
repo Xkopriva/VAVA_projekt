@@ -13,11 +13,17 @@ import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
 import sk.bais.model.Enrollment;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
+import sk.bais.model.Notification;
 import sk.bais.model.Subject;
+import sk.bais.model.Task;
+import sk.bais.model.TaskSubmission;
 
 /**
  * Service vrstva pre učiteľa.
@@ -33,6 +39,9 @@ public class TeacherService {
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
     private final IndexRecordDAO indexRecordDAO;
+    private final NotificationDAO notificationDAO;
+    private final TaskDAO taskDAO;
+    private final TaskSubmissionDAO taskSubmissionDAO;
 
     /**
      * Vráti predmety ktoré daný učiteľ garantuje (guarantor_id == ctx.userId).
@@ -200,6 +209,99 @@ public class TeacherService {
         } catch (SQLException e) {
             log.error("Chyba pri načítaní bodov pre enrollmentId={}", enrollmentId, e);
             return Collections.emptyList();
+        }
+    }
+
+    public Optional<Enrollment> createEnrollment(Enrollment e, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write")) return Optional.empty();
+        try {
+            Enrollment created = enrollmentDAO.create(e);
+            log.info("Teacher {} vytvoril zápis pre študenta {}", ctx.getUserId(), e.getStudentId());
+            
+            // Notifikácia pre študenta
+            createNotification(e.getStudentId(), ctx.getUserId(), Notification.Type.ENROLLMENT_OPEN, 
+                "Nový zápis", "Boli ste zapísaný na predmet.", null, e.getSubjectId(), null);
+                
+            return Optional.of(created);
+        } catch (SQLException ex) {
+            log.error("Chyba pri vytváraní zápisu", ex);
+            return Optional.empty();
+        }
+    }
+
+    public boolean deleteEnrollment(int id, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write")) return false;
+        try {
+            return enrollmentDAO.delete(id);
+        } catch (SQLException e) {
+            log.error("Chyba pri mazaní zápisu id={}", id, e);
+            return false;
+        }
+    }
+
+    // --- TASKS ---
+
+    public Optional<Task> createTask(Task t, AuthContext ctx) {
+        if (!ctx.hasPermission("tasks:write")) return Optional.empty();
+        try {
+            t.setCreatedBy(ctx.getUserId());
+            Task created = taskDAO.create(t);
+            
+            // Notifikácia všetkým študentom na predmete (zjednodušene)
+            List<Enrollment> students = enrollmentDAO.list().stream()
+                    .filter(e -> e.getSubjectId() == t.getSubjectId()).toList();
+            for (Enrollment s : students) {
+                createNotification(s.getStudentId(), ctx.getUserId(), Notification.Type.TASK_DUE,
+                    "Nové zadanie: " + t.getTitle(), "Bolo pridané nové zadanie.", null, t.getSubjectId(), t.getId());
+            }
+            return Optional.of(created);
+        } catch (SQLException e) {
+            log.error("Chyba pri vytváraní úlohy", e);
+            return Optional.empty();
+        }
+    }
+
+    // --- GRADING SUBMISSIONS ---
+
+    public boolean gradeSubmission(int submissionId, TaskSubmission.Status status, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:write")) return false;
+        try {
+            Optional<TaskSubmission> tsOpt = taskSubmissionDAO.getById(submissionId);
+            if (tsOpt.isEmpty()) return false;
+            
+            TaskSubmission ts = tsOpt.get();
+            ts.setStatus(status);
+            ts.setGradedBy(ctx.getUserId());
+            ts.setGradedAt(java.time.OffsetDateTime.now());
+            
+            boolean ok = taskSubmissionDAO.update(ts);
+            if (ok) {
+                createNotification(ts.getStudentId(), ctx.getUserId(), Notification.Type.MARK_ADDED,
+                    "Zadanie ohodnotené", "Vaše odovzdané zadanie bolo skontrolované.", null, null, ts.getTaskId());
+            }
+            return ok;
+        } catch (SQLException e) {
+            log.error("Chyba pri hodnotení odovzdania id={}", submissionId, e);
+            return false;
+        }
+    }
+
+    // Helper pre notifikácie
+    private void createNotification(int recipientId, Integer senderId, Notification.Type type, 
+                                String title, String msg, Integer markId, Integer subId, Integer taskId) {
+        try {
+            Notification n = new Notification();
+            n.setRecipientId(recipientId);
+            n.setSenderId(senderId);
+            n.setType(type);
+            n.setTitle(title);
+            n.setMessage(msg);
+            n.setRelatedMarkId(markId);
+            n.setRelatedSubjectId(subId);
+            n.setRelatedTaskId(taskId);
+            notificationDAO.create(n);
+        } catch (SQLException e) {
+            log.error("Nepodarilo sa vytvoriť notifikáciu pre {}", recipientId, e);
         }
     }
 
