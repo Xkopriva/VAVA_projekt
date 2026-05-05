@@ -1,5 +1,7 @@
 package sk.bais.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,5 +17,6 @@ public class Locale {
 
     private String code;        // PK VARCHAR(10), napr. 'sk', 'en'
     private String name;        // VARCHAR(50), napr. 'Slovenčina'
+    @JsonProperty("isDefault")
     private boolean isDefault;  // prave jedna polozka ma TRUE
 }

@@ -1,9 +1,15 @@
 package sk.bais.service;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +17,29 @@ import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.StudentDAO;
+import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.SubjectTranslationDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
+import sk.bais.dto.CalendarItemDTO;
+import sk.bais.dto.EnrollmentWithSubjectDTO;
 import sk.bais.model.Enrollment;
+import sk.bais.model.Event;
+import sk.bais.model.EventTranslation;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
+import sk.bais.model.Notification;
 import sk.bais.model.Student;
+import sk.bais.model.Subject;
+import sk.bais.model.SubjectTranslation;
+import sk.bais.model.Task;
+import sk.bais.model.TaskSubmission;
 
 /**
  * Service vrstva pre studenta.
@@ -39,6 +61,26 @@ public class StudentService {
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
     private final IndexRecordDAO indexRecordDAO;
+    private final SubjectDAO subjectDAO;
+    private final SubjectTranslationDAO subjectTranslationDAO;
+    private final EventDAO eventDAO;
+    private final EventTranslationDAO eventTranslationDAO;
+    private final NotificationDAO notificationDAO;
+    private final TaskDAO taskDAO;
+    private final TaskSubmissionDAO taskSubmissionDAO;
+    
+    // --- CAFFEINE CACHE ---
+    // Názvy predmetov (key: subjectId_locale) - platné 1 hodinu
+    private final Cache<String, String> subjectNameCache = Caffeine.newBuilder()
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .maximumSize(500)
+            .build();
+
+    // Detail predmetu (key: subjectId_locale) - platné 1 hodinu
+    private final Cache<String, Map<String, Object>> subjectDetailCache = Caffeine.newBuilder()
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .maximumSize(500)
+            .build();
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -74,6 +116,49 @@ public class StudentService {
         }
     }
 
+    /**
+     * Vyčistená verzia pôvodného handleGetMyEvents.
+     * Získava udalosti študenta transformované na jednoduchý zoznam pre UI.
+     */
+    public List<Map<String, Object>> getMyEventsSimpleList(AuthContext ctx, String locale) {
+        try {
+            // Využijeme už existujúcu čistú metódu getMyEnrollments
+            List<EnrollmentWithSubjectDTO> enrollments = getMyEnrollments(ctx);
+            List<Map<String, Object>> result = new ArrayList<>();
+
+            for (EnrollmentWithSubjectDTO enr : enrollments) {
+                // Používame injektované eventDAO
+                List<Event> events = eventDAO.listBySubject(enr.getSubjectId());
+                
+                for (Event ev : events) {
+                    Map<String, Object> map = new HashMap<>();
+                    
+                    // Skúsime získať preložený titulok, inak použijeme typ
+                    String displayTitle = ev.getType() != null ? ev.getType().name() : "EVENT";
+                    Optional<EventTranslation> trans = eventTranslationDAO.get(ev.getId(), locale);
+                    if (trans.isPresent()) {
+                        displayTitle = trans.get().getTitle();
+                    }
+
+                    map.put("title", displayTitle);
+                    map.put("type", ev.getType() != null ? ev.getType().name() : "PREDNASKA");
+                    map.put("subjectCode", enr.getSubjectCode());
+                    
+                    if (ev.getScheduledAt() != null) {
+                        map.put("scheduledAt", ev.getScheduledAt().toString());
+                    }
+                    
+                    map.put("durationMinutes", ev.getDurationMinutes() != null ? ev.getDurationMinutes() : 90);
+                    result.add(map);
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            log.error("Chyba v getMyEventsSimpleList pre studenta {}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
     
     // Zápis na predmet — len STUDENT, len sám seba
     public Optional<Enrollment> enrollInSubject(int subjectId, int semesterId, AuthContext ctx) {
@@ -106,32 +191,97 @@ public class StudentService {
     }
 
     
-    // Moje zápisy — student vidí len svoje
-    public List<Enrollment> getMyEnrollments(AuthContext ctx) {
+    /**
+     * Moje zápisy — obohacené o polia predmetu (subjectCode, subjectName, credits).
+     * Fronted (GradesController, ProgressController, CoursesController) potrebuje tieto
+     * polia priamo v enrollment objekte.
+     */
+    public List<EnrollmentWithSubjectDTO> getMyEnrollments(AuthContext ctx) {
         try {
-            return enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Enrollment> raw = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<EnrollmentWithSubjectDTO> result = new ArrayList<>();
+
+            for (Enrollment e : raw) {
+                String code  = "";
+                String name  = "";
+                int    creds = 0;
+
+                try {
+                    Optional<Subject> subjectOpt = subjectDAO.getById(e.getSubjectId());
+                    if (subjectOpt.isPresent()) {
+                        Subject s = subjectOpt.get();
+                        code  = s.getCode() != null ? s.getCode() : "";
+                        name  = resolveSubjectName(s);
+                        creds = s.getCredits();
+                    }
+                } catch (SQLException ex) {
+                    log.warn("Nepodarilo sa načítať predmet subjectId={} pre enrollment id={}", e.getSubjectId(), e.getId());
+                }
+
+                result.add(new EnrollmentWithSubjectDTO(
+                        e.getId(),
+                        e.getStudentId(),
+                        e.getSubjectId(),
+                        e.getSemesterId(),
+                        e.getAttemptNumber(),
+                        e.getStatus() != null ? e.getStatus().name() : "ACTIVE",
+                        code,
+                        name,
+                        creds
+                ));
+            }
+
+            log.info("Načítaných {} zápisov (s predmetmi) pre userId={}", result.size(), ctx.getUserId());
+            return result;
         } catch (SQLException e) {
             log.error("Chyba pri načítaní zápisov pre userId={}", ctx.getUserId(), e);
             return Collections.emptyList();
         }
     }
 
+    /**
+     * Vráti ľudsky čitateľný názov predmetu z tabuľky subject_translation.
+     * Priorita: slovenský preklad → anglický preklad → kód predmetu.
+     * POUŽÍVA CACHE.
+     */
+    private String resolveSubjectName(Subject s) {
+        String cacheKey = s.getId() + "_name";
+        return subjectNameCache.get(cacheKey, k -> {
+            try {
+                // Skús SK preklad
+                java.util.Optional<SubjectTranslation> sk = subjectTranslationDAO.get(s.getId(), "sk");
+                if (sk.isPresent() && sk.get().getName() != null && !sk.get().getName().isBlank()) {
+                    return sk.get().getName();
+                }
+                // Fallback EN preklad
+                java.util.Optional<SubjectTranslation> en = subjectTranslationDAO.get(s.getId(), "en");
+                if (en.isPresent() && en.get().getName() != null && !en.get().getName().isBlank()) {
+                    return en.get().getName();
+                }
+            } catch (Exception ex) {
+                log.warn("Nepodarilo sa načítať preklad pre subjectId={}", s.getId());
+            }
+            // Posledný fallback — kód predmetu
+            return s.getCode() != null ? s.getCode() : "Predmet " + s.getId();
+        });
+    }
+
     // ziska BODY v enrollmente pre daneho studenta
     public List<Mark> getMyPoints(int enrollmentId, AuthContext ctx) {
-    try {
-        return markDAO.listByEnrollment(enrollmentId, ctx.getUserId());
-    } catch (SQLException e) {
-        log.error("Chyba pri načítaní bodov pre enrollment {}", enrollmentId, e);
-        return Collections.emptyList();
+        try {
+            return markDAO.listByEnrollment(enrollmentId, ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní bodov pre enrollment {}", enrollmentId, e);
+            return Collections.emptyList();
+        }
     }
-}
     // Ziska vsetky znamky pre daneho studenta
     public List<IndexRecord> getMyFinalMarks(AuthContext ctx) {
         if (!ctx.hasPermission("marks:read")) {
             return Collections.emptyList();
         }
         try {
-            // studentId berieme z kontextu prihláseného užívateľa[cite: 9]
+            // studentId berieme z kontextu prihláseného užívateľa
             return indexRecordDAO.listByStudentId(ctx.getUserId());
         } catch (SQLException e) {
             log.error("Chyba pri načítaní známok z indexu", e);
@@ -139,4 +289,230 @@ public class StudentService {
         }
     }
     
+    // Spajame vsetky Eventy a vsetky Tasky do jedneho pekneho vypisu pre kalendar
+    public List<CalendarItemDTO> getMyCalendar(AuthContext ctx, String locale) {
+    try {
+        // 1. Získame zápisy študenta
+        List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+        
+        // 2. Vytvoríme si mapu ID -> Code pre rýchly prístup k názvom predmetov
+        Map<Integer, String> subjectCodeMap = new HashMap<>();
+        for (Enrollment enr : enrollments) {
+            Optional<Subject> subOpt = subjectDAO.getById(enr.getSubjectId());
+            subOpt.ifPresent(s -> subjectCodeMap.put(s.getId(), s.getCode()));
+        }
+
+        List<CalendarItemDTO> calendar = new ArrayList<>();
+
+        for (Integer subjectId : subjectCodeMap.keySet()) {
+            String subjectCode = subjectCodeMap.get(subjectId);
+
+            // 3. Spracovanie EVENTOV
+            List<Event> subjectEvents = eventDAO.listBySubject(subjectId);
+            for (Event e : subjectEvents) {
+                if (!e.isPublished()) continue;
+
+                Optional<EventTranslation> transOpt = eventTranslationDAO.get(e.getId(), locale);
+                if (transOpt.isEmpty() && !locale.equals("sk")) {
+                    transOpt = eventTranslationDAO.get(e.getId(), "sk");
+                }
+
+                EventTranslation trans = transOpt.orElse(null);
+                
+                calendar.add(CalendarItemDTO.builder()
+                        .sourceType("EVENT")
+                        .sourceId(e.getId())
+                        .type(e.getType().name())
+                        .title(trans != null ? trans.getTitle() : "Event " + e.getId())
+                        .description(trans != null ? trans.getDescription() : "")
+                        .scheduledAt(e.getScheduledAt())
+                        .durationMinutes(e.getDurationMinutes())
+                        .room(e.getRoom())
+                        .subjectId(subjectId)
+                        .subjectCode(subjectCode)
+                        .build());
+            }
+
+            // 4. Spracovanie TASKOV
+            List<Task> subjectTasks = taskDAO.listBySubject(subjectId);
+            for (Task t : subjectTasks) {
+                if (!t.isPublished()) continue;
+
+                calendar.add(CalendarItemDTO.builder()
+                        .sourceType("TASK")
+                        .sourceId(t.getId())
+                        .type("TASK_DUE")
+                        .title(t.getTitle())
+                        .description(t.getDescription())
+                        .scheduledAt(t.getDueAt())
+                        .durationMinutes(30)
+                        .subjectId(subjectId)
+                        .subjectCode(subjectCode)
+                        .build());
+            }
+        }
+        return calendar;
+    } catch (SQLException e) {
+        log.error("Chyba pri zostavovaní kalendára pre študenta {}", ctx.getUserId(), e);
+        return Collections.emptyList();
+    }
+}
+
+    /**
+     * Získa úplne všetky notifikácie študenta (aj prečítané).
+     */
+    public List<Notification> getMyNotifications(AuthContext ctx) {
+        try {
+            return notificationDAO.listByRecipient(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní notifikácií pre userId={}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Získa len tie notifikácie, ktoré študent ešte neotvoril.
+     */
+    public List<Notification> getMyUnreadNotifications(AuthContext ctx) {
+        try {
+            return notificationDAO.listUnreadByRecipient(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní neprečítaných notifikácií pre userId={}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Označí jednu konkrétnu notifikáciu za prečítanú.
+     */
+    public boolean markNotificationAsRead(int notificationId, AuthContext ctx) {
+        try {
+            // Druhý parameter (ctx.getUserId()) slúži ako bezpečnostná poistka v DAO
+            return notificationDAO.markAsRead(notificationId, ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri označovaní notifikácie {} ako prečítanej", notificationId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Hromadné označenie všetkých notifikácií daného študenta za prečítané.
+     */
+    public int markAllMyNotificationsAsRead(AuthContext ctx) {
+        try {
+            return notificationDAO.markAllRead(ctx.getUserId());
+        } catch (SQLException e) {
+            log.error("Chyba pri hromadnom označovaní notifikácií pre userId={}", ctx.getUserId(), e);
+            return 0;
+        }
+    }
+
+    /**
+     * Získa všetky publikované úlohy pre predmety, na ktoré je študent zapísaný.
+     */
+    public List<Task> getMyTasks(AuthContext ctx) {
+        try {
+            List<Enrollment> enrollments = enrollmentDAO.listByStudent(ctx.getUserId());
+            List<Task> allMyTasks = new ArrayList<>();
+            
+            for (Enrollment enr : enrollments) {
+                List<Task> subjectTasks = taskDAO.listBySubject(enr.getSubjectId());
+                // Filtrujeme len publikované úlohy
+                subjectTasks.stream()
+                    .filter(Task::isPublished)
+                    .forEach(allMyTasks::add);
+            }
+            return allMyTasks;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní úloh pre študenta {}", ctx.getUserId(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Získa detail úlohy spolu s aktuálnym stavom odovzdania študenta.
+     */
+    public Map<String, Object> getTaskDetail(int taskId, AuthContext ctx) {
+        try {
+            Optional<Task> task = taskDAO.getById(taskId);
+            if (task.isEmpty()) return Collections.emptyMap();
+
+            Optional<TaskSubmission> submission = taskSubmissionDAO.getByTaskAndStudent(taskId, ctx.getUserId());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("task", task.get());
+            response.put("submission", submission.orElse(null));
+            return response;
+        } catch (SQLException e) {
+            log.error("Chyba pri načítaní detailu úlohy {} pre študenta {}", taskId, ctx.getUserId(), e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Spracuje odovzdanie úlohy (vytvorenie alebo prepísanie).
+     */
+    public Optional<TaskSubmission> submitTask(int taskId, String content, String fileUrl, AuthContext ctx) {
+        try {
+            TaskSubmission ts = new TaskSubmission();
+            ts.setTaskId(taskId);
+            ts.setStudentId(ctx.getUserId());
+            ts.setContent(content);
+            ts.setFileUrl(fileUrl);
+            ts.setSubmittedAt(java.time.OffsetDateTime.now());
+            ts.setStatus(TaskSubmission.Status.SUBMITTED);
+
+            TaskSubmission saved = taskSubmissionDAO.updateOrInsert(ts);
+            log.info("Študent {} úspešne odovzdal task {}", ctx.getUserId(), taskId);
+            return Optional.of(saved);
+        } catch (SQLException e) {
+            log.error("Chyba pri odovzdávaní tasku {} študentom {}", taskId, ctx.getUserId(), e);
+            return Optional.empty();
+        }
+    }
+
+    public java.util.Optional<java.util.Map<String, Object>> getSubjectDetail(int subjectId, sk.bais.auth.AuthContext ctx) {
+        String cacheKey = subjectId + "_sk"; // zjednodušené pre "sk" locale, inak by to chcelo ctx locale
+        
+        Map<String, Object> cachedDetail = subjectDetailCache.get(cacheKey, k -> {
+            try {
+                return subjectDAO.getById(subjectId).map(s -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", s.getId());
+                    map.put("code", s.getCode());
+                    map.put("credits", s.getCredits());
+                    map.put("faculty", s.getFaculty());
+                    map.put("isMandatory", s.isMandatory());
+                    map.put("isProfiled", s.isProfiled());
+                    map.put("completionType", s.getCompletionType() != null ? s.getCompletionType().name() : "");
+                    map.put("languageOfInstruction", s.getLanguageOfInstruction());
+                    map.put("assessmentBreakdown", s.getAssessmentBreakdown());
+                    map.put("avgStudentRating", s.getAvgStudentRating());
+                    map.put("subjectDifficulty", s.getSubjectDifficulty());
+                    map.put("gradeAPct", s.getGradeAPct());
+                    map.put("gradeBPct", s.getGradeBPct());
+                    map.put("gradeCPct", s.getGradeCPct());
+                    map.put("gradeDPct", s.getGradeDPct());
+                    map.put("gradeEPct", s.getGradeEPct());
+                    map.put("gradeFxPct", s.getGradeFxPct());
+                    String locale = "sk";
+                    try {
+                        subjectTranslationDAO.get(subjectId, locale).ifPresent(tr -> {
+                            map.put("name", tr.getName());
+                            map.put("syllabus", tr.getDescription());
+                        });
+                    } catch (java.sql.SQLException e) {
+                        log.error("Nepodarilo sa načítať preklad", e);
+                    }
+                    return map;
+                }).orElse(null);
+            } catch (java.sql.SQLException e) {
+                log.error("Nepodarilo sa načítať predmet", e);
+                return null;
+            }
+        });
+        
+        return java.util.Optional.ofNullable(cachedDetail);
+    }
+
 }

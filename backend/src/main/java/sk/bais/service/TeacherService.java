@@ -13,11 +13,17 @@ import sk.bais.auth.AuthContext;
 import sk.bais.dao.EnrollmentDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
 import sk.bais.model.Enrollment;
 import sk.bais.model.IndexRecord;
 import sk.bais.model.Mark;
+import sk.bais.model.Notification;
 import sk.bais.model.Subject;
+import sk.bais.model.Task;
+import sk.bais.model.TaskSubmission;
 
 /**
  * Service vrstva pre učiteľa.
@@ -33,6 +39,9 @@ public class TeacherService {
     private final EnrollmentDAO enrollmentDAO;
     private final MarkDAO markDAO;
     private final IndexRecordDAO indexRecordDAO;
+    private final NotificationDAO notificationDAO;
+    private final TaskDAO taskDAO;
+    private final TaskSubmissionDAO taskSubmissionDAO;
 
     /**
      * Vráti predmety ktoré daný učiteľ garantuje (guarantor_id == ctx.userId).
@@ -46,9 +55,10 @@ public class TeacherService {
         try {
             List<Subject> all = subjectDAO.list();
             List<Subject> mine = all.stream()
-                    .filter(s -> s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId())
+                    .filter(s -> ctx.hasRole("ADMIN")
+                            || (s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId())))
                     .toList();
-            log.info("Teacher userId={} má {} predmetov", ctx.getUserId(), mine.size());
+            log.info("Teacher/Admin userId={} má {} predmetov", ctx.getUserId(), mine.size());
             return mine;
         } catch (SQLException e) {
             log.error("Chyba pri načítaní predmetov pre userId={}", ctx.getUserId(), e);
@@ -111,8 +121,8 @@ public class TeacherService {
     }
 
     /**
-     * Upraví existujúce hodnotenie.
-     * Vyžaduje oprávnenie marks:write.
+     * Upraví existujúce hodnotenie a informuje študenta.
+     * Vyžaduje oprávnenie marks:write a učiteľ musí byť garantom predmetu.
      */
     public boolean updateMark(Mark mark, AuthContext ctx) {
         if (!ctx.hasPermission("marks:write")) {
@@ -120,8 +130,33 @@ public class TeacherService {
             return false;
         }
         try {
+            // 1. Bezpečnostné overenie: Má učiteľ právo meniť známky pre tento enrollment?
+            if (!isGuarantorOfEnrollment(mark.getEnrollmentId(), ctx)) {
+                log.warn("Teacher {} nie je autorizovaný upraviť známku pre enrollment {}", ctx.getUserId(),
+                        mark.getEnrollmentId());
+                return false;
+            }
+
+            // 2. Samotná aktualizácia v DB
             boolean updated = markDAO.update(mark);
-            if (updated) log.info("Teacher userId={} upravil známku id={}", ctx.getUserId(), mark.getId());
+
+            if (updated) {
+                log.info("Teacher userId={} upravil známku id={}", ctx.getUserId(), mark.getId());
+
+                // 3. Notifikácia pre študenta o zmene hodnotenia
+                Optional<Enrollment> enrOpt = enrollmentDAO.getById(mark.getEnrollmentId());
+                enrOpt.ifPresent(enr -> {
+                    createNotification(
+                            enr.getStudentId(),
+                            ctx.getUserId(),
+                            Notification.Type.MARK_ADDED,
+                            "Zmena hodnotenia",
+                            "Vaše body za '" + mark.getTitle() + "' boli aktualizované.",
+                            mark.getId(),
+                            enr.getSubjectId(),
+                            mark.getTaskSubmissionId());
+                });
+            }
             return updated;
         } catch (SQLException e) {
             log.error("Chyba pri úprave známky id={}", mark.getId(), e);
@@ -130,8 +165,60 @@ public class TeacherService {
     }
 
     /**
+     * Upraví existujúci zápis (napr. zmena pokusu alebo manuálna zmena statusu).
+     */
+    public boolean updateEnrollment(Enrollment e, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write")) {
+            log.warn("Teacher {} nemá právo upravovať zápisy", ctx.getUserId());
+            return false;
+        }
+        try {
+            // Overenie, či učiteľ garantuje predmet daného zápisu
+            if (!isGuarantorOfEnrollment(e.getId(), ctx))
+                return false;
+
+            boolean updated = enrollmentDAO.update(e);
+            if (updated) {
+                log.info("Teacher {} upravil enrollment id={}", ctx.getUserId(), e.getId());
+            }
+            return updated;
+        } catch (SQLException ex) {
+            log.error("Chyba pri úprave enrollmentu {}", e.getId(), ex);
+            return false;
+        }
+    }
+
+    /**
+     * Vymaže čiastkové hodnotenie (Mark).
+     */
+    public boolean deleteMark(int markId, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:write"))
+            return false;
+        try {
+            Optional<Mark> markOpt = markDAO.getById(markId);
+            if (markOpt.isEmpty())
+                return false;
+
+            // Kontrola, či učiteľ môže manipulovať so známkami tohto enrollmentu
+            if (!isGuarantorOfEnrollment(markOpt.get().getEnrollmentId(), ctx))
+                return false;
+
+            boolean deleted = markDAO.delete(markId);
+            if (deleted) {
+                log.info("Teacher {} vymazal známku id={}", ctx.getUserId(), markId);
+                // Tu by sa dala poslať notifikácia študentovi, že známka bola odstránená
+            }
+            return deleted;
+        } catch (SQLException e) {
+            log.error("Chyba pri mazaní známky id={}", markId, e);
+            return false;
+        }
+    }
+
+    /**
      * Zapíše finálnu známku do indexu (IndexRecord).
-     * Jeden enrollment môže mať maximálne jeden IndexRecord (UNIQUE constraint v DB).
+     * Jeden enrollment môže mať maximálne jeden IndexRecord (UNIQUE constraint v
+     * DB).
      * Vyžaduje oprávnenie marks:write.
      */
     public Optional<IndexRecord> recordFinalMark(IndexRecord record, AuthContext ctx) {
@@ -168,11 +255,13 @@ public class TeacherService {
      * Vyžaduje overenie, či je učiteľ garantom predmetu.
      */
     public Optional<IndexRecord> getIndexRecordForEnrollment(int enrollmentId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:read")) return Optional.empty();
-        
+        if (!ctx.hasPermission("marks:read"))
+            return Optional.empty();
+
         try {
             // Bezpečnostná kontrola garantora
-            if (!isGuarantorOfEnrollment(enrollmentId, ctx)) return Optional.empty();
+            if (!isGuarantorOfEnrollment(enrollmentId, ctx))
+                return Optional.empty();
 
             return indexRecordDAO.getByEnrollment(enrollmentId);
         } catch (SQLException e) {
@@ -186,8 +275,9 @@ public class TeacherService {
      * Vyžaduje overenie, či je učiteľ garantom predmetu.
      */
     public List<Mark> getPointsForEnrollment(int enrollmentId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:read")) return Collections.emptyList();
-        
+        if (!ctx.hasPermission("marks:read"))
+            return Collections.emptyList();
+
         try {
             // Kontrola, či je učiteľ garantom
             if (!isGuarantorOfEnrollment(enrollmentId, ctx)) {
@@ -203,19 +293,142 @@ public class TeacherService {
         }
     }
 
+    public Optional<Enrollment> createEnrollment(Enrollment e, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write"))
+            return Optional.empty();
+        try {
+            Enrollment created = enrollmentDAO.create(e);
+            log.info("Teacher {} vytvoril zápis pre študenta {}", ctx.getUserId(), e.getStudentId());
 
+            // Notifikácia pre študenta
+            createNotification(e.getStudentId(), ctx.getUserId(), Notification.Type.ENROLLMENT_OPEN,
+                    "Nový zápis", "Boli ste zapísaný na predmet.", null, e.getSubjectId(), null);
+
+            return Optional.of(created);
+        } catch (SQLException ex) {
+            log.error("Chyba pri vytváraní zápisu", ex);
+            return Optional.empty();
+        }
+    }
+
+    public boolean deleteEnrollment(int id, AuthContext ctx) {
+        if (!ctx.hasPermission("enrollments:write"))
+            return false;
+        try {
+            return enrollmentDAO.delete(id);
+        } catch (SQLException e) {
+            log.error("Chyba pri mazaní zápisu id={}", id, e);
+            return false;
+        }
+    }
+
+    // --- TASKS ---
+
+    public Optional<Task> createTask(Task t, AuthContext ctx) {
+        if (!ctx.hasPermission("tasks:write"))
+            return Optional.empty();
+        try {
+            t.setCreatedBy(ctx.getUserId());
+            Task created = taskDAO.create(t);
+
+            // Notifikácia všetkým študentom na predmete (zjednodušene)
+            List<Enrollment> students = enrollmentDAO.list().stream()
+                    .filter(e -> e.getSubjectId() == t.getSubjectId()).toList();
+            for (Enrollment s : students) {
+                createNotification(s.getStudentId(), ctx.getUserId(), Notification.Type.TASK_DUE,
+                        "Nové zadanie: " + t.getTitle(), "Bolo pridané nové zadanie.", null, t.getSubjectId(),
+                        t.getId());
+            }
+            return Optional.of(created);
+        } catch (SQLException e) {
+            log.error("Chyba pri vytváraní úlohy", e);
+            return Optional.empty();
+        }
+    }
+
+    // --- GRADING SUBMISSIONS ---
+
+    public boolean gradeSubmission(int submissionId, TaskSubmission.Status status, AuthContext ctx) {
+        if (!ctx.hasPermission("marks:write"))
+            return false;
+        try {
+            Optional<TaskSubmission> tsOpt = taskSubmissionDAO.getById(submissionId);
+            if (tsOpt.isEmpty())
+                return false;
+
+            TaskSubmission ts = tsOpt.get();
+            ts.setStatus(status);
+            ts.setGradedBy(ctx.getUserId());
+            ts.setGradedAt(java.time.OffsetDateTime.now());
+
+            boolean ok = taskSubmissionDAO.update(ts);
+            if (ok) {
+                createNotification(ts.getStudentId(), ctx.getUserId(), Notification.Type.MARK_ADDED,
+                        "Zadanie ohodnotené", "Vaše odovzdané zadanie bolo skontrolované.", null, null, ts.getTaskId());
+            }
+            return ok;
+        } catch (SQLException e) {
+            log.error("Chyba pri hodnotení odovzdania id={}", submissionId, e);
+            return false;
+        }
+    }
+
+    // Helper pre notifikácie
+    private void createNotification(int recipientId, Integer senderId, Notification.Type type,
+            String title, String msg, Integer markId, Integer subId, Integer taskId) {
+        try {
+            Notification n = new Notification();
+            n.setRecipientId(recipientId);
+            n.setSenderId(senderId);
+            n.setType(type);
+            n.setTitle(title);
+            n.setMessage(msg);
+            n.setRelatedMarkId(markId);
+            n.setRelatedSubjectId(subId);
+            n.setRelatedTaskId(taskId);
+            notificationDAO.create(n);
+        } catch (SQLException e) {
+            log.error("Nepodarilo sa vytvoriť notifikáciu pre {}", recipientId, e);
+        }
+    }
+
+    public void createBroadcastNotification(String title, String message, AuthContext ctx) {
+        if (!ctx.hasRole("TEACHER") && !ctx.hasRole("ADMIN")) {
+            log.warn("Zamietnutý prístup k odoslaniu hromadnej notifikácie pre userId={}", ctx.getUserId());
+            return;
+        }
+
+        try {
+            List<Enrollment> enrollments = enrollmentDAO.list();
+            java.util.Set<Integer> studentIds = enrollments.stream()
+                    .map(Enrollment::getStudentId)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            for (int studentId : studentIds) {
+                createNotification(studentId, ctx.getUserId(), Notification.Type.ANNOUNCEMENT, title, message, null,
+                        null, null);
+            }
+            log.info("Teacher/Admin {} rozposlal hromadnú notifikáciu '{}' pre {} študentov.", ctx.getUserId(), title,
+                    studentIds.size());
+        } catch (SQLException e) {
+            log.error("Chyba pri vytvarani hromadnej notifikacie", e);
+        }
+    }
 
     // Pomocná metóda na overenie práv k enrollmentu
     private boolean isGuarantorOfEnrollment(int enrollmentId, AuthContext ctx) throws SQLException {
-        if (ctx.hasRole("ADMIN")) return true;
+        if (ctx.hasRole("ADMIN"))
+            return true;
 
         Optional<Enrollment> enrollmentOpt = enrollmentDAO.getById(enrollmentId);
-        if (enrollmentOpt.isEmpty()) return false;
+        if (enrollmentOpt.isEmpty())
+            return false;
 
         Optional<Subject> subjectOpt = subjectDAO.getById(enrollmentOpt.get().getSubjectId());
-        if (subjectOpt.isEmpty()) return false;
+        if (subjectOpt.isEmpty())
+            return false;
 
         Subject s = subjectOpt.get();
-        return s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId();
+        return s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId());
     }
 }

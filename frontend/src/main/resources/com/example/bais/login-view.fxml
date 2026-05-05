@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.example.bais.controllers.LoginController"
+           styleClass="root-pane">
+
+    <!-- Top bar with brand info and icon -->
+    <VBox alignment="TOP_LEFT" StackPane.alignment="TOP_LEFT"
+          maxWidth="Infinity" maxHeight="Infinity" pickOnBounds="false">
+        <HBox styleClass="login-topbar" alignment="CENTER_LEFT" spacing="12" prefWidth="Infinity">
+            <Label styleClass="header-icon" text="🎓" />
+            <VBox spacing="1">
+                <Label fx:id="loginSystemTitle" text="Lepší Akademický Systém"
+                       styleClass="login-topbar-title" />
+                <Label fx:id="loginAcademicYear" text="Akademický rok 2026"
+                       styleClass="login-topbar-subtitle" />
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="langButton" styleClass="language-flag-button" onAction="#toggleLanguage">
+                <graphic>
+                    <ImageView fx:id="langFlagImage" fitHeight="20.0" fitWidth="30.0" preserveRatio="true" />
+                </graphic>
+            </Button>
+            <Button fx:id="darkModeToggle" text="🌙" styleClass="dark-mode-toggle" onAction="#toggleDarkMode" />
+        </HBox>
+    </VBox>
+
+    <!-- Centered login card -->
+    <VBox styleClass="login-card" alignment="CENTER" spacing="18"
+          maxWidth="420" maxHeight="460" StackPane.alignment="CENTER">
+        <children>
+            <Label text="🎓" styleClass="card-logo" />
+
+            <VBox spacing="8" alignment="CENTER">
+                <children>
+                    <Label fx:id="loginTitle" text="Lepší Akademický Systém"
+                           styleClass="login-title" wrapText="true"
+                           textAlignment="CENTER" maxWidth="360" />
+                    <Label fx:id="loginSubtitle" text="zadaj svoje údaje aby si zistil svoje známky"
+                           styleClass="login-subtitle" wrapText="true"
+                           textAlignment="CENTER" maxWidth="360" />
+                </children>
+            </VBox>
+
+            <VBox spacing="6" alignment="CENTER_LEFT" prefWidth="340">
+                <children>
+                    <Label fx:id="usernameLabel" text="Meno" styleClass="input-label" />
+                    <TextField fx:id="usernameField" promptText="meno@stuba.sk"
+                               styleClass="login-input" prefWidth="340" />
+                </children>
+            </VBox>
+
+            <VBox spacing="6" alignment="CENTER_LEFT" prefWidth="340">
+                <children>
+                    <Label fx:id="passwordLabel" text="Heslo" styleClass="input-label" />
+                    <PasswordField fx:id="passwordField" promptText="•••••••"
+                                  styleClass="login-input" prefWidth="340" />
+                </children>
+            </VBox>
+
+            <Button fx:id="loginButton" onAction="#handleLogin" text="Prihlásiť sa"
+                    styleClass="login-button" prefWidth="340" />
+        </children>
+    </VBox>
+
+</StackPane>

@@ -1,11 +1,13 @@
 package sk.bais.model;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku task.
@@ -23,6 +25,7 @@ public class Task {
     private String description;     // nullable TEXT
     private OffsetDateTime dueAt;   // nullable TIMESTAMPTZ
     private BigDecimal maxPoints;   // nullable DECIMAL(6,2)
+    @JsonProperty("isPublished")
     private boolean isPublished;    // DEFAULT FALSE
     private Integer createdBy;      // FK -> user nullable
     private OffsetDateTime createdAt;

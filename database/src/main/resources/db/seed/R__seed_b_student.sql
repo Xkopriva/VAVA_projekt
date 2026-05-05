@@ -19,7 +19,11 @@ INSERT INTO "user" (email, first_name, last_name, password_hash, is_active) VALU
     -- Student: Jožko Mrkvička
     ('jozko.mrkvicka@stuba.sk', 'Jožko', 'Mrkvička',
      '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
-     TRUE);
+     TRUE),
+    --Teacher: jan novak
+    ('jan.novak@stuba.sk', 'Ján', 'Novák',
+    '$2a$12$dl3d/QgrPtMXSInE71JJduqMjpfUZY6iL1ZxsqvrxUu.OPr5DdqDS',
+    TRUE);
 
 -- ============================================================
 -- ROLE ASSIGNMENTS
@@ -36,6 +40,12 @@ INSERT INTO user_role (user_id, role_id)
 SELECT u.id, r.id
 FROM "user" u, role r
 WHERE u.email = 'jozko.mrkvicka@stuba.sk' AND r.name = 'STUDENT';
+
+-- Teacher gets Teacher role
+INSERT INTO user_role (user_id, role_id)
+SELECT u.id, r.id
+FROM "user" u, role r
+WHERE u.email = 'jan.novak@stuba.sk' AND r.name = 'TEACHER';
 
 -- ============================================================
 -- ENROLLMENTS + INDEX RECORDS
@@ -56,7 +66,7 @@ WHERE u.email = 'jozko.mrkvicka@stuba.sk' AND r.name = 'STUDENT';
 
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -69,7 +79,7 @@ WHERE s.code IN ('MA_B','MIP_B','AJ1_B','PPI_B','PRPR_B')
 -- ADM_B attempt 1 — FAILED (took 2 attempts total)
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -81,7 +91,7 @@ WHERE s.code = 'ADM_B' AND sem.code = 'WS_2024_2025';
 -- ADM_B attempt 2 — PASSED
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     2,
@@ -94,7 +104,7 @@ WHERE s.code = 'ADM_B' AND sem.code = 'WS_2024_2025';
 INSERT INTO index_record (enrollment_id, recorded_by, final_mark, recorded_at, exam_date)
 SELECT
     e.id,
-    (SELECT id FROM "user" WHERE email = 'admin@fiit.stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'admin@fiit.stuba.sk'),
     t.mark,
     '2025-01-31 12:00:00+00',
     t.exam_date::DATE
@@ -116,7 +126,7 @@ WHERE sem.code = 'WS_2024_2025'
 INSERT INTO index_record (enrollment_id, recorded_by, final_mark, recorded_at, exam_date)
 SELECT
     e.id,
-    (SELECT id FROM "user" WHERE email = 'admin@fiit.stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'admin@fiit.stuba.sk'),
     'FX',
     '2025-01-28 12:00:00+00',
     '2025-01-28'
@@ -131,7 +141,7 @@ WHERE s.code = 'ADM_B'
 
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -145,7 +155,7 @@ WHERE s.code IN ('DSA_B','AJ2_B','ML1_B','OOP_B','TK_L','TZIV_B')
 INSERT INTO index_record (enrollment_id, recorded_by, final_mark, recorded_at, exam_date)
 SELECT
     e.id,
-    (SELECT id FROM "user" WHERE email = 'admin@fiit.stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'admin@fiit.stuba.sk'),
     t.mark,
     '2025-06-30 12:00:00+00',
     t.exam_date::DATE
@@ -167,7 +177,7 @@ WHERE sem.code = 'SS_2024_2025'
 
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -180,7 +190,7 @@ WHERE s.code IN ('UI_B','VPWA_B','PIKT_B','OS_B','TK_Z')
 -- PKS_B attempt 1 — FAILED
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -192,7 +202,7 @@ WHERE s.code = 'PKS_B' AND sem.code = 'WS_2025_2026';
 -- PKS_B attempt 2 — PASSED
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     2,
@@ -205,7 +215,7 @@ WHERE s.code = 'PKS_B' AND sem.code = 'WS_2025_2026';
 INSERT INTO index_record (enrollment_id, recorded_by, final_mark, recorded_at, exam_date)
 SELECT
     e.id,
-    (SELECT id FROM "user" WHERE email = 'admin@fiit.stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'admin@fiit.stuba.sk'),
     t.mark,
     '2026-01-30 12:00:00+00',
     t.exam_date::DATE
@@ -227,7 +237,7 @@ WHERE sem.code = 'WS_2025_2026'
 INSERT INTO index_record (enrollment_id, recorded_by, final_mark, recorded_at, exam_date)
 SELECT
     e.id,
-    (SELECT id FROM "user" WHERE email = 'admin@fiit.stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'admin@fiit.stuba.sk'),
     'FX',
     '2025-11-01 12:00:00+00',
     '2025-11-01'
@@ -242,7 +252,7 @@ WHERE s.code = 'PKS_B'
 
 INSERT INTO enrollment (student_id, subject_id, semester_id, attempt_number, enrolled_at, status)
 SELECT
-    (SELECT id FROM "user" WHERE email = 'jozko.mrkvicka@stuba.sk'),
+    (SELECT u.id FROM "user" u WHERE u.email = 'jozko.mrkvicka@stuba.sk'),
     s.id,
     sem.id,
     1,
@@ -251,3 +261,11 @@ SELECT
 FROM subject s, semester sem
 WHERE s.code IN ('DBS_B','VAVA_B','DMBLOCK_B','WTECH_B','PSI_B','PAS_B')
   AND sem.code = 'SS_2025_2026';
+-- ============================================================
+-- ASSIGN GUARANTOR
+-- Teacher jan.novak@stuba.sk will guarantee the current subjects
+-- ============================================================
+
+UPDATE subject
+SET guarantor_id = (SELECT id FROM "user" WHERE email = 'jan.novak@stuba.sk')
+WHERE code IN ('DBS_B','VAVA_B','DMBLOCK_B','WTECH_B','PSI_B','PAS_B', 'PKS_B', 'UI_B', 'OOP_B', 'PRPR_B');

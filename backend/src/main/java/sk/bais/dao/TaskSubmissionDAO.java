@@ -121,6 +121,20 @@ public class TaskSubmissionDAO {
     }
 
     /**
+     * Vloží alebo aktualizuje odovzdanie 
+     */
+    public TaskSubmission updateOrInsert(TaskSubmission ts) throws SQLException {
+        Optional<TaskSubmission> existing = getByTaskAndStudent(ts.getTaskId(), ts.getStudentId());
+        if (existing.isPresent()) {
+            ts.setId(existing.get().getId());
+            update(ts);
+            return ts;
+        } else {
+            return create(ts);
+        }
+    }
+
+    /**
      * Vytvori nove odovzdanie.
      */
     public TaskSubmission create(TaskSubmission ts) throws SQLException {

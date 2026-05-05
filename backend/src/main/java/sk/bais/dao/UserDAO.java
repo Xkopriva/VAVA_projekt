@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +56,9 @@ public class UserDAO {
             
     private static final String SQL_ASSIGN_ROLE = "INSERT INTO user_role (user_id, role_id) " +
             "SELECT ?, id FROM role WHERE name = ?";
+
+    private static final String SQL_GET_USER_ROLES = "SELECT r.name FROM role r " +
+            "JOIN user_role ur ON r.id = ur.role_id " + "WHERE ur.user_id = ?";
     /**
      * Zoznam vsetkych pouzivatelov.
      */
@@ -176,7 +178,6 @@ public class UserDAO {
 
     /**
      * Vymaze pouzivatela podla ID.
-     * Pozor: DB RESTRICT brani vymazaniu ak su viazane zaznamy (enrollments, marks atd.).
      */
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
@@ -189,7 +190,7 @@ public class UserDAO {
     }
 
     /**
-     * Prida uyivatelovi rolu
+     * Prida uzivatelovi rolu
      */
     public void assignRole(int userId, String roleName) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
@@ -199,6 +200,23 @@ public class UserDAO {
             stmt.executeUpdate();
             log.info("Rola {} priradena pouzivatelovi id={}", roleName, userId);
         }
+    }
+    /**
+     * Ziska role Uzivatela
+     */
+    public List<String> getUserRoles(int userId) throws SQLException {
+        
+        List<String> roles = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(SQL_GET_USER_ROLES)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    roles.add(rs.getString("name"));
+                }
+            }
+        }
+        return roles;
     }
 
     /**

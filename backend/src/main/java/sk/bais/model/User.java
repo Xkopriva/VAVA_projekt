@@ -1,10 +1,13 @@
 package sk.bais.model;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 /**
  * Model trieda mapovana na tabulku "user".
@@ -21,10 +24,12 @@ public class User {
     private String firstName;           // VARCHAR(100) NOT NULL
     private String lastName;            // VARCHAR(100) NOT NULL
     private String passwordHash;        // VARCHAR(255) NOT NULL — nikdy nezobrazovat!
+    @JsonProperty("isActive")
     private boolean isActive;           // DEFAULT TRUE
     private String profilePictureUrl;   // nullable VARCHAR(500)
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private List<String> roles;         // nepekne, ale pridal som sem pomocny atribut aby sa dali lepsie posielat role na frontend
 
     // Konstruktor pre INSERT — bez id, createdAt, updatedAt (generuje DB)
     public User(String email, String firstName, String lastName,

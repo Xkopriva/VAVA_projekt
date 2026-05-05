@@ -2,11 +2,17 @@ package sk.bais.core;
 
 import sk.bais.auth.AuthService;
 import sk.bais.dao.EnrollmentDAO;
+import sk.bais.dao.EventDAO;
+import sk.bais.dao.EventTranslationDAO;
 import sk.bais.dao.IndexRecordDAO;
 import sk.bais.dao.MarkDAO;
+import sk.bais.dao.NotificationDAO;
 import sk.bais.dao.SemesterDAO;
 import sk.bais.dao.StudentDAO;
 import sk.bais.dao.SubjectDAO;
+import sk.bais.dao.SubjectTranslationDAO;
+import sk.bais.dao.TaskDAO;
+import sk.bais.dao.TaskSubmissionDAO;
 import sk.bais.dao.UserDAO;
 import sk.bais.service.AdminService;
 import sk.bais.service.StudentService;
@@ -19,6 +25,23 @@ import sk.bais.service.TeacherService;
 public class Main {
 
     public static void main(String[] args) {
+
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("sun.stdout.encoding", "UTF-8");
+        System.setProperty("sun.stderr.encoding", "UTF-8");
+        System.setProperty("native.encoding", "UTF-8");
+
+        try {
+            var utf8 = java.nio.charset.Charset.forName("UTF-8");
+
+            // Prepíšeme System.out a System.err
+            System.setOut(new java.io.PrintStream(System.out, true, utf8));
+            System.setErr(new java.io.PrintStream(System.err, true, utf8));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         System.out.println("=== BAIS Backend Server - Štartujem ===\n");
 
         // 1. Inicializácia DAO vrstvy
@@ -27,18 +50,30 @@ public class Main {
         EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
         MarkDAO markDAO = new MarkDAO();
         SubjectDAO subjectDAO = new SubjectDAO();
+        SubjectTranslationDAO subjectTranslationDAO = new SubjectTranslationDAO();
         SemesterDAO semesterDAO = new SemesterDAO();
         UserDAO userDAO = new UserDAO();
         IndexRecordDAO indexRecordDAO = new IndexRecordDAO();
+        EventDAO eventDAO = new EventDAO();
+        EventTranslationDAO eventTranslationDAO = new EventTranslationDAO();
+        NotificationDAO notificationDAO = new NotificationDAO();
+        TaskDAO taskDAO = new TaskDAO();
+        TaskSubmissionDAO taskSubmissionDAO = new TaskSubmissionDAO();
 
         // 2. Inicializácia Biznis logiky (Service vrstva)
-        StudentService studentService = new StudentService(studentDAO, enrollmentDAO, markDAO, indexRecordDAO);
-        TeacherService teacherService = new TeacherService(subjectDAO, enrollmentDAO, markDAO, indexRecordDAO); 
-        AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO); 
+        StudentService studentService = new StudentService(
+                studentDAO, enrollmentDAO, markDAO, indexRecordDAO,
+                subjectDAO, subjectTranslationDAO, eventDAO,
+                eventTranslationDAO, notificationDAO, taskDAO, taskSubmissionDAO);
+        TeacherService teacherService = new TeacherService(
+                subjectDAO, enrollmentDAO, markDAO, indexRecordDAO,
+                notificationDAO, taskDAO, taskSubmissionDAO);
+        AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO);
 
         // 3. Spustenie WebSocket servera na porte 8887
         int port = 8887;
-        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService, adminService);
+        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService,
+                adminService, userDAO);
         server.start();
 
         System.out.println("Server beží na: ws://localhost:" + port);
