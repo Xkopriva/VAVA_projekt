@@ -1,23 +1,4 @@
 package com.example.bais.controllers;
-import com.example.bais.*;
-import com.example.bais.models.*;
-import com.example.bais.services.*;
-import com.example.bais.components.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import javafx.application.Platform;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +7,38 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import com.example.bais.models.UserSession;
+import com.example.bais.services.DataXmlExporter;
+import com.example.bais.services.RemindersStorage;
+import com.example.bais.services.WebSocketClientService;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 public class SchoolCalendarController implements Initializable {
 
@@ -203,7 +216,21 @@ public class SchoolCalendarController implements Initializable {
         );
         exportBtn.setOnAction(e -> exportReminders());
 
-        HBox btns = new HBox(12, exportBtn, addBtn);
+        Button importBtn = new Button(en ? "Import XML" : "Importovať XML");
+        importBtn.setCursor(javafx.scene.Cursor.HAND);
+        importBtn.setStyle(
+                "-fx-background-color: transparent; " +
+                "-fx-border-color: #2563EB; " +
+                "-fx-border-width: 2; " +
+                "-fx-text-fill: #2563EB; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10 20; " +
+                "-fx-background-radius: 12; " +
+                "-fx-border-radius: 12;"
+        );
+        importBtn.setOnAction(e -> importReminders());
+
+        HBox btns = new HBox(12, importBtn, exportBtn, addBtn);
         btns.setAlignment(Pos.CENTER_RIGHT);
 
         titleRow.getChildren().addAll(titleBlock, btns);
@@ -243,6 +270,58 @@ public class SchoolCalendarController implements Initializable {
             alert.setHeaderText(null);
             alert.setTitle(en ? "Export successful" : "Export úspešný");
             alert.setContentText(en ? "Reminders exported successfully!" : "Pripomienky boli úspešne exportované!");
+            alert.showAndWait();
+        }
+    }
+
+    private void importReminders() {
+        boolean en = UserSession.get().isEnglish();
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle(en ? "Import Reminders from XML" : "Importovať pripomienky z XML");
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("XML Files", "*.xml"));
+        
+        java.io.File file = fileChooser.showOpenDialog(calendarRoot.getScene().getWindow());
+
+        if (file != null) {
+            List<String> importedRaw = DataXmlExporter.importRemindersOnly(file.getAbsolutePath());
+            String[] days = en ? DAYS_EN : DAYS_SK;
+            
+            for (String raw : importedRaw) {
+                try {
+                    // Formát: "Titul | DEŇ Čas"
+                    String[] parts = raw.split("\\|");
+                    if (parts.length < 2) continue;
+                    
+                    String title = parts[0].trim();
+                    String dayAndTime = parts[1].trim();
+                    
+                    // Získanie dňa (prvé 3 písmená)
+                    String dayPart = dayAndTime.substring(0, 3);
+                    String timePart = dayAndTime.substring(3).trim();
+                    
+                    int dayIdx = -1;
+                    for (int i = 0; i < days.length; i++) {
+                        if (days[i].equalsIgnoreCase(dayPart)) {
+                            dayIdx = i;
+                            break;
+                        }
+                    }
+                    
+                    if (dayIdx != -1) {
+                        userReminders.add(new CalEvent(en ? "REMINDER" : "PRIPOMIENKA", title, timePart, dayIdx));
+                    }
+                } catch (Exception e) {
+                    System.err.println("Nepodarilo sa parsovať importovanú pripomienku: " + raw);
+                }
+            }
+            
+            saveReminders(); // Uložíme do lokálneho úložiska
+            refreshGrid();   // Prekreslíme kalendár
+            
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(en ? "Import successful" : "Import úspešný");
+            alert.setHeaderText(null);
+            alert.setContentText(en ? "Reminders imported: " + importedRaw.size() : "Počet importovaných pripomienok: " + importedRaw.size());
             alert.showAndWait();
         }
     }

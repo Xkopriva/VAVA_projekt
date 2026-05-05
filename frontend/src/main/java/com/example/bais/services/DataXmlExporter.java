@@ -1,18 +1,22 @@
 package com.example.bais.services;
-import com.example.bais.*;
-import com.example.bais.models.*;
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.w3c.dom.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * Vyvezenie a dovezení dat do XML
@@ -81,6 +85,28 @@ public class DataXmlExporter {
             System.err.println("✗ Chyba při exportu: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Import len pripomienok z xml suboru 
+     */
+
+    
+    public static List<String> importRemindersOnly(String filePath) {
+        List<String> reminders = new ArrayList<>();
+        try {
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            Document doc = docBuilder.parse(new File(filePath));
+
+            NodeList reminderNodes = doc.getElementsByTagName("reminder");
+            for (int i = 0; i < reminderNodes.getLength(); i++) {
+                reminders.add(reminderNodes.item(i).getTextContent());
+            }
+        } catch (Exception e) {
+            System.err.println("✗ Chyba pri importe pripomienok: " + e.getMessage());
+        }
+        return reminders;
     }
 
     /**
