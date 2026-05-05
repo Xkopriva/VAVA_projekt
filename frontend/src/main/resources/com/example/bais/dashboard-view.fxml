@@ -43,36 +43,54 @@
 
             <!-- Main nav -->
             <VBox VBox.vgrow="ALWAYS" spacing="0">
+                <!-- Dashboard / Prehľad -->
                 <VBox fx:id="dashboardItem" styleClass="nav-item,nav-item-active" onMouseClicked="#handleDashboard">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="🏠"  styleClass="nav-icon" /><Label fx:id="navDashboard" text="Prehľad"    styleClass="nav-label" />
                     </HBox>
                 </VBox>
+                <!-- Grades / Admin Panel -->
                 <VBox fx:id="gradesItem" styleClass="nav-item" onMouseClicked="#handleGrades">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="📊" styleClass="nav-icon" /><Label fx:id="navGrades"    text="Hodnotenia" styleClass="nav-label" />
                     </HBox>
                 </VBox>
+                <!-- Calendar -->
                 <VBox fx:id="calendarItem" styleClass="nav-item" onMouseClicked="#handleCalendar">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="📅" styleClass="nav-icon" /><Label fx:id="navCalendar"  text="Kalendár"   styleClass="nav-label" />
                     </HBox>
                 </VBox>
+                <!-- Progress (student only) -->
                 <VBox fx:id="progressItem" styleClass="nav-item" onMouseClicked="#handleProgress">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="🎓" styleClass="nav-icon" /><Label fx:id="navProgress"  text="Progres"    styleClass="nav-label" />
                     </HBox>
                 </VBox>
+                <!-- Assignments (student only) -->
                 <VBox fx:id="algebraItem" styleClass="nav-item" onMouseClicked="#handleAlgebra">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="📐" styleClass="nav-icon" /><Label fx:id="navAlgebra"   text="Odovzdanie" styleClass="nav-label" />
                     </HBox>
                 </VBox>
-                <VBox fx:id="coursesItem" styleClass="nav-item" onMouseClicked="#handleCourses">
+
+                <!-- ── ADMIN-ONLY nav items (hidden for non-admin) ── -->
+                <VBox fx:id="adminSubjectsItem" styleClass="nav-item" onMouseClicked="#handleAdminSubjects" visible="false" managed="false">
                     <HBox alignment="CENTER_LEFT" spacing="12">
-                        <Label text="📚" styleClass="nav-icon" /><Label fx:id="navCourses"   text="Kurzy"      styleClass="nav-label" />
+                        <Label text="📚" styleClass="nav-icon" /><Label fx:id="navAdminSubjects" text="Predmety" styleClass="nav-label" />
                     </HBox>
                 </VBox>
+                <VBox fx:id="adminGuarantorsItem" styleClass="nav-item" onMouseClicked="#handleAdminGuarantors" visible="false" managed="false">
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="🔗" styleClass="nav-icon" /><Label fx:id="navAdminGuarantors" text="Garanti" styleClass="nav-label" />
+                    </HBox>
+                </VBox>
+                <VBox fx:id="adminCreateTeacherItem" styleClass="nav-item" onMouseClicked="#handleAdminCreateTeacher" visible="false" managed="false">
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <Label text="👤" styleClass="nav-icon" /><Label fx:id="navAdminCreateTeacher" text="Vytvoriť učiteľa" styleClass="nav-label" />
+                    </HBox>
+                </VBox>
+
                 <Region VBox.vgrow="ALWAYS" />
             </VBox>
 
@@ -109,8 +127,8 @@
                         </VBox>
                     </HBox>
 
-                    <!-- SHORTCUT TILES – Calendar | Grades | Assignments -->
-                    <HBox spacing="16" alignment="CENTER">
+                    <!-- SHORTCUT TILES (student) -->
+                    <HBox fx:id="studentTilesRow" spacing="16" alignment="CENTER">
                         <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="10"
                               onMouseClicked="#handleCalendar" HBox.hgrow="ALWAYS">
                             <Label text="📅" styleClass="dashboard-tile-icon" />
@@ -127,6 +145,34 @@
                               onMouseClicked="#handleAlgebra" HBox.hgrow="ALWAYS">
                             <Label text="📝" styleClass="dashboard-tile-icon" />
                             <Label fx:id="tileAssignmentsText" text="Odovzdania"
+                                   styleClass="dashboard-tile-title" style="-fx-font-size: 15px;" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- ADMIN QUICK-LINK TILES (hidden by default, shown for admin) -->
+                    <HBox fx:id="adminTilesRow" spacing="16" alignment="CENTER" visible="false" managed="false">
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="10"
+                              onMouseClicked="#handleAdminSubjects" HBox.hgrow="ALWAYS">
+                            <Label text="📚" styleClass="dashboard-tile-icon" />
+                            <Label fx:id="tileAdminSubjectsText" text="Predmety"
+                                   styleClass="dashboard-tile-title" style="-fx-font-size: 15px;" />
+                        </VBox>
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="10"
+                              onMouseClicked="#handleAdminGuarantors" HBox.hgrow="ALWAYS">
+                            <Label text="🔗" styleClass="dashboard-tile-icon" />
+                            <Label fx:id="tileAdminGuarantorsText" text="Garanti"
+                                   styleClass="dashboard-tile-title" style="-fx-font-size: 15px;" />
+                        </VBox>
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="10"
+                              onMouseClicked="#handleAdminCreateTeacher" HBox.hgrow="ALWAYS">
+                            <Label text="👤" styleClass="dashboard-tile-icon" />
+                            <Label fx:id="tileAdminCreateTeacherText" text="Vytvoriť učiteľa"
+                                   styleClass="dashboard-tile-title" style="-fx-font-size: 15px;" />
+                        </VBox>
+                        <VBox styleClass="dashboard-tile" alignment="TOP_CENTER" spacing="10"
+                              onMouseClicked="#handleCalendar" HBox.hgrow="ALWAYS">
+                            <Label text="📅" styleClass="dashboard-tile-icon" />
+                            <Label fx:id="tileAdminCalendarText" text="Kalendár"
                                    styleClass="dashboard-tile-title" style="-fx-font-size: 15px;" />
                         </VBox>
                     </HBox>

@@ -696,7 +696,7 @@ public class BaisWebSocketServer extends WebSocketServer {
     private void handleListUsers(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
             var users = adminService.getAllUsers(ctx);
-            sendResponse(conn, "USERS_LIST", users);
+            sendResponse(conn, "USER_LIST", users);
         });
     }
 
@@ -925,7 +925,11 @@ public class BaisWebSocketServer extends WebSocketServer {
 
     @Override
     public void onError(WebSocket conn, Exception ex) {
-        log.error("WebSocket chyba pre spojenie {}: {}", conn.getRemoteSocketAddress(), ex.getMessage());
+        if (conn != null) {
+            log.error("WebSocket chyba pre spojenie {}: {}", conn.getRemoteSocketAddress(), ex.getMessage());
+        } else {
+            log.error("WebSocket chyba na serveri: ", ex);
+        }
     }
 
     @Override

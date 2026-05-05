@@ -1,4 +1,5 @@
 package com.example.bais.controllers;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -18,75 +19,148 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class DashboardController implements Initializable {
 
     // Header
-    @FXML private Label     headerTitle;
-    @FXML private Label     headerSubtitle;
-    @FXML private TextField searchField;
-    @FXML private Button    darkModeToggle;
-    @FXML private StackPane notificationsAction;
-    @FXML private Label     calendarAction;
+    @FXML
+    private Label headerTitle;
+    @FXML
+    private Label headerSubtitle;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private Button darkModeToggle;
+    @FXML
+    private StackPane notificationsAction;
+    @FXML
+    private Label calendarAction;
 
     // Nav labels
-    @FXML private Label navDashboard;
-    @FXML private Label navGrades;
-    @FXML private Label navCalendar;
-    @FXML private Label navProgress;
-    @FXML private Label navAlgebra;
-    @FXML private Label navCourses;
-    @FXML private Label navSettings;
-    @FXML private Label navLogout;
+    @FXML
+    private Label navDashboard;
+    @FXML
+    private Label navGrades;
+    @FXML
+    private Label navCalendar;
+    @FXML
+    private Label navProgress;
+    @FXML
+    private Label navAlgebra;
+    @FXML
+    private Label navCourses;
+    @FXML
+    private Label navAdminSubjects;
+    @FXML
+    private Label navAdminGuarantors;
+    @FXML
+    private Label navAdminCreateTeacher;
+    @FXML
+    private Label navSettings;
+    @FXML
+    private Label navLogout;
 
     // Dashboard content labels
-    @FXML private Label welcomeTitle;
-    @FXML private Label welcomeSub;
-    @FXML private Label schedTitle;
-    @FXML private Label alertsTitle;
-    @FXML private Label perfTitle;
-    @FXML private Label degreeTitle;
-    @FXML private Label quickTitle;
+    @FXML
+    private Label welcomeTitle;
+    @FXML
+    private Label welcomeSub;
+    @FXML
+    private Label schedTitle;
+    @FXML
+    private Label alertsTitle;
+    @FXML
+    private Label perfTitle;
+    @FXML
+    private Label degreeTitle;
+    @FXML
+    private Label quickTitle;
 
     // Added for dynamic translation
-    @FXML private Label tileCalendarText;
-    @FXML private Label tileGradesText;
-    @FXML private Label tileAssignmentsText;
-    @FXML private Label viewAllPerfText;
-    @FXML private Button viewPlanBtn;
-    @FXML private Label gameTitleText;
+    @FXML
+    private Label tileCalendarText;
+    @FXML
+    private Label tileGradesText;
+    @FXML
+    private Label tileAssignmentsText;
+    @FXML
+    private Label viewAllPerfText;
+    @FXML
+    private Button viewPlanBtn;
+    @FXML
+    private Label gameTitleText;
+
+    // Admin tile labels
+    @FXML
+    private HBox adminTilesRow;
+    @FXML
+    private HBox studentTilesRow;
+    @FXML
+    private Label tileAdminSubjectsText;
+    @FXML
+    private Label tileAdminGuarantorsText;
+    @FXML
+    private Label tileAdminCreateTeacherText;
+    @FXML
+    private Label tileAdminCalendarText;
 
     // Nav items
-    @FXML private VBox dashboardItem;
-    @FXML private VBox gradesItem;
-    @FXML private VBox calendarItem;
-    @FXML private VBox progressItem;
-    @FXML private VBox algebraItem;
-    @FXML private VBox coursesItem;
-    @FXML private VBox settingsItem;
-    @FXML private VBox logoutItem;
+    @FXML
+    private VBox dashboardItem;
+    @FXML
+    private VBox gradesItem;
+    @FXML
+    private VBox calendarItem;
+    @FXML
+    private VBox progressItem;
+    @FXML
+    private VBox algebraItem;
+    @FXML
+    private VBox coursesItem;
+    @FXML
+    private VBox adminSubjectsItem;
+    @FXML
+    private VBox adminGuarantorsItem;
+    @FXML
+    private VBox adminCreateTeacherItem;
+    @FXML
+    private VBox settingsItem;
+    @FXML
+    private VBox logoutItem;
 
-    @FXML private ScrollPane mainScroll;
+    @FXML
+    private ScrollPane mainScroll;
 
-    @FXML private VBox dashboardMiniCalendar;
-    @FXML private VBox dashboardMiniTasks;
-    @FXML private VBox dashboardAlertsContainer;
-    @FXML private javafx.scene.layout.HBox dashboardPerfContainer;
-    @FXML private Label dashboardDateLabel;
-    @FXML private Label dashboardProgressLabel;
-    @FXML private Label dashboardProgressPct;
+    @FXML
+    private VBox dashboardMiniCalendar;
+    @FXML
+    private VBox dashboardMiniTasks;
+    @FXML
+    private VBox dashboardAlertsContainer;
+    @FXML
+    private javafx.scene.layout.HBox dashboardPerfContainer;
+    @FXML
+    private Label dashboardDateLabel;
+    @FXML
+    private Label dashboardProgressLabel;
+    @FXML
+    private Label dashboardProgressPct;
 
     // Minigame
-    @FXML private javafx.scene.layout.Pane gameArea;
-    @FXML private Button gameTarget;
-    @FXML private Label gameScoreLabel;
+    @FXML
+    private javafx.scene.layout.Pane gameArea;
+    @FXML
+    private Button gameTarget;
+    @FXML
+    private Label gameScoreLabel;
     private int gameScore = 0;
 
-    private Node    dashboardContent;
+    private Node dashboardContent;
     private boolean isDarkMode = false;
-    private boolean isEnglish  = false;
+    private boolean isEnglish = false;
 
     // Subscription IDs for dashboard data
     private String subProfile;
@@ -94,10 +168,6 @@ public class DashboardController implements Initializable {
     private String subUnreadNotifs;
     private String subDashCalendar;
     private String subDashMarks;
-
-    // Search popup
-    private javafx.stage.Popup searchPopup;
-    private VBox searchResultsBox;
 
     private void loadSettings() {
         try {
@@ -107,7 +177,8 @@ public class DashboardController implements Initializable {
                 com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(file);
                 this.isDarkMode = root.path("isDarkMode").asBoolean(false);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     private void saveSettingsToJson() {
@@ -123,7 +194,8 @@ public class DashboardController implements Initializable {
             root.put("isEnglish", isEnglish);
             root.put("isDarkMode", isDarkMode);
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, root);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @Override
@@ -140,36 +212,17 @@ public class DashboardController implements Initializable {
         }
 
         if (searchField != null) {
-            setupSearchPopup();
-            searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-                String query = newVal.toLowerCase().trim();
-                if (query.isEmpty()) {
-                    hideSearchPopup();
-                } else {
-                    showSearchResults(query);
-                }
-            });
             searchField.setOnKeyReleased(event -> {
-                if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                    hideSearchPopup();
-                    searchField.clear();
-                } else if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
-                    String query = searchField.getText().toLowerCase().trim();
-                    if (!query.isEmpty()) showSearchResults(query);
-                }
-            });
-            // Hide popup when focus lost
-            searchField.focusedProperty().addListener((obs, oldVal, focused) -> {
-                if (!focused) {
-                    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
-                    pause.setOnFinished(e -> hideSearchPopup());
-                    pause.play();
+                String query = searchField.getText().toLowerCase().trim();
+                if (event.getCode().toString().equals("ENTER") && !query.isEmpty()) {
+                    handleSearch(query);
                 }
             });
         }
 
         Platform.runLater(() -> {
-            if (mainScroll != null) dashboardContent = mainScroll.getContent();
+            if (mainScroll != null)
+                dashboardContent = mainScroll.getContent();
         });
 
         // Spojenie musí byť plne pripravené predtým než pýtame dáta
@@ -191,7 +244,7 @@ public class DashboardController implements Initializable {
             gameTarget.setOnAction(e -> {
                 gameScore++;
                 gameScoreLabel.setText(String.valueOf(gameScore));
-                
+
                 double maxX = Math.max(20, gameArea.getWidth() - 35);
                 double maxY = Math.max(20, gameArea.getHeight() - 35);
                 double x = new java.util.Random().nextDouble() * maxX;
@@ -199,7 +252,7 @@ public class DashboardController implements Initializable {
                 gameTarget.setLayoutX(x);
                 gameTarget.setLayoutY(y);
             });
-            
+
             Platform.runLater(() -> {
                 double maxX = Math.max(20, gameArea.getWidth() - 35);
                 double maxY = Math.max(20, gameArea.getHeight() - 35);
@@ -218,9 +271,9 @@ public class DashboardController implements Initializable {
 
     private void handleProfileMessage(JsonNode node) {
         WebSocketClientService.getInstance().unsubscribe(subProfile);
-        JsonNode data    = node.path("data");
+        JsonNode data = node.path("data");
         String firstName = data.path("firstName").asText("");
-        String lastName  = data.path("lastName").asText("");
+        String lastName = data.path("lastName").asText("");
         UserSession.get().setFirstName(firstName);
         UserSession.get().setLastName(lastName);
         Platform.runLater(this::updateWelcomeBanner);
@@ -253,10 +306,10 @@ public class DashboardController implements Initializable {
             Platform.runLater(() -> {
                 if (notificationsAction != null) {
                     notificationsAction.getChildren().stream()
-                        .filter(n -> n instanceof javafx.scene.control.Label lbl
-                            && lbl.getStyleClass().contains("notification-badge"))
-                        .findFirst()
-                        .ifPresent(n -> n.setVisible(false));
+                            .filter(n -> n instanceof javafx.scene.control.Label lbl
+                                    && lbl.getStyleClass().contains("notification-badge"))
+                            .findFirst()
+                            .ifPresent(n -> n.setVisible(false));
                 }
             });
         });
@@ -269,18 +322,18 @@ public class DashboardController implements Initializable {
         Platform.runLater(() -> {
             if (notificationsAction != null) {
                 notificationsAction.getChildren().stream()
-                    .filter(n -> n instanceof javafx.scene.control.Label lbl
-                        && lbl.getStyleClass().contains("notification-badge"))
-                    .findFirst()
-                    .ifPresent(n -> {
-                        javafx.scene.control.Label badge = (javafx.scene.control.Label) n;
-                        if (count > 0) {
-                            badge.setText(String.valueOf(Math.min(count, 9)));
-                            badge.setVisible(true);
-                        } else {
-                            badge.setVisible(false);
-                        }
-                    });
+                        .filter(n -> n instanceof javafx.scene.control.Label lbl
+                                && lbl.getStyleClass().contains("notification-badge"))
+                        .findFirst()
+                        .ifPresent(n -> {
+                            javafx.scene.control.Label badge = (javafx.scene.control.Label) n;
+                            if (count > 0) {
+                                badge.setText(String.valueOf(Math.min(count, 9)));
+                                badge.setVisible(true);
+                            } else {
+                                badge.setVisible(false);
+                            }
+                        });
             }
 
             if (dashboardAlertsContainer != null) {
@@ -292,7 +345,8 @@ public class DashboardController implements Initializable {
                 } else {
                     int i = 0;
                     for (JsonNode n : data) {
-                        if (i++ >= 3) break; // Zobrazi len 3 notifikacie
+                        if (i++ >= 3)
+                            break; // Zobrazi len 3 notifikacie
                         VBox alertBox = new VBox(4);
                         alertBox.getStyleClass().addAll("alert-item", "alert-blue");
                         Label t = new Label("🔔 " + n.path("title").asText("Upozornenie"));
@@ -315,8 +369,10 @@ public class DashboardController implements Initializable {
         int credits = 0;
         if (data.isArray()) {
             for (JsonNode e : data) {
-                if ("ACTIVE".equals(e.path("status").asText())) active++;
-                if ("PASSED".equals(e.path("status").asText())) credits += e.path("credits").asInt(0);
+                if ("ACTIVE".equals(e.path("status").asText()))
+                    active++;
+                if ("PASSED".equals(e.path("status").asText()))
+                    credits += e.path("credits").asInt(0);
             }
         }
         final int activeCount = active;
@@ -325,15 +381,15 @@ public class DashboardController implements Initializable {
             if (welcomeSub != null) {
                 boolean en = isEnglish;
                 welcomeSub.setText(activeCount > 0
-                    ? (en ? "You have " + activeCount + " active subjects this semester."
-                          : "Máš " + activeCount + " aktívnych predmetov tento semester.")
-                    : (en ? "You have upcoming deadlines this week."
-                          : "Máš nadchádzajúce termíny tento týždeň."));
+                        ? (en ? "You have " + activeCount + " active subjects this semester."
+                                : "Máš " + activeCount + " aktívnych predmetov tento semester.")
+                        : (en ? "You have upcoming deadlines this week."
+                                : "Máš nadchádzajúce termíny tento týždeň."));
             }
             if (dashboardProgressLabel != null) {
                 dashboardProgressLabel.setText(isEnglish
-                    ? "Completed " + passedCredits + " out of 180 required credits."
-                    : "Dokončil si " + passedCredits + " z 180 požadovaných kreditov pre Bc. Informatiku.");
+                        ? "Completed " + passedCredits + " out of 180 required credits."
+                        : "Dokončil si " + passedCredits + " z 180 požadovaných kreditov pre Bc. Informatiku.");
                 if (dashboardProgressPct != null) {
                     dashboardProgressPct.setText(Math.round((passedCredits / 180.0) * 100) + "%");
                 }
@@ -345,8 +401,10 @@ public class DashboardController implements Initializable {
         WebSocketClientService.getInstance().unsubscribe(subDashCalendar);
         JsonNode data = node.path("data");
         Platform.runLater(() -> {
-            if (dashboardMiniCalendar != null) dashboardMiniCalendar.getChildren().clear();
-            if (dashboardMiniTasks != null) dashboardMiniTasks.getChildren().clear();
+            if (dashboardMiniCalendar != null)
+                dashboardMiniCalendar.getChildren().clear();
+            if (dashboardMiniTasks != null)
+                dashboardMiniTasks.getChildren().clear();
 
             int calCount = 0;
             int taskCount = 0;
@@ -361,12 +419,14 @@ public class DashboardController implements Initializable {
                     String type = ev.path("type").asText("EVENT");
                     String title = ev.path("title").asText("Neznáma");
                     String time = ev.path("scheduledAt").asText("");
-                    if (time.isEmpty()) continue;
+                    if (time.isEmpty())
+                        continue;
 
                     try {
                         java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(time);
                         // Len buduce
-                        if (odt.isBefore(java.time.OffsetDateTime.now())) continue;
+                        if (odt.isBefore(java.time.OffsetDateTime.now()))
+                            continue;
 
                         String dateStr = odt.format(java.time.format.DateTimeFormatter.ofPattern("d.M. HH:mm"));
 
@@ -374,17 +434,21 @@ public class DashboardController implements Initializable {
                             Label l = new Label(title + " (" + dateStr + ")");
                             l.setStyle("-fx-text-fill: #06b6d4; -fx-font-size: 13px; -fx-font-weight: bold;");
                             l.setWrapText(true);
-                            if (dashboardMiniCalendar != null) dashboardMiniCalendar.getChildren().add(l);
+                            if (dashboardMiniCalendar != null)
+                                dashboardMiniCalendar.getChildren().add(l);
                             calCount++;
                         }
-                        if ((type.equals("ODOVZDANIE") || type.equals("TASK_DUE") || type.equals("PISOMKA") || type.equals("EXAM")) && taskCount < 2) {
+                        if ((type.equals("ODOVZDANIE") || type.equals("TASK_DUE") || type.equals("PISOMKA")
+                                || type.equals("EXAM")) && taskCount < 2) {
                             Label l = new Label(title + " (" + dateStr + ")");
                             l.setStyle("-fx-text-fill: #06b6d4; -fx-font-size: 13px; -fx-font-weight: bold;");
                             l.setWrapText(true);
-                            if (dashboardMiniTasks != null) dashboardMiniTasks.getChildren().add(l);
+                            if (dashboardMiniTasks != null)
+                                dashboardMiniTasks.getChildren().add(l);
                             taskCount++;
                         }
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                    }
                 }
             }
 
@@ -410,13 +474,14 @@ public class DashboardController implements Initializable {
                 if (data.isArray() && data.size() > 0) {
                     int i = 0;
                     for (JsonNode m : data) {
-                        if (i++ >= 4) break;
+                        if (i++ >= 4)
+                            break;
                         VBox pCard = new VBox(4);
                         pCard.getStyleClass().add("perf-card");
-                        pCard.setMinWidth(220);
+                        pCard.setMinWidth(220); // Make grades wider so text fits
                         pCard.setMaxWidth(Double.MAX_VALUE);
                         javafx.scene.layout.HBox.setHgrow(pCard, javafx.scene.layout.Priority.ALWAYS);
-                        
+
                         Label crs = new Label("Predmet " + m.path("enrollmentId").asText());
                         crs.getStyleClass().add("perf-course");
                         Label gr = new Label(m.path("finalMark").asText());
@@ -425,7 +490,7 @@ public class DashboardController implements Initializable {
                         itm.getStyleClass().add("perf-item");
                         javafx.scene.layout.Region bar = new javafx.scene.layout.Region();
                         bar.getStyleClass().addAll("perf-bar", "perf-bar-hi");
-                        
+
                         pCard.getChildren().addAll(crs, gr, itm, bar);
                         dashboardPerfContainer.getChildren().add(pCard);
                     }
@@ -440,12 +505,13 @@ public class DashboardController implements Initializable {
 
     /** Aktualizuje welcome banner s menom používateľa. */
     private void updateWelcomeBanner() {
-        boolean en      = isEnglish;
+        boolean en = isEnglish;
         boolean teacher = UserSession.get().isTeacher();
-        boolean admin   = UserSession.get().isAdmin();
-        String  name    = UserSession.get().getFullName();
+        boolean admin = UserSession.get().isAdmin();
+        String name = UserSession.get().getFullName();
 
-        if (welcomeTitle == null) return;
+        if (welcomeTitle == null)
+            return;
 
         if (admin) {
             welcomeTitle.setText(en ? "Welcome, Administrator 👋" : "Vitajte, Administrátor 👋");
@@ -458,13 +524,15 @@ public class DashboardController implements Initializable {
 
     // ── NAV HANDLERS ──────────────────────────────────────────────
 
-    @FXML private void handleDashboard() {
+    @FXML
+    private void handleDashboard() {
         setActiveNavItem("dashboard");
         if (mainScroll != null && dashboardContent != null)
             mainScroll.setContent(dashboardContent);
     }
 
-    @FXML private void handleGrades() {
+    @FXML
+    private void handleGrades() {
         setActiveNavItem("grades");
         if (UserSession.get().isAdmin()) {
             loadView("admin-panel-view.fxml");
@@ -475,32 +543,56 @@ public class DashboardController implements Initializable {
         }
     }
 
-    @FXML private void handleCalendar() {
+    @FXML
+    private void handleCalendar() {
         setActiveNavItem("calendar");
         loadView("school-calendar-view.fxml");
     }
 
-    @FXML private void handleProgress() {
+    @FXML
+    private void handleProgress() {
         setActiveNavItem("progress");
         loadView("progress-view.fxml");
     }
 
-    @FXML private void handleAlgebra() {
+    @FXML
+    private void handleAlgebra() {
         setActiveNavItem("algebra");
         loadView("submissions-view.fxml");
     }
 
-    @FXML private void handleCourses() {
+    @FXML
+    private void handleCourses() {
         setActiveNavItem("courses");
         loadView("courses-view.fxml");
     }
 
-    @FXML private void handleSettings() {
+    @FXML
+    private void handleAdminSubjects() {
+        setActiveNavItem("adminSubjects");
+        loadView("admin-subjects-view.fxml");
+    }
+
+    @FXML
+    private void handleAdminGuarantors() {
+        setActiveNavItem("adminGuarantors");
+        loadView("admin-guarantors-view.fxml");
+    }
+
+    @FXML
+    private void handleAdminCreateTeacher() {
+        setActiveNavItem("adminCreateTeacher");
+        loadView("admin-create-teacher-view.fxml");
+    }
+
+    @FXML
+    private void handleSettings() {
         setActiveNavItem("settings");
         loadView("settings-view.fxml");
     }
 
-    @FXML private void handleLogout() {
+    @FXML
+    private void handleLogout() {
         try {
             UserSession.get().setRole(UserSession.Role.STUDENT);
             UserSession.get().setFirstName("");
@@ -510,18 +602,22 @@ public class DashboardController implements Initializable {
             loader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
             Scene loginScene = new Scene(loader.load(), 1280, 800);
             loginScene.getStylesheets().add(
-                getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
+                    getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
             javafx.stage.Stage stage = (javafx.stage.Stage) darkModeToggle.getScene().getWindow();
             stage.setTitle("BAIS – Lepší Akademický Systém");
             stage.setScene(loginScene);
-            if (!stage.isMaximized()) stage.setMaximized(true);
-
-            Platform.runLater(() -> {
-                stage.setMaximized(false);
+            if (!stage.isMaximized())
                 stage.setMaximized(true);
+
+            // Workaround pre fullscreen problém po odhlásení
+            Platform.runLater(() -> {
+                stage.setMaximized(false); // Zmenší okno na normálny stav
+                stage.setMaximized(true); // Okamžite ho znova maximalizuje
             });
 
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // ── Helper: načítaj FXML do scroll pane ──────────────────────
@@ -541,7 +637,8 @@ public class DashboardController implements Initializable {
                 currentSettingsController = null;
             }
 
-            if (mainScroll != null) mainScroll.setContent(view);
+            if (mainScroll != null)
+                mainScroll.setContent(view);
         } catch (IOException e) {
             System.err.println("Chyba pri načítaní: " + fxmlName + " – " + e.getMessage());
             e.printStackTrace();
@@ -554,28 +651,35 @@ public class DashboardController implements Initializable {
         lbl.getStyleClass().add("content-placeholder");
         StackPane sp = new StackPane(lbl);
         sp.getStyleClass().add("main-content");
-        if (mainScroll != null) mainScroll.setContent(sp);
+        if (mainScroll != null)
+            mainScroll.setContent(sp);
     }
 
     // ── Aktívna nav položka ───────────────────────────────────────
 
     private void setActiveNavItem(String active) {
-        VBox[] all = {dashboardItem, gradesItem, calendarItem, progressItem,
-                      algebraItem, coursesItem, settingsItem};
+        VBox[] all = { dashboardItem, gradesItem, calendarItem, progressItem,
+                algebraItem, coursesItem, adminSubjectsItem, adminGuarantorsItem,
+                adminCreateTeacherItem, settingsItem };
         for (VBox v : all) {
-            if (v != null) v.getStyleClass().removeAll("nav-item-active");
+            if (v != null)
+                v.getStyleClass().removeAll("nav-item-active");
         }
         VBox target = switch (active) {
-            case "dashboard" -> dashboardItem;
-            case "grades"    -> gradesItem;
-            case "calendar"  -> calendarItem;
-            case "progress"  -> progressItem;
-            case "algebra"   -> algebraItem;
-            case "courses"   -> coursesItem;
-            case "settings"  -> settingsItem;
-            default          -> null;
+            case "dashboard"          -> dashboardItem;
+            case "grades"             -> gradesItem;
+            case "calendar"           -> calendarItem;
+            case "progress"           -> progressItem;
+            case "algebra"            -> algebraItem;
+            case "courses"            -> coursesItem;
+            case "adminSubjects"      -> adminSubjectsItem;
+            case "adminGuarantors"    -> adminGuarantorsItem;
+            case "adminCreateTeacher" -> adminCreateTeacherItem;
+            case "settings"           -> settingsItem;
+            default -> null;
         };
-        if (target != null) target.getStyleClass().add("nav-item-active");
+        if (target != null)
+            target.getStyleClass().add("nav-item-active");
     }
 
     // ── Téma a jazyk ──────────────────────────────────────────────
@@ -584,20 +688,35 @@ public class DashboardController implements Initializable {
         isEnglish = !isEnglish;
         UserSession.get().setEnglish(isEnglish);
         updateLanguage();
-        if (UserSession.get().isTeacher() || UserSession.get().isAdmin()) applyTeacherUI();
+        if (UserSession.get().isTeacher() || UserSession.get().isAdmin())
+            applyTeacherUI();
         updateWelcomeBanner();
-        
+
         // Reload active view
-        if (dashboardItem.getStyleClass().contains("nav-item-active")) handleDashboard();
-        else if (gradesItem.getStyleClass().contains("nav-item-active")) handleGrades();
-        else if (calendarItem.getStyleClass().contains("nav-item-active")) handleCalendar();
-        else if (progressItem.getStyleClass().contains("nav-item-active")) handleProgress();
-        else if (algebraItem.getStyleClass().contains("nav-item-active")) handleAlgebra();
-        else if (coursesItem.getStyleClass().contains("nav-item-active")) handleCourses();
-        else if (settingsItem.getStyleClass().contains("nav-item-active")) handleSettings();
+        if (dashboardItem.getStyleClass().contains("nav-item-active"))
+            handleDashboard();
+        else if (gradesItem.getStyleClass().contains("nav-item-active"))
+            handleGrades();
+        else if (calendarItem.getStyleClass().contains("nav-item-active"))
+            handleCalendar();
+        else if (progressItem != null && progressItem.getStyleClass().contains("nav-item-active"))
+            handleProgress();
+        else if (algebraItem != null && algebraItem.getStyleClass().contains("nav-item-active"))
+            handleAlgebra();
+        else if (coursesItem != null && coursesItem.getStyleClass().contains("nav-item-active"))
+            handleCourses();
+        else if (adminSubjectsItem != null && adminSubjectsItem.getStyleClass().contains("nav-item-active"))
+            handleAdminSubjects();
+        else if (adminGuarantorsItem != null && adminGuarantorsItem.getStyleClass().contains("nav-item-active"))
+            handleAdminGuarantors();
+        else if (adminCreateTeacherItem != null && adminCreateTeacherItem.getStyleClass().contains("nav-item-active"))
+            handleAdminCreateTeacher();
+        else if (settingsItem.getStyleClass().contains("nav-item-active"))
+            handleSettings();
 
         saveSettingsToJson();
-        if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
+        if (currentSettingsController != null)
+            currentSettingsController.syncFromDashboard();
     }
 
     public void toggleDarkMode() {
@@ -611,43 +730,54 @@ public class DashboardController implements Initializable {
         if (scene != null) {
             scene.getStylesheets().clear();
             scene.getStylesheets().add(
-                getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
+                    getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
         }
         updateDarkModeButton();
-        applySearchPopupTheme(); // Obnov štýl search popupu po zmene témy
         saveSettingsToJson();
-        if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
+        if (currentSettingsController != null)
+            currentSettingsController.syncFromDashboard();
     }
 
     private void applyTeacherUI() {
-        boolean en   = isEnglish;
+        boolean en = isEnglish;
         UserSession.Role role = UserSession.get().getRole();
 
         if (headerSubtitle != null) {
             headerSubtitle.setText(role == UserSession.Role.ADMIN
-                ? (en ? "Admin Portal" : "Portál administrátora")
-                : (en ? "Teacher Portal" : "Portál učiteľa"));
+                    ? (en ? "Admin Portal" : "Portál administrátora")
+                    : (en ? "Teacher Portal" : "Portál učiteľa"));
         }
 
+        // Hide student-only nav items
         if (progressItem != null) { progressItem.setVisible(false); progressItem.setManaged(false); }
-        if (algebraItem  != null) { algebraItem.setVisible(false);  algebraItem.setManaged(false); }
+        if (algebraItem  != null) { algebraItem.setVisible(false);  algebraItem.setManaged(false);  }
+        if (coursesItem  != null) { coursesItem.setVisible(false);  coursesItem.setManaged(false);  }
 
         if (navGrades != null)
-            navGrades.setText(en ? "Student Grades" : "Známky študentov");
+            navGrades.setText(en ? "Admin Panel" : "Admin Panel");
 
-        if (welcomeSub != null) {
-            if (role == UserSession.Role.ADMIN) {
+        if (role == UserSession.Role.ADMIN) {
+            // Show admin nav items
+            if (adminSubjectsItem != null)      { adminSubjectsItem.setVisible(true);      adminSubjectsItem.setManaged(true);      }
+            if (adminGuarantorsItem != null)     { adminGuarantorsItem.setVisible(true);     adminGuarantorsItem.setManaged(true);     }
+            if (adminCreateTeacherItem != null)  { adminCreateTeacherItem.setVisible(true);  adminCreateTeacherItem.setManaged(true);  }
+
+            // Swap tile rows
+            if (studentTilesRow != null) { studentTilesRow.setVisible(false); studentTilesRow.setManaged(false); }
+            if (adminTilesRow   != null) { adminTilesRow.setVisible(true);    adminTilesRow.setManaged(true);    }
+
+            if (welcomeSub != null)
                 welcomeSub.setText(en
                     ? "System is running normally. You have full access."
                     : "Systém beží normálne. Máte plný prístup.");
-            } else {
+        } else {
+            if (welcomeSub != null)
                 welcomeSub.setText(en
                     ? "Click 'Student Grades' to view results for your subjects."
                     : "Kliknite na 'Známky študentov' pre prehľad výsledkov vašich predmetov.");
-            }
         }
 
-        if (perfTitle   != null) { hideParentCard(perfTitle); }
+        if (perfTitle != null)   { hideParentCard(perfTitle); }
         if (degreeTitle != null) { hideParentCard(degreeTitle); }
     }
 
@@ -656,31 +786,52 @@ public class DashboardController implements Initializable {
         while (n != null && !(n instanceof VBox vb && vb.getStyleClass().contains("section-card"))) {
             n = n.getParent();
         }
-        if (n != null) { n.setVisible(false); n.setManaged(false); }
+        if (n != null) {
+            n.setVisible(false);
+            n.setManaged(false);
+        }
     }
 
     private void updateLanguage() {
-        boolean en      = isEnglish;
+        boolean en = isEnglish;
         boolean teacher = UserSession.get().isTeacher();
 
-        if (headerTitle    != null) headerTitle.setText(en ? "Academic Info"  : "Akademické Info");
-        if (headerSubtitle != null) headerSubtitle.setText(
-            teacher ? (en ? "Teacher Portal" : "Portál učiteľa")
-                    : (en ? "Student Portal"  : "Študentský Portál"));
-        if (searchField    != null) searchField.setPromptText(en ? "Search AIS Desktop..." : "Hľadať AIS Desktop...");
+        if (headerTitle != null)
+            headerTitle.setText(en ? "Academic Info" : "Akademické Info");
+        if (headerSubtitle != null)
+            headerSubtitle.setText(
+                    teacher ? (en ? "Teacher Portal" : "Portál učiteľa")
+                            : (en ? "Student Portal" : "Študentský Portál"));
+        if (searchField != null)
+            searchField.setPromptText(en ? "Search AIS Desktop..." : "Hľadať AIS Desktop...");
 
-        if (navDashboard != null) navDashboard.setText(en ? "Dashboard"   : "Prehľad");
-        if (navGrades    != null) navGrades.setText(
-            UserSession.get().isAdmin() ? (en ? "Admin Panel"    : "Admin Panel")
-           : teacher                    ? (en ? "Student Grades" : "Známky študentov")
-                                        : (en ? "Grades"         : "Hodnotenia"));
-        if (navCalendar  != null) navCalendar.setText(en ? "Calendar"    : "Kalendár");
-        if (navProgress  != null) navProgress.setText(en ? "Progress"    : "Progres");
-        if (navAlgebra   != null) navAlgebra.setText(en  ? "Assignments" : "Odovzdanie");
-        if (navCourses   != null) navCourses.setText(en  ? "Courses"     : "Kurzy");
-        if (navSettings  != null) navSettings.setText(en ? "Settings"    : "Nastavenia");
-        if (navLogout    != null) navLogout.setText(en   ? "Logout"      : "Odhlásiť");
+        if (navDashboard != null)
+            navDashboard.setText(en ? "Dashboard" : "Prehľad");
+        if (navGrades != null)
+            navGrades.setText(
+                    UserSession.get().isAdmin() ? (en ? "Admin Panel" : "Admin Panel")
+                            : teacher ? (en ? "Student Grades" : "Známky študentov")
+                                    : (en ? "Grades" : "Hodnotenia"));
+        if (navCalendar != null)
+            navCalendar.setText(en ? "Calendar" : "Kalendár");
+        if (navProgress != null)
+            navProgress.setText(en ? "Progress" : "Progres");
+        if (navAlgebra != null)
+            navAlgebra.setText(en ? "Assignments" : "Odovzdanie");
+        if (navCourses != null)
+            navCourses.setText(en ? "Courses" : "Kurzy");
+        if (navAdminSubjects != null)
+            navAdminSubjects.setText(en ? "Subjects" : "Predmety");
+        if (navAdminGuarantors != null)
+            navAdminGuarantors.setText(en ? "Guarantors" : "Garanti");
+        if (navAdminCreateTeacher != null)
+            navAdminCreateTeacher.setText(en ? "Create Teacher" : "Vytvoriť učiteľa");
+        if (navSettings != null)
+            navSettings.setText(en ? "Settings" : "Nastavenia");
+        if (navLogout != null)
+            navLogout.setText(en ? "Logout" : "Odhlásiť");
 
+        // Welcome banner — meno sa dopĺňa z updateWelcomeBanner() po načítaní profilu
         String name = UserSession.get().getFullName();
         if (welcomeTitle != null) {
             boolean admin = UserSession.get().isAdmin();
@@ -688,251 +839,72 @@ public class DashboardController implements Initializable {
                 welcomeTitle.setText(en ? "Welcome, Administrator 👋" : "Vitajte, Administrátor 👋");
             } else {
                 welcomeTitle.setText((en ? (teacher ? "Welcome, " : "Welcome back, ")
-                                         : (teacher ? "Vitajte, " : "Vitaj späť, ")) + name + " 👋");
+                        : (teacher ? "Vitajte, " : "Vitaj späť, ")) + name + " 👋");
             }
         }
         if (welcomeSub != null && !UserSession.get().isTeacher() && !UserSession.get().isAdmin()) {
             welcomeSub.setText(en
-                ? "You have upcoming deadlines this week."
-                : "Máš nadchádzajúce termíny tento týždeň.");
+                    ? "You have upcoming deadlines this week."
+                    : "Máš nadchádzajúce termíny tento týždeň.");
         }
-        if (schedTitle  != null) schedTitle.setText(en  ? "Today's Schedule"   : "Rozvrh dnes");
-        if (alertsTitle != null) alertsTitle.setText(en ? "Alerts"             : "Upozornenia");
-        if (perfTitle   != null) perfTitle.setText(en   ? "Recent Performance" : "Výsledky predmetov");
-        if (degreeTitle != null) degreeTitle.setText(en ? "Degree Progress"    : "Progres štúdium");
-        if (quickTitle  != null) quickTitle.setText(en  ? "Quick Links"        : "Rýchle odkazy");
-        
-        if (tileCalendarText != null) tileCalendarText.setText(en ? "Calendar" : "Kalendár");
-        if (tileGradesText != null) tileGradesText.setText(en ? "Grades" : "Známky");
-        if (tileAssignmentsText != null) tileAssignmentsText.setText(en ? "Assignments" : "Odovzdania");
-        if (viewAllPerfText != null) viewAllPerfText.setText(en ? "View all →" : "Zobraziť všetky →");
-        if (viewPlanBtn != null) viewPlanBtn.setText(en ? "View Plan" : "Zobraziť plán");
-        if (gameTitleText != null) gameTitleText.setText(en ? "Unwind" : "Odreagovanie");
+        if (schedTitle != null)
+            schedTitle.setText(en ? "Today's Schedule" : "Rozvrh dnes");
+        if (alertsTitle != null)
+            alertsTitle.setText(en ? "Alerts" : "Upozornenia");
+        if (perfTitle != null)
+            perfTitle.setText(en ? "Recent Performance" : "Výsledky predmetov");
+        if (degreeTitle != null)
+            degreeTitle.setText(en ? "Degree Progress" : "Progres štúdium");
+        if (quickTitle != null)
+            quickTitle.setText(en ? "Quick Links" : "Rýchle odkazy");
+
+        if (tileCalendarText != null)
+            tileCalendarText.setText(en ? "Calendar" : "Kalendár");
+        if (tileGradesText != null)
+            tileGradesText.setText(en ? "Grades" : "Známky");
+        if (tileAssignmentsText != null)
+            tileAssignmentsText.setText(en ? "Assignments" : "Odovzdania");
+        if (tileAdminSubjectsText != null)
+            tileAdminSubjectsText.setText(en ? "Subjects" : "Predmety");
+        if (tileAdminGuarantorsText != null)
+            tileAdminGuarantorsText.setText(en ? "Guarantors" : "Garanti");
+        if (tileAdminCreateTeacherText != null)
+            tileAdminCreateTeacherText.setText(en ? "Create Teacher" : "Vytvoriť učiteľa");
+        if (tileAdminCalendarText != null)
+            tileAdminCalendarText.setText(en ? "Calendar" : "Kalendár");
+        if (viewAllPerfText != null)
+            viewAllPerfText.setText(en ? "View all →" : "Zobraziť všetky →");
+        if (viewPlanBtn != null)
+            viewPlanBtn.setText(en ? "View Plan" : "Zobraziť plán");
+        if (gameTitleText != null)
+            gameTitleText.setText(en ? "Unwind" : "Odreagovanie");
 
         if (dashboardProgressLabel != null && !UserSession.get().isTeacher() && !UserSession.get().isAdmin()) {
             String txt = dashboardProgressLabel.getText();
             try {
                 int creds = Integer.parseInt(txt.replaceAll("[^0-9]", " ").trim().split("\\s+")[0]);
                 dashboardProgressLabel.setText(en
-                    ? "You have completed " + creds + " of 180 required credits for BSc. Informatics."
-                    : "Dokončil si " + creds + " z 180 požadovaných kreditov pre Bc. Informatiku.");
-            } catch (Exception e) {}
+                        ? "You have completed " + creds + " of 180 required credits for BSc. Informatics."
+                        : "Dokončil si " + creds + " z 180 požadovaných kreditov pre Bc. Informatiku.");
+            } catch (Exception e) {
+            }
         }
     }
 
     private void updateDarkModeButton() {
-        if (darkModeToggle != null) darkModeToggle.setText(isDarkMode ? "☀" : "🌙");
+        if (darkModeToggle != null)
+            darkModeToggle.setText(isDarkMode ? "☀" : "🌙");
     }
 
-    @FXML private void handleNotifications() {
+    @FXML
+    private void handleNotifications() {
         NotificationWindow.show();
     }
 
-    // ── SEARCH ────────────────────────────────────────────────────
-
-    /** Všetky searchovateľné položky: {sk keywords, en keywords, akcia} */
-    private static final Object[][] SEARCH_ITEMS = {
-        {new String[]{"prehľad", "dashboard", "domov", "home", "hlavná"}, new String[]{"dashboard", "home", "overview"}, "dashboard"},
-        {new String[]{"hodnotenia", "známky", "výsledky", "skúšky"}, new String[]{"grades", "marks", "results", "exams"}, "grades"},
-        {new String[]{"kalendár", "rozvrh", "udalosti", "hodiny"}, new String[]{"calendar", "schedule", "events", "timetable"}, "calendar"},
-        {new String[]{"progres", "štúdium", "kredity", "pokrok"}, new String[]{"progress", "study", "credits", "degree"}, "progress"},
-        {new String[]{"odovzdanie", "úlohy", "zadania", "homework"}, new String[]{"assignments", "tasks", "homework", "submissions"}, "algebra"},
-        {new String[]{"kurzy", "predmety", "zápis", "courses"}, new String[]{"courses", "subjects", "enroll"}, "courses"},
-        {new String[]{"nastavenia", "profil", "jazyk", "téma"}, new String[]{"settings", "profile", "language", "theme"}, "settings"},
-    };
-
-    private void setupSearchPopup() {
-        searchPopup = new javafx.stage.Popup();
-        searchPopup.setAutoHide(false);
-
-        searchResultsBox = new VBox(0);
-        applySearchPopupTheme();
-        searchResultsBox.setMinWidth(340);
-        searchResultsBox.setMaxWidth(340);
-        searchPopup.getContent().add(searchResultsBox);
-    }
-
-    /**
-     * Aplikuje dark alebo light štýl na search popup podľa aktuálneho isDarkMode.
-     * Dark mode: tmavé pozadie (#1e293b), biely text.
-     * Light mode: biele pozadie (#ffffff), čierny text.
-     */
-    private void applySearchPopupTheme() {
-        if (searchResultsBox == null) return;
-        if (isDarkMode) {
-            searchResultsBox.setStyle(
-                "-fx-background-color: #1e293b; " +
-                "-fx-border-color: #06b6d4; " +
-                "-fx-border-width: 1; " +
-                "-fx-border-radius: 8; " +
-                "-fx-background-radius: 8; " +
-                "-fx-effect: dropshadow(gaussian, rgba(6,182,212,0.3), 12, 0, 0, 4);"
-            );
-        } else {
-            searchResultsBox.setStyle(
-                "-fx-background-color: #ffffff; " +
-                "-fx-border-color: #0891b2; " +
-                "-fx-border-width: 1; " +
-                "-fx-border-radius: 8; " +
-                "-fx-background-radius: 8; " +
-                "-fx-effect: dropshadow(gaussian, rgba(8,145,178,0.2), 12, 0, 0, 4);"
-            );
-        }
-    }
-
-    private void showSearchResults(String query) {
-        if (searchPopup == null) return;
-        searchResultsBox.getChildren().clear();
-        applySearchPopupTheme(); // Obnov štýl pri každom zobrazení (pre prípad zmeny témy)
-
-        // Farby podľa témy
-        String colorPrimary  = isDarkMode ? "#e2e8f0" : "#0f172a";   // hlavný text
-        String colorSecond   = isDarkMode ? "#64748b" : "#64748b";   // nápoveda (hint)
-        String colorNoResult = isDarkMode ? "#94a3b8" : "#64748b";   // prázdny stav
-        String colorAccent   = isDarkMode ? "#06b6d4" : "#0891b2";   // šípka / ikona
-        String hoverBg       = isDarkMode
-            ? "rgba(6,182,212,0.1)"
-            : "rgba(8,145,178,0.08)";
-
-        java.util.List<Object[]> matched = new java.util.ArrayList<>();
-        for (Object[] item : SEARCH_ITEMS) {
-            String[] skKeywords = (String[]) item[0];
-            String[] enKeywords = (String[]) item[1];
-            boolean hit = false;
-            for (String kw : skKeywords) { if (fuzzyMatch(query, kw)) { hit = true; break; } }
-            if (!hit) for (String kw : enKeywords) { if (fuzzyMatch(query, kw)) { hit = true; break; } }
-            if (hit) matched.add(item);
-        }
-
-        if (matched.isEmpty()) {
-            Label noResult = new Label(isEnglish ? "  No results found" : "  Žiadne výsledky");
-            noResult.setStyle("-fx-text-fill: " + colorNoResult + "; -fx-font-size: 13px; -fx-padding: 12 16;");
-            searchResultsBox.getChildren().add(noResult);
-        } else {
-            for (int i = 0; i < matched.size(); i++) {
-                Object[] item = matched.get(i);
-                String[] skKeywords = (String[]) item[0];
-                String[] enKeywords = (String[]) item[1];
-                String action = (String) item[2];
-
-                String navName = switch (action) {
-                    case "dashboard" -> isEnglish ? "Dashboard"   : "Prehľad";
-                    case "grades"    -> isEnglish ? "Grades"       : "Hodnotenia";
-                    case "calendar"  -> isEnglish ? "Calendar"     : "Kalendár";
-                    case "progress"  -> isEnglish ? "Progress"     : "Progres";
-                    case "algebra"   -> isEnglish ? "Assignments"  : "Odovzdanie";
-                    case "courses"   -> isEnglish ? "Courses"      : "Kurzy";
-                    case "settings"  -> isEnglish ? "Settings"     : "Nastavenia";
-                    default -> action;
-                };
-                String icon = switch (action) {
-                    case "dashboard" -> "🏠";
-                    case "grades"    -> "📊";
-                    case "calendar"  -> "📅";
-                    case "progress"  -> "🎓";
-                    case "algebra"   -> "📝";
-                    case "courses"   -> "📚";
-                    case "settings"  -> "⚙️";
-                    default -> "🔍";
-                };
-
-                String hints = String.join(", ", isEnglish ? enKeywords : skKeywords);
-
-                javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(12);
-                row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                row.setStyle("-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: transparent;");
-
-                Label iconLabel = new Label(icon);
-                iconLabel.setStyle("-fx-font-size: 18px;");
-
-                VBox textBlock = new VBox(2);
-                Label nameLabel = new Label(navName);
-                nameLabel.setStyle("-fx-text-fill: " + colorPrimary + "; -fx-font-size: 14px; -fx-font-weight: bold;");
-                Label hintLabel = new Label(hints);
-                hintLabel.setStyle("-fx-text-fill: " + colorSecond + "; -fx-font-size: 11px;");
-                textBlock.getChildren().addAll(nameLabel, hintLabel);
-
-                Label arrowLabel = new Label("→");
-                arrowLabel.setStyle("-fx-text-fill: " + colorAccent + "; -fx-font-size: 14px;");
-                javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
-                javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-                row.getChildren().addAll(iconLabel, textBlock, spacer, arrowLabel);
-
-                // Hover efekt
-                row.setOnMouseEntered(e -> row.setStyle(
-                    "-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: " + hoverBg + "; -fx-background-radius: 6;"));
-                row.setOnMouseExited(e -> row.setStyle(
-                    "-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: transparent;"));
-
-                final String finalAction = action;
-                row.setOnMouseClicked(e -> {
-                    hideSearchPopup();
-                    searchField.clear();
-                    navigateToAction(finalAction);
-                });
-
-                // Separator
-                if (i > 0) {
-                    javafx.scene.control.Separator sep = new javafx.scene.control.Separator();
-                    sep.setStyle("-fx-background-color: " + (isDarkMode ? "#334155" : "#e2e8f0") + ";");
-                    searchResultsBox.getChildren().add(sep);
-                }
-                searchResultsBox.getChildren().add(row);
-            }
-        }
-
-        // Zobraz popup pod search fieldom
-        if (!searchPopup.isShowing()) {
-            javafx.geometry.Bounds bounds = searchField.localToScreen(searchField.getBoundsInLocal());
-            if (bounds != null) {
-                searchPopup.show(searchField, bounds.getMinX(), bounds.getMaxY() + 4);
-            }
-        }
-    }
-
-    private void hideSearchPopup() {
-        if (searchPopup != null && searchPopup.isShowing()) {
-            searchPopup.hide();
-        }
-    }
-
-    /**
-     * Fuzzy matching: query je "obsiahnuté" v keyword alebo opačne,
-     * alebo Levenshtein vzdialenosť je malá pre krátke slová.
-     */
-    private boolean fuzzyMatch(String query, String keyword) {
-        if (keyword.contains(query) || query.contains(keyword)) return true;
-        if (query.length() >= 3) {
-            return levenshtein(query, keyword) <= 2;
-        }
-        return false;
-    }
-
-    private int levenshtein(String a, String b) {
-        int m = a.length(), n = b.length();
-        int[][] dp = new int[m + 1][n + 1];
-        for (int i = 0; i <= m; i++) dp[i][0] = i;
-        for (int j = 0; j <= n; j++) dp[0][j] = j;
-        for (int i = 1; i <= m; i++) {
-            for (int j = 1; j <= n; j++) {
-                dp[i][j] = (a.charAt(i - 1) == b.charAt(j - 1))
-                    ? dp[i - 1][j - 1]
-                    : 1 + Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1]));
-            }
-        }
-        return dp[m][n];
-    }
-
-    private void navigateToAction(String action) {
-        switch (action) {
-            case "dashboard" -> handleDashboard();
-            case "grades"    -> handleGrades();
-            case "calendar"  -> handleCalendar();
-            case "progress"  -> handleProgress();
-            case "algebra"   -> handleAlgebra();
-            case "courses"   -> handleCourses();
-            case "settings"  -> handleSettings();
-        }
+    private void handleSearch(String query) {
+        // Placeholder for search functionality
+        System.out.println("Searching for: " + query);
+        // For now, show a placeholder message
+        showPlaceholder("Search for '" + query + "' - feature in development");
     }
 }

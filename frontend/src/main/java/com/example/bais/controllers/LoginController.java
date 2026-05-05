@@ -1,4 +1,5 @@
 package com.example.bais.controllers;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -28,23 +29,35 @@ import javafx.stage.Stage;
 
 public class LoginController implements Initializable {
 
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private Button langButton;
-    @FXML private ImageView langFlagImage;
-    @FXML private Button darkModeToggle;
-    @FXML private Label loginTitle;
-    @FXML private Label loginSubtitle;
-    @FXML private Label usernameLabel;
-    @FXML private Label passwordLabel;
-    @FXML private Button loginButton;
-    @FXML private Label loginSystemTitle;
-    @FXML private Label loginAcademicYear;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private Button langButton;
+    @FXML
+    private ImageView langFlagImage;
+    @FXML
+    private Button darkModeToggle;
+    @FXML
+    private Label loginTitle;
+    @FXML
+    private Label loginSubtitle;
+    @FXML
+    private Label usernameLabel;
+    @FXML
+    private Label passwordLabel;
+    @FXML
+    private Button loginButton;
+    @FXML
+    private Label loginSystemTitle;
+    @FXML
+    private Label loginAcademicYear;
 
     private boolean isDarkMode = false;
     private boolean isEnglish = false;
-    private String  subLogin;
-    private String  subError;
+    private String subLogin;
+    private String subError;
 
     // Lokálne JSON ukladanie
     private static final File SETTINGS_FILE = new File(System.getProperty("user.home"), ".bais-settings.json");
@@ -60,7 +73,8 @@ public class LoginController implements Initializable {
         updateLanguageButton();
         updateDarkModeButton();
 
-        // 3. Aplikujeme CSS tému (musí byť cez Platform.runLater, aby scéna stihla vzniknúť)
+        // 3. Aplikujeme CSS tému (musí byť cez Platform.runLater, aby scéna stihla
+        // vzniknúť)
         Platform.runLater(this::updateTheme);
     }
 
@@ -69,7 +83,7 @@ public class LoginController implements Initializable {
             try {
                 JsonNode root = JSON_MAPPER.readTree(SETTINGS_FILE);
                 isDarkMode = root.path("isDarkMode").asBoolean(false);
-                isEnglish  = root.path("isEnglish").asBoolean(false);
+                isEnglish = root.path("isEnglish").asBoolean(false);
 
                 // Synchronizujeme globálnu session
                 UserSession.get().setEnglish(isEnglish);
@@ -81,7 +95,8 @@ public class LoginController implements Initializable {
 
     private void saveSettingsToJson() {
         try {
-            // Pre zachovanie ostatných nastavení (notifikácie) najprv načítame pôvodný súbor
+            // Pre zachovanie ostatných nastavení (notifikácie) najprv načítame pôvodný
+            // súbor
             ObjectNode root;
             if (SETTINGS_FILE.exists()) {
                 root = (ObjectNode) JSON_MAPPER.readTree(SETTINGS_FILE);
@@ -110,10 +125,11 @@ public class LoginController implements Initializable {
             return;
         }
 
-        if (!user.matches("^[\\w\\.-]+@stuba\\.sk$")) {
+        if (!user.matches("^[\\w\\.-]+@(?:fiit\\.)?stuba\\.sk$")) {
             showAlert(Alert.AlertType.WARNING,
                     isEnglish ? "Invalid Email Domain" : "Neplatná doména",
-                    isEnglish ? "Please use your university email (@stuba.sk)." : "Prosím použite univerzitný email (@stuba.sk).");
+                    isEnglish ? "Please use your university email (@stuba.sk / @fiit.stuba.sk)."
+                            : "Prosím použite univerzitný email (@stuba.sk / @fiit.stuba.sk).");
             return;
         }
 
@@ -145,9 +161,12 @@ public class LoginController implements Initializable {
                 session.setUserEmail(data.path("email").asText());
 
                 String role = data.path("role").asText();
-                if ("ADMIN".equalsIgnoreCase(role)) session.setRole(UserSession.Role.ADMIN);
-                else if ("TEACHER".equalsIgnoreCase(role)) session.setRole(UserSession.Role.TEACHER);
-                else session.setRole(UserSession.Role.STUDENT);
+                if ("ADMIN".equalsIgnoreCase(role))
+                    session.setRole(UserSession.Role.ADMIN);
+                else if ("TEACHER".equalsIgnoreCase(role))
+                    session.setRole(UserSession.Role.TEACHER);
+                else
+                    session.setRole(UserSession.Role.STUDENT);
 
                 session.setEnglish(isEnglish);
                 navigateToDashboard();
@@ -167,9 +186,8 @@ public class LoginController implements Initializable {
         try {
             // SPRÁVNA CESTA pri behu z JARu
             FXMLLoader fxmlLoader = new FXMLLoader(
-                getClass().getResource("/com/example/bais/dashboard-view.fxml")
-            );
-            
+                    getClass().getResource("/com/example/bais/dashboard-view.fxml"));
+
             fxmlLoader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
             Scene dashboardScene = new Scene(fxmlLoader.load(), 1280, 800);
 
@@ -215,23 +233,30 @@ public class LoginController implements Initializable {
             loginSubtitle.setText(isEnglish ? "Enter your credentials" : "Zadaj svoje údaje");
             loginSubtitle.setAlignment(Pos.CENTER);
         }
-        if (usernameLabel != null) usernameLabel.setText(isEnglish ? "Email" : "Email");
-        if (passwordLabel != null) passwordLabel.setText(isEnglish ? "Password" : "Heslo");
-        if (loginButton != null) loginButton.setText(isEnglish ? "Sign In" : "Prihlásiť sa");
-        if (loginSystemTitle != null) loginSystemTitle.setText(isEnglish ? "Better Academic System" : "Lepší Akademický Systém");
-        if (loginAcademicYear != null) loginAcademicYear.setText(isEnglish ? "Academic Year 2026" : "Akademický rok 2026");
+        if (usernameLabel != null)
+            usernameLabel.setText(isEnglish ? "Email" : "Email");
+        if (passwordLabel != null)
+            passwordLabel.setText(isEnglish ? "Password" : "Heslo");
+        if (loginButton != null)
+            loginButton.setText(isEnglish ? "Sign In" : "Prihlásiť sa");
+        if (loginSystemTitle != null)
+            loginSystemTitle.setText(isEnglish ? "Better Academic System" : "Lepší Akademický Systém");
+        if (loginAcademicYear != null)
+            loginAcademicYear.setText(isEnglish ? "Academic Year 2026" : "Akademický rok 2026");
     }
 
     private void updateLanguageButton() {
         if (langFlagImage != null) {
             String path = isEnglish ? "/images/United_Kingdom.png" : "/images/Slovakia.png";
             URL resource = getClass().getResource(path);
-            if (resource != null) langFlagImage.setImage(new Image(resource.toExternalForm()));
+            if (resource != null)
+                langFlagImage.setImage(new Image(resource.toExternalForm()));
         }
     }
 
     private void updateTheme() {
-        if (loginButton == null || loginButton.getScene() == null) return;
+        if (loginButton == null || loginButton.getScene() == null)
+            return;
         Scene scene = loginButton.getScene();
         scene.getStylesheets().clear();
         String css = isDarkMode ? "/dark.css" : "/light.css";
@@ -239,7 +264,8 @@ public class LoginController implements Initializable {
     }
 
     private void updateDarkModeButton() {
-        if (darkModeToggle != null) darkModeToggle.setText(isDarkMode ? "☀" : "🌙");
+        if (darkModeToggle != null)
+            darkModeToggle.setText(isDarkMode ? "☀" : "🌙");
     }
 
     private void showAlert(Alert.AlertType type, String title, String content) {
