@@ -18,10 +18,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-/**
- * Admin Panel Overview — dashboard with quick-link tiles to admin sections.
- * SK/EN + dark/light mode aware.
- */
 public class AdminPanelController implements Initializable {
 
     @FXML private VBox adminRoot;
@@ -37,7 +33,7 @@ public class AdminPanelController implements Initializable {
     }
 
     private void buildUI(boolean en) {
-        // ── Title ─────────────────────────────────────────────────────────
+        //Title
         Label title = new Label(en ? "Admin Panel" : "Administrátorský panel");
         title.setStyle("-fx-font-size:28px;-fx-font-weight:bold;");
         title.getStyleClass().add("welcome-title");
@@ -51,7 +47,7 @@ public class AdminPanelController implements Initializable {
         VBox titleBlock = new VBox(6, title, sub);
         adminRoot.getChildren().add(titleBlock);
 
-        // ── Stats row ─────────────────────────────────────────────────────
+        //Stats row
         Label statsTitle = new Label(en ? "System overview" : "Prehľad systému");
         statsTitle.setStyle("-fx-font-size:16px;-fx-font-weight:bold;");
         statsTitle.getStyleClass().add("section-title");
@@ -70,13 +66,12 @@ public class AdminPanelController implements Initializable {
         // Load counts from backend
         loadStats(statsRow, en);
 
-        // ── Quick links title ─────────────────────────────────────────────
+        //Quick links title
         Label qlTitle = new Label(en ? "Quick navigation" : "Rýchla navigácia");
         qlTitle.setStyle("-fx-font-size:16px;-fx-font-weight:bold;");
         qlTitle.getStyleClass().add("section-title");
         adminRoot.getChildren().add(qlTitle);
 
-        // ── Quick link tiles ──────────────────────────────────────────────
         HBox tilesRow = new HBox(16);
         tilesRow.setAlignment(Pos.CENTER_LEFT);
 

@@ -178,7 +178,6 @@ public class UserDAO {
 
     /**
      * Vymaze pouzivatela podla ID.
-     * Pozor: DB RESTRICT brani vymazaniu ak su viazane zaznamy (enrollments, marks atd.).
      */
     public boolean delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();

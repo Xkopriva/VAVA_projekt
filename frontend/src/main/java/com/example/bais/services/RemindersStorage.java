@@ -8,9 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * Ulúči a načítava pripomienky z loklního úložiště (JSON soubor).
- */
+//Ulúči a načítava pripomienky z loklního úložiště
 public class RemindersStorage {
     private static final String REMINDERS_DIR = System.getProperty("user.home") + "/.bais/reminders";
     private static final String REMINDERS_FILE = REMINDERS_DIR + "/reminders.txt";
@@ -23,10 +21,7 @@ public class RemindersStorage {
         }
     }
 
-    /**
-     * Ulož pripomienky do súboru (jeden riadok = jedna pripomienka)
-     * Format: type|title|time|dayIndex|userId
-     */
+    // Ulož pripomienky do súboru 
     public static void saveReminders(List<CalendarReminder> reminders, String userId) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(REMINDERS_FILE))) {
             for (CalendarReminder r : reminders) {
@@ -44,9 +39,8 @@ public class RemindersStorage {
         }
     }
 
-    /**
-     * Načítaj pripomienky z súboru
-     */
+    // Načítaj pripomienky z súboru
+
     public static List<CalendarReminder> loadReminders(String userId) {
         List<CalendarReminder> reminders = new ArrayList<>();
         Path filePath = Paths.get(REMINDERS_FILE);
@@ -63,10 +57,10 @@ public class RemindersStorage {
                 String[] parts = line.split("\\|");
                 if (parts.length >= 5 && parts[4].equals(userId)) {
                     reminders.add(new CalendarReminder(
-                        parts[0],  // type
-                        parts[1],  // title
-                        parts[2],  // time
-                        Integer.parseInt(parts[3])  // dayIndex
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                        Integer.parseInt(parts[3])
                     ));
                 }
             }
@@ -77,9 +71,6 @@ public class RemindersStorage {
         return reminders;
     }
 
-    /**
-     * Vymaž všetky pripomienky konkrétneho používateľa
-     */
     public static void clearReminders(String userId) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(REMINDERS_FILE))) {
             List<String> lines = Files.readAllLines(Paths.get(REMINDERS_FILE));
@@ -96,9 +87,6 @@ public class RemindersStorage {
         }
     }
 
-    /**
-     * Vnútorná trieda reprezentujúca jednu pripomienku
-     */
     public static class CalendarReminder {
         public final String type;
         public final String title;

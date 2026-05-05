@@ -178,7 +178,7 @@ public class ProgressController implements Initializable {
         title.getStyleClass().add("welcome-title");
         Label sub = new Label(name + (email != null && !name.equals(email) ? "  •  " + email : ""));
         sub.getStyleClass().add("welcome-sub");
-        sub.setPadding(new Insets(4, 0, 0, 0)); // Apply padding directly
+        sub.setPadding(new Insets(4, 0, 0, 0));
         titleBlock.getChildren().addAll(title, sub);
         HBox.setHgrow(titleBlock, Priority.ALWAYS);
 

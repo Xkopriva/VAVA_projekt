@@ -22,15 +22,15 @@ public class Event {
     }
 
     private int id;
-    private int subjectId;              // FK -> subject NOT NULL
-    private Type type;                  // PREDNASKA | CVICENIE | ... NOT NULL
-    private Integer weekNumber;         // nullable
-    private String room;                // nullable VARCHAR(100)
-    private OffsetDateTime scheduledAt; // nullable TIMESTAMPTZ
-    private Integer durationMinutes;    // nullable
+    private int subjectId; 
+    private Type type; 
+    private Integer weekNumber;
+    private String room;
+    private OffsetDateTime scheduledAt;
+    private Integer durationMinutes; 
     @JsonProperty("isPublished")
-    private boolean isPublished;        // DEFAULT FALSE
-    private Integer createdBy;          // FK -> user nullable
+    private boolean isPublished; 
+    private Integer createdBy; 
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 

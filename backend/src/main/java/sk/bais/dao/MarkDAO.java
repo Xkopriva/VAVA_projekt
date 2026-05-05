@@ -77,7 +77,7 @@ public class MarkDAO {
             stmt.setInt(2, studentId);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRow(rs)); // Mapper z tvojho MarkDAO[cite: 21]
+                    list.add(mapRow(rs));
                 }
             }
         }

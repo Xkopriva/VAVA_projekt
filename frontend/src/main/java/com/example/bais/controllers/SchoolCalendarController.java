@@ -189,7 +189,6 @@ public class SchoolCalendarController implements Initializable {
         titleBlock.getChildren().addAll(title, sub);
         HBox.setHgrow(titleBlock, Priority.ALWAYS);
 
-        // MODERNEJSÍ DIZAJN TLAČIDLA
         Button addBtn = new Button(en ? "+ Add Reminder" : "+ Pridať pripomienku");
         addBtn.setCursor(javafx.scene.Cursor.HAND);
         addBtn.setStyle(
@@ -244,7 +243,7 @@ public class SchoolCalendarController implements Initializable {
         gridContainer.getChildren().add(calendarGrid);
 
         HBox legend = buildLegend();
-        legend.setPadding(new Insets(8, 0, 16, 0)); // space below legend
+        legend.setPadding(new Insets(8, 0, 16, 0));
         calendarRoot.getChildren().addAll(titleRow, legend, gridContainer);
     }
 
@@ -288,7 +287,6 @@ public class SchoolCalendarController implements Initializable {
             
             for (String raw : importedRaw) {
                 try {
-                    // Formát: "Titul | DEŇ Čas"
                     String[] parts = raw.split("\\|");
                     if (parts.length < 2) continue;
                     
@@ -315,8 +313,8 @@ public class SchoolCalendarController implements Initializable {
                 }
             }
             
-            saveReminders(); // Uložíme do lokálneho úložiska
-            refreshGrid();   // Prekreslíme kalendár
+            saveReminders(); 
+            refreshGrid(); 
             
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle(en ? "Import successful" : "Import úspešný");
@@ -558,7 +556,7 @@ public class SchoolCalendarController implements Initializable {
 
          card.getChildren().addAll(typeLbl, titleLbl, timeLbl);
 
-         // Pridaj context menu na vymazanie pre pripomienky
+         // context menu na vymazanie pre pripomienky
          boolean isReminder = "PRIPOMIENKA".equals(ev.type()) || "REMINDER".equals(ev.type());
          if (isReminder) {
              ContextMenu contextMenu = new ContextMenu();

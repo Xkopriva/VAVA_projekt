@@ -262,7 +262,7 @@ public class DashboardController implements Initializable {
         }
     }
 
-    /** Načíta meno používateľa z backendu a aktualizuje welcome banner. */
+    // Načíta meno používateľa z backendu a aktualizuje welcome banner.
     private void loadUserProfile() {
         WebSocketClientService ws = WebSocketClientService.getInstance();
         subProfile = ws.subscribe("USER_PROFILE", this::handleProfileMessage);
@@ -279,19 +279,19 @@ public class DashboardController implements Initializable {
         Platform.runLater(this::updateWelcomeBanner);
     }
 
-    /** Načíta reálne hodnotenia a enrollmenty pre dashboard. */
+    // Načíta reálne hodnotenia a enrollmenty pre dashboard.
     private void loadDashboardData() {
         WebSocketClientService ws = WebSocketClientService.getInstance();
 
-        // Načítaj enrollmenty (počet predmetov → welcome subtitle)
+        // Načíta enrollmenty (počet predmetov → welcome subtitle)
         subDashEnrollments = ws.subscribe("MY_ENROLLMENTS", this::handleDashboardEnrollments);
         ws.sendAction("GET_MY_ENROLLMENTS", null);
 
-        // Načítaj kalendár
+        // Načíta kalendár
         subDashCalendar = ws.subscribe("MY_CALENDAR_EVENTS", this::handleDashboardCalendar);
         ws.sendAction("GET_MY_CALENDAR", null);
 
-        // Načítaj hodnotenia
+        // Načíta hodnotenia
         subDashMarks = ws.subscribe("MY_INDEX_RECORDS", this::handleDashboardMarks);
         ws.sendAction("GET_MY_MARKS", null);
 
@@ -503,7 +503,7 @@ public class DashboardController implements Initializable {
         });
     }
 
-    /** Aktualizuje welcome banner s menom používateľa. */
+    // Aktualizuje welcome banner s menom používateľa.
     private void updateWelcomeBanner() {
         boolean en = isEnglish;
         boolean teacher = UserSession.get().isTeacher();
@@ -522,7 +522,7 @@ public class DashboardController implements Initializable {
         }
     }
 
-    // ── NAV HANDLERS ──────────────────────────────────────────────
+    //NAV HANDLERS
 
     @FXML
     private void handleDashboard() {
@@ -620,7 +620,7 @@ public class DashboardController implements Initializable {
         }
     }
 
-    // ── Helper: načítaj FXML do scroll pane ──────────────────────
+    //Helper: načítaj FXML do scroll pane
 
     private SettingsController currentSettingsController;
 
@@ -655,7 +655,7 @@ public class DashboardController implements Initializable {
             mainScroll.setContent(sp);
     }
 
-    // ── Aktívna nav položka ───────────────────────────────────────
+    //Aktívna nav položka
 
     private void setActiveNavItem(String active) {
         VBox[] all = { dashboardItem, gradesItem, calendarItem, progressItem,
@@ -682,7 +682,7 @@ public class DashboardController implements Initializable {
             target.getStyleClass().add("nav-item-active");
     }
 
-    // ── Téma a jazyk ──────────────────────────────────────────────
+    // Téma a jazyk
 
     public void toggleLanguage() {
         isEnglish = !isEnglish;
@@ -904,7 +904,6 @@ public class DashboardController implements Initializable {
     private void handleSearch(String query) {
         // Placeholder for search functionality
         System.out.println("Searching for: " + query);
-        // For now, show a placeholder message
         showPlaceholder("Search for '" + query + "' - feature in development");
     }
 }

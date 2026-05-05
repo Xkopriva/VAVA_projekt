@@ -18,14 +18,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-/**
- * Vyvezenie a dovezení dat do XML
- */
+//Vyvezenie a dovezení dat do XML
 public class DataXmlExporter {
 
-    /**
-     * Exportuje data do XML súboru
-     */
+    // Exportuje data do XML súboru
     public static void exportToXml(String filePath, String userName, List<String> enrolledSubjects,
                                    List<String> grades, List<String> reminders) {
         try {
@@ -43,7 +39,7 @@ public class DataXmlExporter {
             userElement.setAttribute("name", userName);
             rootElement.appendChild(userElement);
 
-            // Předměty
+            // Predmety
             Element subjectsElement = doc.createElement("enrolled_subjects");
             for (String subject : enrolledSubjects) {
                 Element subjectElement = doc.createElement("subject");
@@ -61,7 +57,7 @@ public class DataXmlExporter {
             }
             rootElement.appendChild(gradesElement);
 
-            // Připomínky
+            // Pripomienky
             Element remindersElement = doc.createElement("reminders");
             for (String reminder : reminders) {
                 Element reminderElement = doc.createElement("reminder");
@@ -70,7 +66,7 @@ public class DataXmlExporter {
             }
             rootElement.appendChild(remindersElement);
 
-            // Uložení do souboru
+            // Ulozenie do souboru
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty("indent", "yes");
@@ -87,11 +83,7 @@ public class DataXmlExporter {
         }
     }
     
-    /**
-     * Import len pripomienok z xml suboru 
-     */
-
-    
+    //Import len pripomienok z xml suboru   
     public static List<String> importRemindersOnly(String filePath) {
         List<String> reminders = new ArrayList<>();
         try {
@@ -109,10 +101,6 @@ public class DataXmlExporter {
         return reminders;
     }
 
-    /**
-     * Importuje data z XML súboru
-     * @return Mapa s klíči: "user", "subjects", "grades", "reminders"
-     */
     public static Map<String, Object> importFromXml(String filePath) {
         Map<String, Object> data = new HashMap<>();
 
@@ -123,14 +111,14 @@ public class DataXmlExporter {
 
             Element rootElement = doc.getDocumentElement();
 
-            // Uživatel
+            // Uzivatel
             NodeList userNodes = rootElement.getElementsByTagName("user");
             if (userNodes.getLength() > 0) {
                 Element userElement = (Element) userNodes.item(0);
                 data.put("user", userElement.getAttribute("name"));
             }
 
-            // Předměty
+            // Predmety
             List<String> subjects = new ArrayList<>();
             NodeList subjectNodes = rootElement.getElementsByTagName("subject");
             for (int i = 0; i < subjectNodes.getLength(); i++) {
@@ -139,7 +127,7 @@ public class DataXmlExporter {
             }
             data.put("subjects", subjects);
 
-            // Známky
+            // Znamky
             List<String> grades = new ArrayList<>();
             NodeList gradeNodes = rootElement.getElementsByTagName("grade");
             for (int i = 0; i < gradeNodes.getLength(); i++) {
@@ -148,7 +136,7 @@ public class DataXmlExporter {
             }
             data.put("grades", grades);
 
-            // Připomínky
+            // Pripomienky
             List<String> reminders = new ArrayList<>();
             NodeList reminderNodes = rootElement.getElementsByTagName("reminder");
             for (int i = 0; i < reminderNodes.getLength(); i++) {
