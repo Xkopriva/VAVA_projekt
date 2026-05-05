@@ -142,8 +142,6 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
                 case "CREATE_NOTIFICATION" -> handleCreateNotification(conn, payload);
 
-                
-
 
                 default             -> sendError(conn, "Neznáma akcia: " + action);
             }

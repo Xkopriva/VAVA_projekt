@@ -90,6 +90,14 @@
                             <key>file.encoding</key>
                             <value>UTF-8</value>
                         </systemProperty>
+                        <systemProperty>
+                            <key>sun.stdout.encoding</key>
+                            <value>UTF-8</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <key>sun.stderr.encoding</key>
+                            <value>UTF-8</value>
+                        </systemProperty>
                     </systemProperties>
                 </configuration>
             </plugin>

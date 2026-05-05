@@ -25,6 +25,25 @@ import sk.bais.service.TeacherService;
 public class Main {
 
     public static void main(String[] args) {
+
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("sun.stdout.encoding", "UTF-8");
+        System.setProperty("sun.stderr.encoding", "UTF-8");
+        System.setProperty("native.encoding", "UTF-8");
+
+        try {
+            var utf8 = java.nio.charset.Charset.forName("UTF-8");
+            
+            // Prepíšeme System.out a System.err
+            System.setOut(new java.io.PrintStream(System.out, true, utf8));
+            System.setErr(new java.io.PrintStream(System.err, true, utf8));
+        
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
         System.out.println("=== BAIS Backend Server - Štartujem ===\n");
 
         // 1. Inicializácia DAO vrstvy
