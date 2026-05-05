@@ -110,6 +110,13 @@ public class LoginController implements Initializable {
             return;
         }
 
+        if (!user.matches("^[\\w\\.-]+@stuba\\.sk$")) {
+            showAlert(Alert.AlertType.WARNING,
+                    isEnglish ? "Invalid Email Domain" : "Neplatná doména",
+                    isEnglish ? "Please use your university email (@stuba.sk)." : "Prosím použite univerzitný email (@stuba.sk).");
+            return;
+        }
+
         WebSocketClientService ws = WebSocketClientService.getInstance();
         ws.connectAsync().thenRun(() -> {
             subLogin = ws.subscribe("LOGIN_SUCCESS", this::handleServerMessage);

@@ -95,6 +95,10 @@ public class DashboardController implements Initializable {
     private String subDashCalendar;
     private String subDashMarks;
 
+    // Search popup
+    private javafx.stage.Popup searchPopup;
+    private VBox searchResultsBox;
+
     private void loadSettings() {
         try {
             java.io.File file = new java.io.File(System.getProperty("user.home"), ".bais-settings.json");
@@ -136,10 +140,30 @@ public class DashboardController implements Initializable {
         }
 
         if (searchField != null) {
+            setupSearchPopup();
+            searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+                String query = newVal.toLowerCase().trim();
+                if (query.isEmpty()) {
+                    hideSearchPopup();
+                } else {
+                    showSearchResults(query);
+                }
+            });
             searchField.setOnKeyReleased(event -> {
-                String query = searchField.getText().toLowerCase().trim();
-                if (event.getCode().toString().equals("ENTER") && !query.isEmpty()) {
-                    handleSearch(query);
+                if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                    hideSearchPopup();
+                    searchField.clear();
+                } else if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    String query = searchField.getText().toLowerCase().trim();
+                    if (!query.isEmpty()) showSearchResults(query);
+                }
+            });
+            // Hide popup when focus lost
+            searchField.focusedProperty().addListener((obs, oldVal, focused) -> {
+                if (!focused) {
+                    javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
+                    pause.setOnFinished(e -> hideSearchPopup());
+                    pause.play();
                 }
             });
         }
@@ -389,7 +413,7 @@ public class DashboardController implements Initializable {
                         if (i++ >= 4) break;
                         VBox pCard = new VBox(4);
                         pCard.getStyleClass().add("perf-card");
-                        pCard.setMinWidth(220); // Make grades wider so text fits
+                        pCard.setMinWidth(220);
                         pCard.setMaxWidth(Double.MAX_VALUE);
                         javafx.scene.layout.HBox.setHgrow(pCard, javafx.scene.layout.Priority.ALWAYS);
                         
@@ -463,7 +487,7 @@ public class DashboardController implements Initializable {
 
     @FXML private void handleAlgebra() {
         setActiveNavItem("algebra");
-        loadView("submissions-view.fxml"); // Changed from course-detail-view.fxml
+        loadView("submissions-view.fxml");
     }
 
     @FXML private void handleCourses() {
@@ -492,10 +516,9 @@ public class DashboardController implements Initializable {
             stage.setScene(loginScene);
             if (!stage.isMaximized()) stage.setMaximized(true);
 
-            // Workaround pre fullscreen problém po odhlásení
             Platform.runLater(() -> {
-                stage.setMaximized(false); // Zmenší okno na normálny stav
-                stage.setMaximized(true);  // Okamžite ho znova maximalizuje
+                stage.setMaximized(false);
+                stage.setMaximized(true);
             });
 
         } catch (IOException e) { e.printStackTrace(); }
@@ -591,6 +614,7 @@ public class DashboardController implements Initializable {
                 getClass().getResource(isDarkMode ? "/dark.css" : "/light.css").toExternalForm());
         }
         updateDarkModeButton();
+        applySearchPopupTheme(); // Obnov štýl search popupu po zmene témy
         saveSettingsToJson();
         if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
     }
@@ -657,7 +681,6 @@ public class DashboardController implements Initializable {
         if (navSettings  != null) navSettings.setText(en ? "Settings"    : "Nastavenia");
         if (navLogout    != null) navLogout.setText(en   ? "Logout"      : "Odhlásiť");
 
-        // Welcome banner — meno sa dopĺňa z updateWelcomeBanner() po načítaní profilu
         String name = UserSession.get().getFullName();
         if (welcomeTitle != null) {
             boolean admin = UserSession.get().isAdmin();
@@ -705,10 +728,211 @@ public class DashboardController implements Initializable {
         NotificationWindow.show();
     }
 
-    private void handleSearch(String query) {
-        // Placeholder for search functionality
-        System.out.println("Searching for: " + query);
-        // For now, show a placeholder message
-        showPlaceholder("Search for '" + query + "' - feature in development");
+    // ── SEARCH ────────────────────────────────────────────────────
+
+    /** Všetky searchovateľné položky: {sk keywords, en keywords, akcia} */
+    private static final Object[][] SEARCH_ITEMS = {
+        {new String[]{"prehľad", "dashboard", "domov", "home", "hlavná"}, new String[]{"dashboard", "home", "overview"}, "dashboard"},
+        {new String[]{"hodnotenia", "známky", "výsledky", "skúšky"}, new String[]{"grades", "marks", "results", "exams"}, "grades"},
+        {new String[]{"kalendár", "rozvrh", "udalosti", "hodiny"}, new String[]{"calendar", "schedule", "events", "timetable"}, "calendar"},
+        {new String[]{"progres", "štúdium", "kredity", "pokrok"}, new String[]{"progress", "study", "credits", "degree"}, "progress"},
+        {new String[]{"odovzdanie", "úlohy", "zadania", "homework"}, new String[]{"assignments", "tasks", "homework", "submissions"}, "algebra"},
+        {new String[]{"kurzy", "predmety", "zápis", "courses"}, new String[]{"courses", "subjects", "enroll"}, "courses"},
+        {new String[]{"nastavenia", "profil", "jazyk", "téma"}, new String[]{"settings", "profile", "language", "theme"}, "settings"},
+    };
+
+    private void setupSearchPopup() {
+        searchPopup = new javafx.stage.Popup();
+        searchPopup.setAutoHide(false);
+
+        searchResultsBox = new VBox(0);
+        applySearchPopupTheme();
+        searchResultsBox.setMinWidth(340);
+        searchResultsBox.setMaxWidth(340);
+        searchPopup.getContent().add(searchResultsBox);
+    }
+
+    /**
+     * Aplikuje dark alebo light štýl na search popup podľa aktuálneho isDarkMode.
+     * Dark mode: tmavé pozadie (#1e293b), biely text.
+     * Light mode: biele pozadie (#ffffff), čierny text.
+     */
+    private void applySearchPopupTheme() {
+        if (searchResultsBox == null) return;
+        if (isDarkMode) {
+            searchResultsBox.setStyle(
+                "-fx-background-color: #1e293b; " +
+                "-fx-border-color: #06b6d4; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-effect: dropshadow(gaussian, rgba(6,182,212,0.3), 12, 0, 0, 4);"
+            );
+        } else {
+            searchResultsBox.setStyle(
+                "-fx-background-color: #ffffff; " +
+                "-fx-border-color: #0891b2; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 8; " +
+                "-fx-background-radius: 8; " +
+                "-fx-effect: dropshadow(gaussian, rgba(8,145,178,0.2), 12, 0, 0, 4);"
+            );
+        }
+    }
+
+    private void showSearchResults(String query) {
+        if (searchPopup == null) return;
+        searchResultsBox.getChildren().clear();
+        applySearchPopupTheme(); // Obnov štýl pri každom zobrazení (pre prípad zmeny témy)
+
+        // Farby podľa témy
+        String colorPrimary  = isDarkMode ? "#e2e8f0" : "#0f172a";   // hlavný text
+        String colorSecond   = isDarkMode ? "#64748b" : "#64748b";   // nápoveda (hint)
+        String colorNoResult = isDarkMode ? "#94a3b8" : "#64748b";   // prázdny stav
+        String colorAccent   = isDarkMode ? "#06b6d4" : "#0891b2";   // šípka / ikona
+        String hoverBg       = isDarkMode
+            ? "rgba(6,182,212,0.1)"
+            : "rgba(8,145,178,0.08)";
+
+        java.util.List<Object[]> matched = new java.util.ArrayList<>();
+        for (Object[] item : SEARCH_ITEMS) {
+            String[] skKeywords = (String[]) item[0];
+            String[] enKeywords = (String[]) item[1];
+            boolean hit = false;
+            for (String kw : skKeywords) { if (fuzzyMatch(query, kw)) { hit = true; break; } }
+            if (!hit) for (String kw : enKeywords) { if (fuzzyMatch(query, kw)) { hit = true; break; } }
+            if (hit) matched.add(item);
+        }
+
+        if (matched.isEmpty()) {
+            Label noResult = new Label(isEnglish ? "  No results found" : "  Žiadne výsledky");
+            noResult.setStyle("-fx-text-fill: " + colorNoResult + "; -fx-font-size: 13px; -fx-padding: 12 16;");
+            searchResultsBox.getChildren().add(noResult);
+        } else {
+            for (int i = 0; i < matched.size(); i++) {
+                Object[] item = matched.get(i);
+                String[] skKeywords = (String[]) item[0];
+                String[] enKeywords = (String[]) item[1];
+                String action = (String) item[2];
+
+                String navName = switch (action) {
+                    case "dashboard" -> isEnglish ? "Dashboard"   : "Prehľad";
+                    case "grades"    -> isEnglish ? "Grades"       : "Hodnotenia";
+                    case "calendar"  -> isEnglish ? "Calendar"     : "Kalendár";
+                    case "progress"  -> isEnglish ? "Progress"     : "Progres";
+                    case "algebra"   -> isEnglish ? "Assignments"  : "Odovzdanie";
+                    case "courses"   -> isEnglish ? "Courses"      : "Kurzy";
+                    case "settings"  -> isEnglish ? "Settings"     : "Nastavenia";
+                    default -> action;
+                };
+                String icon = switch (action) {
+                    case "dashboard" -> "🏠";
+                    case "grades"    -> "📊";
+                    case "calendar"  -> "📅";
+                    case "progress"  -> "🎓";
+                    case "algebra"   -> "📝";
+                    case "courses"   -> "📚";
+                    case "settings"  -> "⚙️";
+                    default -> "🔍";
+                };
+
+                String hints = String.join(", ", isEnglish ? enKeywords : skKeywords);
+
+                javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(12);
+                row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                row.setStyle("-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: transparent;");
+
+                Label iconLabel = new Label(icon);
+                iconLabel.setStyle("-fx-font-size: 18px;");
+
+                VBox textBlock = new VBox(2);
+                Label nameLabel = new Label(navName);
+                nameLabel.setStyle("-fx-text-fill: " + colorPrimary + "; -fx-font-size: 14px; -fx-font-weight: bold;");
+                Label hintLabel = new Label(hints);
+                hintLabel.setStyle("-fx-text-fill: " + colorSecond + "; -fx-font-size: 11px;");
+                textBlock.getChildren().addAll(nameLabel, hintLabel);
+
+                Label arrowLabel = new Label("→");
+                arrowLabel.setStyle("-fx-text-fill: " + colorAccent + "; -fx-font-size: 14px;");
+                javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+                javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+                row.getChildren().addAll(iconLabel, textBlock, spacer, arrowLabel);
+
+                // Hover efekt
+                row.setOnMouseEntered(e -> row.setStyle(
+                    "-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: " + hoverBg + "; -fx-background-radius: 6;"));
+                row.setOnMouseExited(e -> row.setStyle(
+                    "-fx-padding: 10 16; -fx-cursor: hand; -fx-background-color: transparent;"));
+
+                final String finalAction = action;
+                row.setOnMouseClicked(e -> {
+                    hideSearchPopup();
+                    searchField.clear();
+                    navigateToAction(finalAction);
+                });
+
+                // Separator
+                if (i > 0) {
+                    javafx.scene.control.Separator sep = new javafx.scene.control.Separator();
+                    sep.setStyle("-fx-background-color: " + (isDarkMode ? "#334155" : "#e2e8f0") + ";");
+                    searchResultsBox.getChildren().add(sep);
+                }
+                searchResultsBox.getChildren().add(row);
+            }
+        }
+
+        // Zobraz popup pod search fieldom
+        if (!searchPopup.isShowing()) {
+            javafx.geometry.Bounds bounds = searchField.localToScreen(searchField.getBoundsInLocal());
+            if (bounds != null) {
+                searchPopup.show(searchField, bounds.getMinX(), bounds.getMaxY() + 4);
+            }
+        }
+    }
+
+    private void hideSearchPopup() {
+        if (searchPopup != null && searchPopup.isShowing()) {
+            searchPopup.hide();
+        }
+    }
+
+    /**
+     * Fuzzy matching: query je "obsiahnuté" v keyword alebo opačne,
+     * alebo Levenshtein vzdialenosť je malá pre krátke slová.
+     */
+    private boolean fuzzyMatch(String query, String keyword) {
+        if (keyword.contains(query) || query.contains(keyword)) return true;
+        if (query.length() >= 3) {
+            return levenshtein(query, keyword) <= 2;
+        }
+        return false;
+    }
+
+    private int levenshtein(String a, String b) {
+        int m = a.length(), n = b.length();
+        int[][] dp = new int[m + 1][n + 1];
+        for (int i = 0; i <= m; i++) dp[i][0] = i;
+        for (int j = 0; j <= n; j++) dp[0][j] = j;
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                dp[i][j] = (a.charAt(i - 1) == b.charAt(j - 1))
+                    ? dp[i - 1][j - 1]
+                    : 1 + Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1]));
+            }
+        }
+        return dp[m][n];
+    }
+
+    private void navigateToAction(String action) {
+        switch (action) {
+            case "dashboard" -> handleDashboard();
+            case "grades"    -> handleGrades();
+            case "calendar"  -> handleCalendar();
+            case "progress"  -> handleProgress();
+            case "algebra"   -> handleAlgebra();
+            case "courses"   -> handleCourses();
+            case "settings"  -> handleSettings();
+        }
     }
 }
