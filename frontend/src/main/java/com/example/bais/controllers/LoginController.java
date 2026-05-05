@@ -146,8 +146,13 @@ public class LoginController implements Initializable {
                 navigateToDashboard();
             });
         } else if ("ERROR".equals(type)) {
-            String message = node.path("data").path("message").asText("Neznáma chyba");
-            Platform.runLater(() -> showAlert(Alert.AlertType.ERROR, isEnglish ? "Login Failed" : "Prihlásenie zlyhalo", message));
+            // Backend vždy posiela správy po slovensky — preložíme na frontende
+            String message = isEnglish
+                    ? "Incorrect email or password. Please try again."
+                    : "Nesprávne prihlasovacie údaje. Skúste znova.";
+            Platform.runLater(() -> showAlert(Alert.AlertType.ERROR,
+                    isEnglish ? "Login Failed" : "Prihlásenie zlyhalo",
+                    message));
         }
     }
 

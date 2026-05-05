@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -45,6 +47,9 @@ public class BaisWebSocketServer extends WebSocketServer {
     // Mapa aktívnych sessions: každé WebSocket spojenie má svoj AuthContext
     private final Map<WebSocket, AuthContext> sessions = new ConcurrentHashMap<>();
 
+    // Thread pool pre asynchrónne spracovanie WebSocket požiadaviek (zabraňuje blokovaniu I/O)
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
+
     public BaisWebSocketServer(int port, AuthService authService, StudentService studentService, 
                             TeacherService teacherService, AdminService adminService, UserDAO userDAO) {
     super(new InetSocketAddress(port));
@@ -70,85 +75,87 @@ public class BaisWebSocketServer extends WebSocketServer {
 
     @Override
     public void onMessage(WebSocket conn, String message) {
-        try {
-            JsonNode json = mapper.readTree(message);
+        executor.submit(() -> {
+            try {
+                JsonNode json = mapper.readTree(message);
 
-            // NULL CHECK – správa musí obsahovať pole "action"
-            if (!json.hasNonNull("action")) {
-                sendError(conn, "Chýba povinné pole 'action'");
-                return;
+                // NULL CHECK – správa musí obsahovať pole "action"
+                if (!json.hasNonNull("action")) {
+                    sendError(conn, "Chýba povinné pole 'action'");
+                    return;
+                }
+
+                String action = json.get("action").asText();
+                // .path() vráti MissingNode namiesto null – bezpečnejšie ako .get()
+                JsonNode payload = json.path("payload");
+
+                switch (action) {
+                    case "LOGIN"        -> handleLogin(conn, payload);
+                    case "GET_STUDENTS" -> handleGetStudents(conn);
+
+                    // --- ADMIN AKCIE ---
+                    case "LIST_USERS" -> handleListUsers(conn);
+                    case "CREATE_USER" -> handleCreateUser(conn, payload);
+                    case "CREATE_SUBJECT" -> handleCreateSubject(conn, payload);
+                    case "CREATE_SEMESTER" -> handleCreateSemester(conn, payload);
+                    case "ASSIGN_ROLE" -> handleAssignRole(conn, payload);
+                    case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
+                    case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
+                    case "DELETE_SUBJECT" -> handleDeleteSubject(conn, payload);
+                    case "ACTIVATE_USER" -> handleActivateUser(conn, payload);
+                    case "REMOVE_GUARANTOR" -> handleRemoveGuarantor(conn, payload);
+                    
+
+                    // --- TEACHER AKCIE ---
+                    case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
+
+                    case "ADD_MARK" -> handleAddMark(conn, payload);
+                    case "UPDATE_MARK" -> handleUpdateMark(conn, payload);
+                    case "DELETE_MARK" -> handleDeleteMark(conn, payload);
+
+                    case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
+                    case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
+                    case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
+
+                    case "CREATE_ENROLLMENT" -> handleCreateEnrollment(conn, payload);
+                    case "UPDATE_ENROLLMENT" -> handleUpdateEnrollment(conn, payload);
+                    case "DELETE_ENROLLMENT" -> handleDeleteEnrollment(conn, payload);
+
+                    case "CREATE_TASK" -> handleCreateTask(conn, payload);
+                    case "GRADE_SUBMISSION" -> handleGradeSubmission(conn, payload);
+                    case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
+                    case "BROADCAST_NOTIFICATION_TO_SUBJECT" -> handleBroadcastToSubject(conn, payload);
+
+                    // --- STUDENT AKCIE ---
+                    case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
+                    case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
+                    case "GET_SUBJECT_DETAIL" -> handleGetSubjectDetail(conn, payload);
+                    case "GET_MY_MARKS" -> handleGetMyMarks(conn);
+                    case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
+                    case "GET_MY_EVENTS" -> handleGetMyEvents(conn, payload);
+                    case "GET_MY_CALENDAR" -> handleGetMyCalendar(conn, payload);
+
+                    case "GET_ALL_NOTIFICATIONS" -> handleGetNotifications(conn);
+                    case "GET_UNDREAD_NOTIFICATIONS" -> handleGetUnreadNotifications(conn);
+                    case "MARK_READ_NOTIFICATION" -> handleMarkRead(conn, payload);
+                    case "MARK_ALL_UNREAD" -> handleMarkAllRead(conn);
+
+                    case "GET_MY_TASKS" -> handleGetMyTasks(conn);
+                    case "GET_TASK_DETAIL" -> handleGetTaskDetail(conn, payload);
+                    case "SUBMIT_TASK" -> handleSaveSubmission(conn, payload);
+                    
+                    // --- SPOLOCNE AKCIE ---
+                    case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
+                    case "CREATE_NOTIFICATION" -> handleCreateNotification(conn, payload);
+
+
+                    default             -> sendError(conn, "Neznáma akcia: " + action);
+                }
+            } catch (Exception e) {
+                log.error("Chyba pri spracovaní správy", e);
+                sendError(conn, "Neplatný formát správy");
             }
-
-            String action = json.get("action").asText();
-            // .path() vráti MissingNode namiesto null – bezpečnejšie ako .get()
-            JsonNode payload = json.path("payload");
-
-            switch (action) {
-                case "LOGIN"        -> handleLogin(conn, payload);
-                case "GET_STUDENTS" -> handleGetStudents(conn);
-
-                // --- ADMIN AKCIE ---
-                case "LIST_USERS" -> handleListUsers(conn);
-                case "CREATE_USER" -> handleCreateUser(conn, payload);
-                case "CREATE_SUBJECT" -> handleCreateSubject(conn, payload);
-                case "CREATE_SEMESTER" -> handleCreateSemester(conn, payload);
-                case "ASSIGN_ROLE" -> handleAssignRole(conn, payload);
-                case "DEACTIVATE_USER" -> handleDeactivateUser(conn, payload);
-                case "ASSIGN_GUARANTOR" -> handleAssignGuarantor(conn, payload);
-                case "DELETE_SUBJECT" -> handleDeleteSubject(conn, payload);
-                case "ACTIVATE_USER" -> handleActivateUser(conn, payload);
-                case "REMOVE_GUARANTOR" -> handleRemoveGuarantor(conn, payload);
-                
-
-                // --- TEACHER AKCIE ---
-                case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
-
-                case "ADD_MARK" -> handleAddMark(conn, payload);
-                case "UPDATE_MARK" -> handleUpdateMark(conn, payload);
-                case "DELETE_MARK" -> handleDeleteMark(conn, payload);
-
-                case "GET_MARKS_FOR_ENROLLMENT" -> handleGetIndexRecordForEnrollment(conn, payload);
-                case "GET_POINTS_ENROLLMENT" -> handleGetPointsForEnrollment(conn, payload);
-                case "GET_ENROLLMENTS_FOR_SUBJECT" -> handleGetEnrollmentsForSubject(conn, payload);
-
-                case "CREATE_ENROLLMENT" -> handleCreateEnrollment(conn, payload);
-                case "UPDATE_ENROLLMENT" -> handleUpdateEnrollment(conn, payload);
-                case "DELETE_ENROLLMENT" -> handleDeleteEnrollment(conn, payload);
-
-                case "CREATE_TASK" -> handleCreateTask(conn, payload);
-                case "GRADE_SUBMISSION" -> handleGradeSubmission(conn, payload);
-                case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
-                case "BROADCAST_NOTIFICATION_TO_SUBJECT" -> handleBroadcastToSubject(conn, payload);
-
-                // --- STUDENT AKCIE ---
-                case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
-                case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
-                case "GET_SUBJECT_DETAIL" -> handleGetSubjectDetail(conn, payload);
-                case "GET_MY_MARKS" -> handleGetMyMarks(conn);
-                case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
-                case "GET_MY_EVENTS" -> handleGetMyEvents(conn, payload);
-                case "GET_MY_CALENDAR" -> handleGetMyCalendar(conn, payload);
-
-                case "GET_ALL_NOTIFICATIONS" -> handleGetNotifications(conn);
-                case "GET_UNDREAD_NOTIFICATIONS" -> handleGetUnreadNotifications(conn);
-                case "MARK_READ_NOTIFICATION" -> handleMarkRead(conn, payload);
-                case "MARK_ALL_UNREAD" -> handleMarkAllRead(conn);
-
-                case "GET_MY_TASKS" -> handleGetMyTasks(conn);
-                case "GET_TASK_DETAIL" -> handleGetTaskDetail(conn, payload);
-                case "SUBMIT_TASK" -> handleSaveSubmission(conn, payload);
-                
-                // --- SPOLOCNE AKCIE ---
-                case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
-                case "CREATE_NOTIFICATION" -> handleCreateNotification(conn, payload);
-
-
-                default             -> sendError(conn, "Neznáma akcia: " + action);
-            }
-        } catch (Exception e) {
-            log.error("Chyba pri spracovaní správy", e);
-            sendError(conn, "Neplatný formát správy");
-        }
+        });
     }
 
     private void handleCreateNotification(WebSocket conn, JsonNode payload) {

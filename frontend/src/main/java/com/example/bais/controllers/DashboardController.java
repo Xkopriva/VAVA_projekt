@@ -148,16 +148,19 @@ public class DashboardController implements Initializable {
             if (mainScroll != null) dashboardContent = mainScroll.getContent();
         });
 
-        // Load user profile if needed
-        if (UserSession.get().getFullName().equals(UserSession.get().getUserEmail())
-                || UserSession.get().getFirstName().isEmpty()) {
-            loadUserProfile();
-        }
+        // Spojenie musí byť plne pripravené predtým než pýtame dáta
+        WebSocketClientService.getInstance().connectAsync().thenRun(() -> {
+            // Load user profile if needed
+            if (UserSession.get().getFullName().equals(UserSession.get().getUserEmail())
+                    || UserSession.get().getFirstName().isEmpty()) {
+                loadUserProfile();
+            }
 
-        if (!UserSession.get().isAdmin()) {
-            loadDashboardData();
-            loadUnreadNotifications();
-        }
+            if (!UserSession.get().isAdmin()) {
+                loadDashboardData();
+                loadUnreadNotifications();
+            }
+        });
 
         // Initialize Minigame
         if (gameTarget != null && gameArea != null && gameScoreLabel != null) {

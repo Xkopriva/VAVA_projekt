@@ -166,7 +166,9 @@ public class SchoolCalendarController implements Initializable {
         LocalDate today = LocalDate.now();
         LocalDate monday = today.minusDays(today.getDayOfWeek().getValue() - 1);
         LocalDate friday = monday.plusDays(4);
-        DateTimeFormatter df = DateTimeFormatter.ofPattern(en ? "MMM d" : "d.M.");
+        DateTimeFormatter df = en
+                ? DateTimeFormatter.ofPattern("MMM d").withLocale(java.util.Locale.ENGLISH)
+                : DateTimeFormatter.ofPattern("d.M.");
         String weekRange = monday.format(df) + " – " + friday.format(df) + " " + today.getYear();
         Label sub = new Label(weekRange);
         sub.getStyleClass().add("calendar-subtitle");

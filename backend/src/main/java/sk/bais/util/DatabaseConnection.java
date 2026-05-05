@@ -19,14 +19,15 @@ public final class DatabaseConnection {
 
     static {
         Properties props = new Properties();
-        
+
         // 1. Skús načítať externe (vedľa JAR súboru) — pre produkciu
         java.nio.file.Path externalConfig = java.nio.file.Path.of("application.properties");
         if (java.nio.file.Files.exists(externalConfig)) {
             try (InputStream input = java.nio.file.Files.newInputStream(externalConfig)) {
                 props.load(input);
             } catch (IOException e) {
-                throw new ExceptionInInitializerError("Chyba pri čítaní externého application.properties: " + e.getMessage());
+                throw new ExceptionInInitializerError(
+                        "Chyba pri čítaní externého application.properties: " + e.getMessage());
             }
         } else {
             // 2. Fallback — načítaj z JAR (pre development)
@@ -37,12 +38,13 @@ public final class DatabaseConnection {
                 }
                 props.load(input);
             } catch (IOException e) {
-                throw new ExceptionInInitializerError("Chyba pri čítaní application.properties z JAR: " + e.getMessage());
+                throw new ExceptionInInitializerError(
+                        "Chyba pri čítaní application.properties z JAR: " + e.getMessage());
             }
         }
 
-        URL      = props.getProperty("db.url");
-        USER     = props.getProperty("db.user");
+        URL = props.getProperty("db.url");
+        USER = props.getProperty("db.user");
         PASSWORD = props.getProperty("db.password");
 
         // Overenie, či máme kľúčové údaje (fail-fast prístup)
@@ -66,10 +68,10 @@ public final class DatabaseConnection {
         try {
             // Explicitné nastavenie UTF-8 pre správne zobrazenie diakritiky
             Properties connProps = new Properties();
-            connProps.setProperty("user",    USER);
+            connProps.setProperty("user", USER);
             connProps.setProperty("password", PASSWORD);
-            connProps.setProperty("charSet",  "UTF-8");
-            connProps.setProperty("unicode",  "true");
+            connProps.setProperty("charSet", "UTF-8");
+            connProps.setProperty("unicode", "true");
 
             Connection conn = DriverManager.getConnection(URL, connProps);
             conn.setAutoCommit(true);

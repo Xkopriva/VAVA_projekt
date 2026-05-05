@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,19 @@ public class StudentService {
     private final NotificationDAO notificationDAO;
     private final TaskDAO taskDAO;
     private final TaskSubmissionDAO taskSubmissionDAO;
+    
+    // --- CAFFEINE CACHE ---
+    // Názvy predmetov (key: subjectId_locale) - platné 1 hodinu
+    private final Cache<String, String> subjectNameCache = Caffeine.newBuilder()
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .maximumSize(500)
+            .build();
+
+    // Detail predmetu (key: subjectId_locale) - platné 1 hodinu
+    private final Cache<String, Map<String, Object>> subjectDetailCache = Caffeine.newBuilder()
+            .expireAfterWrite(1, TimeUnit.HOURS)
+            .maximumSize(500)
+            .build();
     
     // Zoznam všetkých študentov — len ADMIN a POWER_USER
     public List<Student> getAllStudents(AuthContext ctx) {
@@ -226,24 +242,28 @@ public class StudentService {
     /**
      * Vráti ľudsky čitateľný názov predmetu z tabuľky subject_translation.
      * Priorita: slovenský preklad → anglický preklad → kód predmetu.
+     * POUŽÍVA CACHE.
      */
     private String resolveSubjectName(Subject s) {
-        try {
-            // Skús SK preklad
-            java.util.Optional<SubjectTranslation> sk = subjectTranslationDAO.get(s.getId(), "sk");
-            if (sk.isPresent() && sk.get().getName() != null && !sk.get().getName().isBlank()) {
-                return sk.get().getName();
+        String cacheKey = s.getId() + "_name";
+        return subjectNameCache.get(cacheKey, k -> {
+            try {
+                // Skús SK preklad
+                java.util.Optional<SubjectTranslation> sk = subjectTranslationDAO.get(s.getId(), "sk");
+                if (sk.isPresent() && sk.get().getName() != null && !sk.get().getName().isBlank()) {
+                    return sk.get().getName();
+                }
+                // Fallback EN preklad
+                java.util.Optional<SubjectTranslation> en = subjectTranslationDAO.get(s.getId(), "en");
+                if (en.isPresent() && en.get().getName() != null && !en.get().getName().isBlank()) {
+                    return en.get().getName();
+                }
+            } catch (Exception ex) {
+                log.warn("Nepodarilo sa načítať preklad pre subjectId={}", s.getId());
             }
-            // Fallback EN preklad
-            java.util.Optional<SubjectTranslation> en = subjectTranslationDAO.get(s.getId(), "en");
-            if (en.isPresent() && en.get().getName() != null && !en.get().getName().isBlank()) {
-                return en.get().getName();
-            }
-        } catch (Exception ex) {
-            log.warn("Nepodarilo sa načítať preklad pre subjectId={}", s.getId());
-        }
-        // Posledný fallback — kód predmetu
-        return s.getCode() != null ? s.getCode() : "Predmet " + s.getId();
+            // Posledný fallback — kód predmetu
+            return s.getCode() != null ? s.getCode() : "Predmet " + s.getId();
+        });
     }
 
     // ziska BODY v enrollmente pre daneho studenta
@@ -452,41 +472,47 @@ public class StudentService {
     }
 
     public java.util.Optional<java.util.Map<String, Object>> getSubjectDetail(int subjectId, sk.bais.auth.AuthContext ctx) {
-        try {
-            return subjectDAO.getById(subjectId).map(s -> {
-                java.util.Map<String, Object> map = new java.util.HashMap<>();
-                map.put("id", s.getId());
-                map.put("code", s.getCode());
-                map.put("credits", s.getCredits());
-                map.put("faculty", s.getFaculty());
-                map.put("isMandatory", s.isMandatory());
-                map.put("isProfiled", s.isProfiled());
-                map.put("completionType", s.getCompletionType() != null ? s.getCompletionType().name() : "");
-                map.put("languageOfInstruction", s.getLanguageOfInstruction());
-                map.put("assessmentBreakdown", s.getAssessmentBreakdown());
-                map.put("avgStudentRating", s.getAvgStudentRating());
-                map.put("subjectDifficulty", s.getSubjectDifficulty());
-                map.put("gradeAPct", s.getGradeAPct());
-                map.put("gradeBPct", s.getGradeBPct());
-                map.put("gradeCPct", s.getGradeCPct());
-                map.put("gradeDPct", s.getGradeDPct());
-                map.put("gradeEPct", s.getGradeEPct());
-                map.put("gradeFxPct", s.getGradeFxPct());
-                String locale = "sk";
-                try {
-                    subjectTranslationDAO.get(subjectId, locale).ifPresent(tr -> {
-                        map.put("name", tr.getName());
-                        map.put("syllabus", tr.getDescription());
-                    });
-                } catch (java.sql.SQLException e) {
-                    log.error("Nepodarilo sa načítať preklad", e);
-                }
-                return map;
-            });
-        } catch (java.sql.SQLException e) {
-            log.error("Nepodarilo sa načítať predmet", e);
-            return java.util.Optional.empty();
-        }
+        String cacheKey = subjectId + "_sk"; // zjednodušené pre "sk" locale, inak by to chcelo ctx locale
+        
+        Map<String, Object> cachedDetail = subjectDetailCache.get(cacheKey, k -> {
+            try {
+                return subjectDAO.getById(subjectId).map(s -> {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", s.getId());
+                    map.put("code", s.getCode());
+                    map.put("credits", s.getCredits());
+                    map.put("faculty", s.getFaculty());
+                    map.put("isMandatory", s.isMandatory());
+                    map.put("isProfiled", s.isProfiled());
+                    map.put("completionType", s.getCompletionType() != null ? s.getCompletionType().name() : "");
+                    map.put("languageOfInstruction", s.getLanguageOfInstruction());
+                    map.put("assessmentBreakdown", s.getAssessmentBreakdown());
+                    map.put("avgStudentRating", s.getAvgStudentRating());
+                    map.put("subjectDifficulty", s.getSubjectDifficulty());
+                    map.put("gradeAPct", s.getGradeAPct());
+                    map.put("gradeBPct", s.getGradeBPct());
+                    map.put("gradeCPct", s.getGradeCPct());
+                    map.put("gradeDPct", s.getGradeDPct());
+                    map.put("gradeEPct", s.getGradeEPct());
+                    map.put("gradeFxPct", s.getGradeFxPct());
+                    String locale = "sk";
+                    try {
+                        subjectTranslationDAO.get(subjectId, locale).ifPresent(tr -> {
+                            map.put("name", tr.getName());
+                            map.put("syllabus", tr.getDescription());
+                        });
+                    } catch (java.sql.SQLException e) {
+                        log.error("Nepodarilo sa načítať preklad", e);
+                    }
+                    return map;
+                }).orElse(null);
+            } catch (java.sql.SQLException e) {
+                log.error("Nepodarilo sa načítať predmet", e);
+                return null;
+            }
+        });
+        
+        return java.util.Optional.ofNullable(cachedDetail);
     }
 
 }
