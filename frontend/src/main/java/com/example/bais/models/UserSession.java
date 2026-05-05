@@ -1,4 +1,5 @@
-package com.example.bais;
+package com.example.bais.models;
+import com.example.bais.*;
 
 import javafx.stage.Stage;
 
@@ -18,6 +19,7 @@ public class UserSession {
     private int     userId;
     private String  firstName = "";
     private String  lastName  = "";
+    private boolean darkMode  = false;
 
     // Referencie na primárne okno – pre navigáciu bez fullscreen
     private Stage   primaryStage;
@@ -45,6 +47,9 @@ public class UserSession {
     public void   setFirstName(String n)       { this.firstName = n == null ? "" : n; }
     public String getLastName()                { return lastName; }
     public void   setLastName(String n)        { this.lastName = n == null ? "" : n; }
+
+    public boolean isDarkMode()                { return darkMode; }
+    public void    setDarkMode(boolean d)      { this.darkMode = d; }
 
     public Stage  getPrimaryStage()            { return primaryStage; }
     public void   setPrimaryStage(Stage s)     { this.primaryStage = s; }

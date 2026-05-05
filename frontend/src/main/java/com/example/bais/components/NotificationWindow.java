@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.components;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.controllers.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;
@@ -15,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 public class NotificationWindow {
 
+    private static boolean fallbackDismissed = false;
+
     public static void show() {
         boolean en = UserSession.get().isEnglish();
 
@@ -26,13 +32,14 @@ public class NotificationWindow {
 
         VBox root = new VBox(12);
         root.setPadding(new Insets(20));
-        root.setStyle("-fx-background-color: #f8fafc;");
+        root.getStyleClass().add("root-pane");
 
         // Header
         HBox header = new HBox();
         header.setAlignment(Pos.CENTER_LEFT);
         Label title = new Label(en ? "Your Notifications" : "Vaše upozornenia");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        title.getStyleClass().add("text-primary");
         
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -44,7 +51,7 @@ public class NotificationWindow {
             
         header.getChildren().addAll(title, spacer);
         
-        if (UserSession.get().hasRole("TEACHER") || UserSession.get().hasRole("ADMIN")) {
+        if (UserSession.get().isTeacher() || UserSession.get().isAdmin()) {
             Button newNotifBtn = new Button(en ? "+ New" : "+ Nová");
             newNotifBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; " +
                 "-fx-font-size: 12px; -fx-font-weight: bold; -fx-cursor: hand; " +
@@ -80,6 +87,8 @@ public class NotificationWindow {
         root.getChildren().addAll(header, new Separator(), scroll, buttonBox);
 
         Scene scene = new Scene(root);
+        String theme = UserSession.get().isDarkMode() ? "/dark.css" : "/light.css";
+        scene.getStylesheets().add(NotificationWindow.class.getResource(theme).toExternalForm());
         stage.setScene(scene);
         stage.show();
 
@@ -88,13 +97,19 @@ public class NotificationWindow {
 
         markAllBtn.setOnAction(e -> {
             WebSocketClientService.getInstance().sendAction("MARK_ALL_UNREAD", null);
+            fallbackDismissed = true;
+            
             // Zmazanie vsetkych z okna
             notificationsList.getChildren().clear();
             Label empty = new Label(en ? "✅  No notifications" : "✅  Žiadne upozornenia");
             empty.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b; -fx-padding: 20;");
             notificationsList.getChildren().add(empty);
             
-            // Dispatch event to local window if needed (but DashboardController listens to WS)
+            // Hide dashboard badge if open
+            Platform.runLater(() -> {
+                // If we want to hide it immediately globally, we would need a reference, 
+                // but since it's just static fallback, just set the flag.
+            });
         });
     }
 
@@ -153,7 +168,9 @@ public class NotificationWindow {
                 if (list.getChildren().stream().anyMatch(n ->
                         n instanceof Label lbl && lbl.getText().contains("⏳"))) {
                     list.getChildren().clear();
-                    addStaticFallback(list, en);
+                    Label empty = new Label(en ? "✅  No notifications" : "✅  Žiadne upozornenia");
+                    empty.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b; -fx-padding: 20;");
+                    list.getChildren().add(empty);
                 }
             });
         }, 4, TimeUnit.SECONDS);
@@ -169,27 +186,6 @@ public class NotificationWindow {
         };
     }
 
-    private static void addStaticFallback(VBox list, boolean en) {
-        if (en) {
-            list.getChildren().addAll(
-                createNotification("⚠️  Project submission – PAS",
-                    "Deadline: Friday 23:59. Upload via AIS.", "#fef2f2", "#dc2626"),
-                createNotification("📋  New materials – DBS",
-                    "Lecture 7 has been uploaded to the portal.", "#eff6ff", "#2563eb"),
-                createNotification("📚  Exam – Algebra",
-                    "Date: 28.1.2025 at 9:00 in D-302.", "#fff7ed", "#d97706")
-            );
-        } else {
-            list.getChildren().addAll(
-                createNotification("⚠️  Odovzdanie projektu – PAS",
-                    "Deadline: piatok 23:59. Nahraj cez AIS.", "#fef2f2", "#dc2626"),
-                createNotification("📋  Nové materiály – DBS",
-                    "Prednáška 7 bola nahraná na portál.", "#eff6ff", "#2563eb"),
-                createNotification("📚  Skúška – Algebra",
-                    "Dátum: 28.1.2025 o 9:00 v D-302.", "#fff7ed", "#d97706")
-            );
-        }
-    }
 
     private static VBox createNotification(String title, String message,
                                             String bgColor, String titleColor) {
@@ -218,7 +214,7 @@ public class NotificationWindow {
         
         VBox root = new VBox(12);
         root.setPadding(new Insets(20));
-        root.setStyle("-fx-background-color: #ffffff;");
+        root.getStyleClass().add("root-pane");
         
         Label titleLbl = new Label(en ? "Title:" : "Názov:");
         TextField titleField = new TextField();
@@ -256,7 +252,10 @@ public class NotificationWindow {
         btnBox.getChildren().addAll(cancelBtn, sendBtn);
         root.getChildren().addAll(titleLbl, titleField, msgLbl, msgField, btnBox);
         
-        stage.setScene(new Scene(root, 350, 300));
+        Scene scene = new Scene(root, 350, 300);
+        String theme = UserSession.get().isDarkMode() ? "/dark.css" : "/light.css";
+        scene.getStylesheets().add(NotificationWindow.class.getResource(theme).toExternalForm());
+        stage.setScene(scene);
         stage.show();
     }
 }

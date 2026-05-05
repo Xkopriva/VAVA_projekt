@@ -118,10 +118,12 @@ public class BaisWebSocketServer extends WebSocketServer {
                 case "CREATE_TASK" -> handleCreateTask(conn, payload);
                 case "GRADE_SUBMISSION" -> handleGradeSubmission(conn, payload);
                 case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
-                
+                case "BROADCAST_NOTIFICATION_TO_SUBJECT" -> handleBroadcastToSubject(conn, payload);
+
                 // --- STUDENT AKCIE ---
                 case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                 case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
+                case "GET_SUBJECT_DETAIL" -> handleGetSubjectDetail(conn, payload);
                 case "GET_MY_MARKS" -> handleGetMyMarks(conn);
                 case "GET_MY_POINTS" -> handleGetMyPoints(conn, payload);
                 case "GET_MY_EVENTS" -> handleGetMyEvents(conn, payload);
@@ -262,8 +264,24 @@ public class BaisWebSocketServer extends WebSocketServer {
     // GET_MY_ENROLLMENTS
     private void handleGetMyEnrollments(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
-            var enrollments = studentService.getMyEnrollments(ctx);
-            sendResponse(conn, "MY_ENROLLMENTS", enrollments);
+            var list = studentService.getMyEnrollments(ctx);
+            sendResponse(conn, "MY_ENROLLMENTS", list);
+        });
+    }
+
+    private void handleGetSubjectDetail(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("subjectId")) {
+                sendError(conn, "Chýba subjectId");
+                return;
+            }
+            int subjectId = payload.get("subjectId").asInt();
+            var detailOpt = studentService.getSubjectDetail(subjectId, ctx);
+            if (detailOpt.isPresent()) {
+                sendResponse(conn, "SUBJECT_DETAIL", detailOpt.get());
+            } else {
+                sendError(conn, "Predmet sa nenašiel");
+            }
         });
     }
 
@@ -421,6 +439,52 @@ public class BaisWebSocketServer extends WebSocketServer {
     // -------------------------------------------------------------------------
     // Teacher Handlery
     // -------------------------------------------------------------------------
+
+    private void handleBroadcastToSubject(WebSocket conn, JsonNode payload) {
+        requireAuth(conn).ifPresent(ctx -> {
+            if (payload == null || !payload.has("subjectId") || !payload.has("title") || !payload.has("message")) {
+                sendError(conn, "Chýba subjectId, title alebo message");
+                return;
+            }
+            int subjectId = payload.get("subjectId").asInt();
+            String title = payload.get("title").asText();
+            String message = payload.get("message").asText();
+
+            try {
+                var enrollments = teacherService.getEnrollmentsForSubject(subjectId, ctx);
+                java.util.Set<Integer> studentIds = enrollments.stream()
+                    .map(sk.bais.model.Enrollment::getStudentId)
+                    .collect(java.util.stream.Collectors.toSet());
+
+                for (int sid : studentIds) {
+                    sk.bais.model.Notification n = new sk.bais.model.Notification();
+                    n.setRecipientId(sid);
+                    n.setSenderId(ctx.getUserId());
+                    n.setType(sk.bais.model.Notification.Type.ANNOUNCEMENT);
+                    n.setTitle(title);
+                    n.setMessage(message);
+                    n.setRelatedSubjectId(subjectId);
+                    try {
+                        // Reuse createNotification indirectly via teacherService
+                    } catch (Exception ignored) {}
+                }
+                // Use existing broadcast helper
+                teacherService.createBroadcastNotification(title + " [" + subjectId + "]", message, ctx);
+                sendResponse(conn, "NOTIFICATION_SENT", java.util.Map.of("sent", studentIds.size()));
+
+                // Push live to connected students
+                for (Map.Entry<WebSocket, AuthContext> entry : sessions.entrySet()) {
+                    if (entry.getValue().hasRole("STUDENT")) {
+                        sendResponse(entry.getKey(), "NEW_NOTIFICATION", null);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Chyba pri broadcastu do predmetu {}", subjectId, e);
+                sendError(conn, "Nepodarilo sa odoslať upozornenie");
+            }
+        });
+    }
+
 
     private void handleGetTeacherSubjects(WebSocket conn) {
         requireAuth(conn).ifPresent(ctx -> {
@@ -635,42 +699,75 @@ public class BaisWebSocketServer extends WebSocketServer {
     private void handleCreateUser(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             try {
-                // Mapovanie JSONu na objekt User a vytiahnutie plain hesla
-                sk.bais.model.User newUser = mapper.treeToValue(payload.get("user"), sk.bais.model.User.class);
-                String password = payload.get("password").asText();
-                String role = payload.get("role").asText();
-                
-                var result = adminService.createUser(newUser, password, role, ctx);
-                if (result.isPresent()) {
-                    sendResponse(conn, "USER_CREATED", result.get());
+                sk.bais.model.User newUser = new sk.bais.model.User();
+                // Support both old nested format {user:{...}, password, role}
+                // and new flat format {email, firstName, lastName, password, roleName}
+                if (payload.has("user")) {
+                    newUser = mapper.treeToValue(payload.get("user"), sk.bais.model.User.class);
+                    String password = payload.path("password").asText();
+                    String role     = payload.path("role").asText("STUDENT");
+                    var result = adminService.createUser(newUser, password, role, ctx);
+                    if (result.isPresent()) sendResponse(conn, "USER_CREATED", result.get());
+                    else sendError(conn, "Nepodarilo sa vytvoriť používateľa");
                 } else {
-                    sendError(conn, "Nepodarilo sa vytvoriť používateľa (chýbajúce práva alebo chyba v DB)");
+                    newUser.setEmail(payload.path("email").asText());
+                    newUser.setFirstName(payload.path("firstName").asText());
+                    newUser.setLastName(payload.path("lastName").asText());
+                    String password = payload.path("password").asText();
+                    String role     = payload.path("roleName").asText("STUDENT");
+                    var result = adminService.createUser(newUser, password, role, ctx);
+                    if (result.isPresent()) sendResponse(conn, "USER_CREATED", result.get());
+                    else sendError(conn, "Nepodarilo sa vytvoriť používateľa (chýbajúce práva alebo chyba v DB)");
                 }
             } catch (Exception e) {
+                log.error("Chyba pri CREATE_USER", e);
                 sendError(conn, "Neplatné dáta pre vytvorenie používateľa");
             }
         });
     }
 
-    // CREATE_SUBJECT 
+    // CREATE_SUBJECT
     private void handleCreateSubject(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
             try {
-                sk.bais.model.Subject subject = mapper.treeToValue(payload.get("subject"), sk.bais.model.Subject.class);
-                String name = payload.get("name").asText();
-                String locale = payload.get("locale").asText();
-                String description = payload.get("description").asText();
+                sk.bais.model.Subject subject = new sk.bais.model.Subject();
+                String name, locale, desc;
 
-                if (adminService.createSubject(subject, name, locale, description, ctx)) {
+                if (payload.has("subject")) {
+                    // Legacy nested format
+                    subject = mapper.treeToValue(payload.get("subject"), sk.bais.model.Subject.class);
+                    name   = payload.path("name").asText();
+                    locale = payload.path("locale").asText("sk");
+                    desc   = payload.path("description").asText("");
+                } else {
+                    // New flat format from AdminPanelController
+                    subject.setCode(payload.path("code").asText());
+                    subject.setCredits(payload.path("credits").asInt(6));
+                    subject.setMandatory(payload.path("isMandatory").asBoolean(true));
+                    subject.setProfiled(false);
+                    subject.setFaculty(payload.path("faculty").asText("FIIT"));
+                    subject.setLanguageOfInstruction("sk");
+                    String ct = payload.path("completionType").asText("EXAM");
+                    subject.setCompletionType(sk.bais.model.Subject.CompletionType.valueOf(ct));
+                    if (payload.has("guarantorId") && !payload.path("guarantorId").isNull())
+                        subject.setGuarantorId(payload.path("guarantorId").asInt());
+                    name   = payload.path("name").asText();
+                    locale = payload.path("locale").asText("sk");
+                    desc   = payload.path("description").asText("");
+                }
+
+                if (adminService.createSubject(subject, name, locale, desc, ctx)) {
                     sendResponse(conn, "SUBJECT_CREATED", subject);
                 } else {
                     sendError(conn, "Nepodarilo sa vytvoriť predmet (práva/DB)");
                 }
             } catch (Exception e) {
-                sendError(conn, "Neplatné dáta pre predmet");
+                log.error("Chyba pri CREATE_SUBJECT", e);
+                sendError(conn, "Neplatné dáta pre predmet: " + e.getMessage());
             }
         });
     }
+
     // CREATE_SEMESTER
     private void handleCreateSemester(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {

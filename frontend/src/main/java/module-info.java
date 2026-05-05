@@ -13,5 +13,10 @@ module com.example.bais {
     requires java.xml;
 
     opens com.example.bais to javafx.fxml;
+    opens com.example.bais.controllers to javafx.fxml;
+    exports com.example.bais.controllers;
+    exports com.example.bais.models;
+    exports com.example.bais.services;
+    exports com.example.bais.components;
     exports com.example.bais;
 }

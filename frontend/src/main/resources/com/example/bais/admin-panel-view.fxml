@@ -2,10 +2,10 @@
 
 <?import javafx.scene.layout.*?>
 
-<VBox fx:id="coursesRoot"
+<VBox fx:id="adminRoot"
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.bais.controllers.CoursesController"
+      fx:controller="com.example.bais.controllers.AdminPanelController"
       styleClass="main-content"
       VBox.vgrow="ALWAYS">
 </VBox>

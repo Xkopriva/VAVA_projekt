@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;
@@ -100,9 +104,8 @@ public class SchoolCalendarController implements Initializable {
     private CalEvent parseNode(JsonNode node) {
         try {
             String rawType = node.path("type").asText("PREDNASKA");
-            String title;
-            String scheduledAt;
-            int durationMinutes = node.path("durationMinutes").asInt(90);
+            int durationMinutes = node.hasNonNull("durationMinutes") ? node.path("durationMinutes").asInt(100) : 100;
+            String subjectCode = node.path("subjectCode").asText("");
 
             String calType = switch (rawType) {
                 case "PREDNASKA"  -> "PREDNÁŠKA";
@@ -110,20 +113,23 @@ public class SchoolCalendarController implements Initializable {
                 case "ODOVZDANIE" -> "ODOVZDANIE";
                 case "TASK", "TASK_DUE" -> "TASK DUE";
                 case "EXAM", "PISOMKA"  -> "ODOVZDANIE";
+                case "ZAPOCET"    -> "ZÁPOČET";
                 default           -> "PRIPOMIENKA";
             };
 
-            if (rawType.equals("TASK") || rawType.equals("TASK_DUE") || rawType.equals("ODOVZDANIE") || rawType.equals("EXAM") || rawType.equals("PISOMKA")) {
-                title = node.path("title").asText("Úloha");
-                scheduledAt = node.path("scheduledAt").asText();
-                durationMinutes = node.path("durationMinutes").asInt(30);
-            } else {
-                title = node.path("title").asText(node.path("subjectCode").asText("Event"));
-                scheduledAt = node.path("scheduledAt").asText();
-            }
+            String rawTitle = node.path("title").asText("Udalosť");
+            String title = subjectCode.isEmpty() ? rawTitle : (subjectCode + " - " + rawTitle);
+            String scheduledAt = node.path("scheduledAt").asText();
 
             if (scheduledAt != null && !scheduledAt.isBlank()) {
-                java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(scheduledAt);
+                java.time.OffsetDateTime odt;
+                try {
+                    long epoch = Long.parseLong(scheduledAt);
+                    odt = java.time.OffsetDateTime.ofInstant(java.time.Instant.ofEpochSecond(epoch), java.time.ZoneId.systemDefault());
+                } catch (NumberFormatException e) {
+                    odt = java.time.OffsetDateTime.parse(scheduledAt);
+                }
+                
                 int dayIndex = odt.getDayOfWeek().getValue() - 1;
                 if (dayIndex >= 0 && dayIndex <= 4) {
                     String time;
@@ -148,7 +154,7 @@ public class SchoolCalendarController implements Initializable {
         boolean en = UserSession.get().isEnglish();
         calendarRoot.getChildren().clear();
         calendarRoot.setSpacing(24);
-        calendarRoot.setPadding(new Insets(32, 40, 200, 40));
+        calendarRoot.setPadding(new Insets(32, 40, 40, 40));
 
         HBox titleRow = new HBox();
         titleRow.setAlignment(Pos.CENTER_LEFT);
@@ -192,7 +198,8 @@ public class SchoolCalendarController implements Initializable {
         gridContainer.getChildren().add(calendarGrid);
 
         HBox legend = buildLegend();
-        calendarRoot.getChildren().addAll(titleRow, gridContainer, legend);
+        legend.setPadding(new Insets(8, 0, 16, 0)); // space below legend
+        calendarRoot.getChildren().addAll(titleRow, legend, gridContainer);
     }
 
     private void showAddReminderDialog() {
@@ -318,10 +325,15 @@ public class SchoolCalendarController implements Initializable {
              grid.add(hourLbl, (h - 8) * 2 + 1, 0, 2, 1);
          }
 
+         RowConstraints rcHeader = new RowConstraints();
+         rcHeader.setMinHeight(40);
+         rcHeader.setMaxHeight(40);
+         grid.getRowConstraints().add(rcHeader);
+
          for (int i = 0; i < 5; i++) {
              RowConstraints rc = new RowConstraints();
              rc.setVgrow(Priority.ALWAYS);
-             rc.setMinHeight(140);
+             rc.setMinHeight(100);
              grid.getRowConstraints().add(rc);
          }
 
@@ -331,6 +343,10 @@ public class SchoolCalendarController implements Initializable {
          allEvents.addAll(userReminders);
 
          for (int d = 0; d < 5; d++) {
+             Pane bgPane = new Pane();
+             bgPane.getStyleClass().add("calendar-cell");
+             grid.add(bgPane, 1, d + 1, 26, 1);
+
              grid.add(buildDayRowHeader(d, days), 0, d + 1);
              for (CalEvent ev : allEvents) {
                  if (ev.dayIndex() == d) {
@@ -403,7 +419,7 @@ public class SchoolCalendarController implements Initializable {
          String typeClass = switch (ev.type()) {
              case "PREDNÁŠKA" -> "event-card-prednaska";
              case "CVIČENIE" -> "event-card-cvicenie";
-             case "ODOVZDANIE", "TASK DUE" -> "event-card-odovzdanie";
+             case "ODOVZDANIE", "TASK DUE", "ZÁPOČET" -> "event-card-odovzdanie";
              default -> "event-card-reminder";
          };
          card.getStyleClass().add(typeClass);
@@ -442,7 +458,6 @@ public class SchoolCalendarController implements Initializable {
         boolean en = UserSession.get().isEnglish();
         HBox legend = new HBox(24);
         legend.setAlignment(Pos.CENTER_LEFT);
-        legend.setPadding(new Insets(12, 0, 0, 0));
         legend.getChildren().addAll(
                 legendItem("#2563EB", en ? "Lectures" : "Prednášky"),
                 legendItem("#16A34A", en ? "Labs" : "Cvičenia"),

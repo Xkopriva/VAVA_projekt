@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;
@@ -21,7 +25,7 @@ public class CoursesController implements Initializable {
 
     @FXML private VBox coursesRoot;
 
-    record CourseItem(String code, String name, int credits, String status, String accent) {}
+    record CourseItem(int id, String code, String name, int credits, String status, String accent) {}
 
     // Farby pre accent pruhy — cyklicky pre rôzne predmety
     private static final String[] ACCENTS = {
@@ -57,19 +61,20 @@ public class CoursesController implements Initializable {
         if (data.isArray()) {
             int idx = 0;
             for (JsonNode e : data) {
+                int    subjectId = e.path("subjectId").asInt(0);
                 String code    = e.path("subjectCode").asText("");
                 String name    = e.path("subjectName").asText("");
                 int    credits = e.path("credits").asInt(0);
                 String status  = e.path("status").asText("ACTIVE");
 
-                if (code.isEmpty()) code = "Sub " + e.path("subjectId").asInt();
+                if (code.isEmpty()) code = "Sub " + subjectId;
                 if (name.isEmpty()) name = code;
 
                 // Zobrazujeme len kurzy v aktuálnom semestri (ACTIVE)
                 if (!"ACTIVE".equals(status)) continue;
 
                 String accent = ACCENTS[idx % ACCENTS.length];
-                courses.add(new CourseItem(code, name, credits, status, accent));
+                courses.add(new CourseItem(subjectId, code, name, credits, status, accent));
                 idx++;
             }
         }
@@ -141,12 +146,15 @@ public class CoursesController implements Initializable {
         coursesRoot.getChildren().addAll(titleRow, stats, cardList);
     }
 
-    private HBox buildCourseCard(CourseItem c, boolean en) {
-        HBox card = new HBox(0);
-        card.getStyleClass().add("section-card");
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setPadding(new Insets(0));
-        card.setStyle("-fx-background-radius:12;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),6,0,0,2);");
+    private VBox buildCourseCard(CourseItem c, boolean en) {
+        VBox wrapper = new VBox(0);
+        wrapper.getStyleClass().add("section-card");
+        wrapper.setStyle("-fx-background-radius:12;-fx-effect:dropshadow(gaussian,rgba(0,0,0,0.05),6,0,0,2);");
+
+        HBox header = new HBox(0);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(0));
+        header.setStyle("-fx-cursor: hand;");
 
         // Color accent bar
         Region bar = new Region();
@@ -202,8 +210,124 @@ public class CoursesController implements Initializable {
         credBox.getChildren().addAll(credNum, credLbl);
 
         content.getChildren().addAll(codeBadge, info, credBox);
-        card.getChildren().addAll(bar, content);
-        return card;
+        header.getChildren().addAll(bar, content);
+
+        VBox detailsContainer = new VBox(10);
+        detailsContainer.setPadding(new Insets(16, 24, 16, 24));
+        detailsContainer.setStyle("-fx-background-color: transparent; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;");
+        detailsContainer.setVisible(false);
+        detailsContainer.setManaged(false);
+
+        wrapper.getChildren().addAll(header, detailsContainer);
+
+        header.setOnMouseClicked(e -> {
+            boolean isExpanded = detailsContainer.isVisible();
+            detailsContainer.setVisible(!isExpanded);
+            detailsContainer.setManaged(!isExpanded);
+
+            if (!isExpanded && detailsContainer.getChildren().isEmpty()) {
+                loadSubjectDetails(c.id(), detailsContainer, en);
+            }
+        });
+
+        return wrapper;
+    }
+
+    private void loadSubjectDetails(int subjectId, VBox container, boolean en) {
+        Label loading = new Label(en ? "⏳ Loading details..." : "⏳ Načítavam detaily...");
+        loading.setStyle("-fx-text-fill: #64748b;");
+        container.getChildren().add(loading);
+
+        WebSocketClientService ws = WebSocketClientService.getInstance();
+        String[] sub = new String[1];
+        sub[0] = ws.subscribe("SUBJECT_DETAIL", node -> {
+            ws.unsubscribe(sub[0]);
+            JsonNode data = node.path("data");
+            Platform.runLater(() -> {
+                container.getChildren().clear();
+                if (data.isMissingNode() || data.isNull()) {
+                    Label err = new Label(en ? "Failed to load details." : "Nepodarilo sa načítať detaily.");
+                    err.setStyle("-fx-text-fill: #dc2626;");
+                    container.getChildren().add(err);
+                    return;
+                }
+                
+                String syllabus = data.path("syllabus").asText("");
+                String breakdown = data.path("assessmentBreakdown").asText("");
+                double rating = data.path("avgStudentRating").asDouble(0);
+                double diff = data.path("subjectDifficulty").asDouble(0);
+                
+                if (!syllabus.isBlank()) {
+                    Label sylLbl = new Label(en ? "Syllabus:" : "Sylabus:");
+                    sylLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155;");
+                    Label sylText = new Label(syllabus);
+                    sylText.setWrapText(true);
+                    sylText.setStyle("-fx-text-fill: #475569; -fx-font-size: 13px;");
+                    container.getChildren().addAll(sylLbl, sylText);
+                }
+                
+                if (!breakdown.isBlank()) {
+                    Label brkLbl = new Label(en ? "Assessment:" : "Hodnotenie:");
+                    brkLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155;");
+                    Label brkText = new Label(breakdown);
+                    brkText.setWrapText(true);
+                    brkText.setStyle("-fx-text-fill: #475569; -fx-font-size: 13px;");
+                    if (!container.getChildren().isEmpty()) {
+                        Region space = new Region(); space.setMinHeight(8); container.getChildren().add(space);
+                    }
+                    container.getChildren().addAll(brkLbl, brkText);
+                }
+                
+                HBox stats = new HBox(20);
+                stats.setPadding(new Insets(10, 0, 0, 0));
+                
+                if (rating > 0) {
+                    Label r = new Label("⭐ Rating: " + rating + " / 5.0");
+                    r.setStyle("-fx-text-fill: #d97706; -fx-font-weight: bold;");
+                    stats.getChildren().add(r);
+                }
+                if (diff > 0) {
+                    Label d = new Label("🔥 " + (en ? "Difficulty:" : "Obtiažnosť:") + " " + diff + " / 5.0");
+                    d.setStyle("-fx-text-fill: #dc2626; -fx-font-weight: bold;");
+                    stats.getChildren().add(d);
+                }
+                
+                if (!stats.getChildren().isEmpty()) {
+                    container.getChildren().add(stats);
+                }
+                
+                // Grades
+                HBox grades = new HBox(12);
+                grades.setPadding(new Insets(10, 0, 0, 0));
+                String[] letters = {"A", "B", "C", "D", "E", "FX"};
+                String[] pctKeys = {"gradeAPct", "gradeBPct", "gradeCPct", "gradeDPct", "gradeEPct", "gradeFxPct"};
+                String[] colors = {"#16a34a", "#2563eb", "#0284c7", "#ca8a04", "#ea580c", "#dc2626"};
+                
+                for (int i=0; i<letters.length; i++) {
+                    double pct = data.path(pctKeys[i]).asDouble(0);
+                    if (pct > 0) {
+                        VBox gBox = new VBox(2);
+                        gBox.setAlignment(Pos.CENTER);
+                        Label l = new Label(letters[i]);
+                        l.setStyle("-fx-font-weight: bold; -fx-text-fill: " + colors[i] + ";");
+                        Label p = new Label(String.format("%.1f%%", pct));
+                        p.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+                        gBox.getChildren().addAll(l, p);
+                        grades.getChildren().add(gBox);
+                    }
+                }
+                if (!grades.getChildren().isEmpty()) {
+                    container.getChildren().add(grades);
+                }
+                
+                if (container.getChildren().isEmpty()) {
+                    Label noData = new Label(en ? "No details available." : "Bližšie informácie nie sú dostupné.");
+                    noData.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic;");
+                    container.getChildren().add(noData);
+                }
+            });
+        });
+        ws.sendAction("GET_SUBJECT_DETAIL", java.util.Map.of("subjectId", subjectId));
     }
 
     private VBox statCard(String value, String label) {

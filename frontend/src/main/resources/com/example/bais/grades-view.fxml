@@ -5,7 +5,7 @@
 <VBox fx:id="gradesRoot"
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.bais.GradesController"
+      fx:controller="com.example.bais.controllers.GradesController"
       styleClass="main-content"
       VBox.vgrow="ALWAYS">
 </VBox>

@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;
@@ -209,11 +213,12 @@ public class SubmissionsController implements Initializable {
 
         VBox root = new VBox(12);
         root.setPadding(new Insets(24));
-        root.setStyle("-fx-background-color: #f8fafc;");
+        root.getStyleClass().add("root-pane");
 
         // Title
         Label title = new Label(task.path("title").asText(fallbackTitle));
-        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        title.getStyleClass().add("text-primary");
         title.setWrapText(true);
 
         // Description
@@ -324,11 +329,11 @@ public class SubmissionsController implements Initializable {
         btnRow.setAlignment(Pos.CENTER_RIGHT);
         root.getChildren().add(btnRow);
 
-        ScrollPane scroll = new ScrollPane(root);
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-
-        stage.setScene(new Scene(scroll, 520, 480));
+        root.setPrefWidth(520);
+        Scene scene = new Scene(root);
+        String theme = UserSession.get().isDarkMode() ? "/dark.css" : "/light.css";
+        scene.getStylesheets().add(getClass().getResource(theme).toExternalForm());
+        stage.setScene(scene);
         stage.show();
     }
 
@@ -351,35 +356,39 @@ public class SubmissionsController implements Initializable {
 
         VBox root = new VBox(14);
         root.setPadding(new Insets(24));
-        root.setStyle("-fx-background-color: #f8fafc;");
+        root.getStyleClass().add("root-pane");
 
         Label title = new Label(en ? "Submit: " + taskTitle : "Odovzdať: " + taskTitle);
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        title.getStyleClass().add("text-primary");
         title.setWrapText(true);
 
         // Info o fileUrl
         Label info = new Label(en
-                ? "ℹ️  The backend accepts a file URL (cloud link). Upload your file to a cloud service (Google Drive, GitHub, etc.) and paste the link below."
-                : "ℹ️  Backend prijíma URL súboru (cloudový odkaz). Nahrajte súbor na cloudovú službu (Google Drive, GitHub, ...) a vložte odkaz nižšie.");
-        info.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-padding: 8;"
-                + "-fx-background-color: #eff6ff; -fx-background-radius: 6;");
+                ? "The backend accepts a file URL (cloud link). Upload your file to a cloud service (Google Drive, GitHub, etc.) and paste the link below."
+                : "Backend prijíma URL súboru (cloudový odkaz). Nahrajte súbor na cloudovú službu (Google Drive, GitHub, ...) a vložte odkaz nižšie.");
+        info.setStyle("-fx-font-size: 12px; -fx-padding: 8;");
+        info.getStyleClass().addAll("info-box", "text-secondary");
         info.setWrapText(true);
+        info.setMinHeight(Region.USE_PREF_SIZE);
 
         // File URL field
         Label urlLbl = new Label(en ? "File URL *" : "URL súboru *");
-        urlLbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;");
+        urlLbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        urlLbl.getStyleClass().add("text-primary");
         TextField urlField = new TextField();
         urlField.setPromptText("https://drive.google.com/...");
-        urlField.getStyleClass().add("text-field");
+        urlField.getStyleClass().add("text-field-custom");
 
         // Optional comment
         Label commentLbl = new Label(en ? "Comment (optional)" : "Komentár (voliteľné)");
-        commentLbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;");
+        commentLbl.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        commentLbl.getStyleClass().add("text-primary");
         TextArea commentArea = new TextArea();
         commentArea.setPromptText(en ? "Add a note for the teacher..." : "Poznámka pre učiteľa...");
         commentArea.setPrefRowCount(3);
         commentArea.setWrapText(true);
-        commentArea.getStyleClass().add("text-field");
+        commentArea.getStyleClass().add("text-field-custom");
 
         Label errorLbl = new Label();
         errorLbl.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 12px;");
@@ -467,7 +476,10 @@ public class SubmissionsController implements Initializable {
                 urlLbl, urlField, commentLbl, commentArea,
                 errorLbl, btnRow);
 
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        String theme = UserSession.get().isDarkMode() ? "/dark.css" : "/light.css";
+        scene.getStylesheets().add(getClass().getResource(theme).toExternalForm());
+        stage.setScene(scene);
         stage.show();
     }
 

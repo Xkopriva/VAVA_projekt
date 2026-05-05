@@ -55,7 +55,7 @@ public class TeacherService {
         try {
             List<Subject> all = subjectDAO.list();
             List<Subject> mine = all.stream()
-                    .filter(s -> ctx.hasRole("ADMIN") || (s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId()))
+                    .filter(s -> ctx.hasRole("ADMIN") || (s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId())))
                     .toList();
             log.info("Teacher/Admin userId={} má {} predmetov", ctx.getUserId(), mine.size());
             return mine;
@@ -380,6 +380,27 @@ public class TeacherService {
 
 
 
+    public void createBroadcastNotification(String title, String message, AuthContext ctx) {
+        if (!ctx.hasRole("TEACHER") && !ctx.hasRole("ADMIN")) {
+            log.warn("Zamietnutý prístup k odoslaniu hromadnej notifikácie pre userId={}", ctx.getUserId());
+            return;
+        }
+        
+        try {
+            List<Enrollment> enrollments = enrollmentDAO.list();
+            java.util.Set<Integer> studentIds = enrollments.stream()
+                .map(Enrollment::getStudentId)
+                .collect(java.util.stream.Collectors.toSet());
+            
+            for (int studentId : studentIds) {
+                createNotification(studentId, ctx.getUserId(), Notification.Type.ANNOUNCEMENT, title, message, null, null, null);
+            }
+            log.info("Teacher/Admin {} rozposlal hromadnú notifikáciu '{}' pre {} študentov.", ctx.getUserId(), title, studentIds.size());
+        } catch (SQLException e) {
+            log.error("Chyba pri vytvarani hromadnej notifikacie", e);
+        }
+    }
+
     // Pomocná metóda na overenie práv k enrollmentu
     private boolean isGuarantorOfEnrollment(int enrollmentId, AuthContext ctx) throws SQLException {
         if (ctx.hasRole("ADMIN")) return true;
@@ -391,6 +412,6 @@ public class TeacherService {
         if (subjectOpt.isEmpty()) return false;
 
         Subject s = subjectOpt.get();
-        return s.getGuarantorId() != null && s.getGuarantorId() == ctx.getUserId();
+        return s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId());
     }
 }

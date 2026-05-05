@@ -11,7 +11,7 @@
 
 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS"
             xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.bais.SubmissionsController">
+            fx:controller="com.example.bais.controllers.SubmissionsController">
     <content>
         <VBox spacing="16" styleClass="main-content">
             <padding>

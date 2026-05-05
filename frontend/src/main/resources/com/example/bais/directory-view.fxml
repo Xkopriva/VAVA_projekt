@@ -5,7 +5,7 @@
 <VBox fx:id="dirRoot"
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.bais.DirectoryController"
+      fx:controller="com.example.bais.controllers.DirectoryController"
       styleClass="main-content"
       VBox.vgrow="ALWAYS">
 </VBox>

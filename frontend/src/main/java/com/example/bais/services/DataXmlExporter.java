@@ -1,4 +1,6 @@
-package com.example.bais;
+package com.example.bais.services;
+import com.example.bais.*;
+import com.example.bais.models.*;
 
 import org.w3c.dom.*;
 import javax.xml.parsers.DocumentBuilder;

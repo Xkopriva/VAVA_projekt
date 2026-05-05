@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;

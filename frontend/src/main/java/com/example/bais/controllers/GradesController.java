@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -293,7 +297,8 @@ public class GradesController implements Initializable {
                     pTitle.setPrefWidth(200);
 
                     Label pPts = new Label(fmt(p.points()) + " / " + fmt(p.maxPoints()) + " b.");
-                    pPts.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 12px; -fx-font-weight: bold;");
+                    pPts.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+                    pPts.getStyleClass().add("grade-text");
                     
                     totalGot += p.points();
                     totalMax += p.maxPoints();
@@ -307,7 +312,8 @@ public class GradesController implements Initializable {
                 sumRow.setAlignment(Pos.CENTER_LEFT);
                 sumRow.setPadding(new Insets(4, 0, 0, 0));
                 Label sumTitle = new Label("Spolu:");
-                sumTitle.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 12px; -fx-font-weight: bold;");
+                sumTitle.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+                sumTitle.getStyleClass().add("grade-text");
                 sumTitle.setPrefWidth(200);
                 Label sumPts = new Label(fmt(totalGot) + " / " + fmt(totalMax) + " b.");
                 sumPts.setStyle("-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;");
@@ -341,7 +347,7 @@ public class GradesController implements Initializable {
         card.getStyleClass().add("section-card");
         card.setAlignment(Pos.CENTER);
         HBox.setHgrow(card, Priority.ALWAYS);
-        Label ic  = new Label(icon);   ic.setStyle("-fx-font-size:22px;");
+        Label ic  = new Label(icon);   ic.setStyle("-fx-font-size:22px;"); ic.getStyleClass().add("stat-icon");
         Label lbl = new Label(label);  lbl.getStyleClass().add("perf-course");
         Label val = new Label(value);  val.setStyle("-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:#06b6d4;");
         card.getChildren().addAll(ic, lbl, val);

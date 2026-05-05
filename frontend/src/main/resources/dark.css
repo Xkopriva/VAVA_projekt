@@ -204,6 +204,10 @@
 .perf-bar-hi  { -fx-background-color: #06b6d4; }
 .perf-bar-mid { -fx-background-color: #475569; }
 
+/* ── GRADES CUSTOM TEXT ── */
+.grade-text { -fx-text-fill: #e2e8f0; }
+.stat-icon  { -fx-text-fill: #e2e8f0; }
+
 /* ── DASHBOARD TILES ── */
 .dashboard-tile {
     -fx-background-color: #1e293b;
@@ -222,6 +226,7 @@
 }
 .dashboard-tile-icon {
     -fx-font-size: 48px;
+    -fx-text-fill: #e2e8f0;
 }
 .dashboard-tile-title {
     -fx-font-size: 20px;
@@ -269,6 +274,13 @@
 .quick-link-card:hover { -fx-background-color: #0f3057; }
 .ql-icon  { -fx-font-size: 22px; }
 .ql-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #06b6d4; }
+
+/* ── MINIGAME ── */
+.game-area {
+    -fx-background-color: #0f172a;
+    -fx-background-radius: 8;
+    -fx-cursor: crosshair;
+}
 
 /* ════ CALENDAR ════ */
 .calendar-title    { -fx-text-fill: #e2e8f0; -fx-font-size: 26px; -fx-font-weight: bold; }
@@ -449,3 +461,10 @@
 .submission-button:hover {
     -fx-background-color: #0891b2;
 }
+
+/* Globals for dialogs */
+.text-primary { -fx-text-fill: #f1f5f9; }
+.text-secondary { -fx-text-fill: #94a3b8; }
+.info-box { -fx-background-color: #1e293b; -fx-background-radius: 8; -fx-border-color: #334155; -fx-border-radius: 8; -fx-padding: 10; }
+.text-field-custom { -fx-background-color: #334155; -fx-text-fill: #f1f5f9; -fx-prompt-text-fill: #94a3b8; -fx-border-color: #475569; -fx-border-radius: 6; }
+.text-field-custom:focused { -fx-border-color: #06b6d4; }

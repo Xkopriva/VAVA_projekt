@@ -1,4 +1,8 @@
-package com.example.bais;
+package com.example.bais.controllers;
+import com.example.bais.*;
+import com.example.bais.models.*;
+import com.example.bais.services.*;
+import com.example.bais.components.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import javafx.application.Platform;
@@ -46,6 +50,14 @@ public class DashboardController implements Initializable {
     @FXML private Label degreeTitle;
     @FXML private Label quickTitle;
 
+    // Added for dynamic translation
+    @FXML private Label tileCalendarText;
+    @FXML private Label tileGradesText;
+    @FXML private Label tileAssignmentsText;
+    @FXML private Label viewAllPerfText;
+    @FXML private Button viewPlanBtn;
+    @FXML private Label gameTitleText;
+
     // Nav items
     @FXML private VBox dashboardItem;
     @FXML private VBox gradesItem;
@@ -65,6 +77,12 @@ public class DashboardController implements Initializable {
     @FXML private Label dashboardDateLabel;
     @FXML private Label dashboardProgressLabel;
     @FXML private Label dashboardProgressPct;
+
+    // Minigame
+    @FXML private javafx.scene.layout.Pane gameArea;
+    @FXML private Button gameTarget;
+    @FXML private Label gameScoreLabel;
+    private int gameScore = 0;
 
     private Node    dashboardContent;
     private boolean isDarkMode = false;
@@ -139,6 +157,28 @@ public class DashboardController implements Initializable {
         if (!UserSession.get().isAdmin()) {
             loadDashboardData();
             loadUnreadNotifications();
+        }
+
+        // Initialize Minigame
+        if (gameTarget != null && gameArea != null && gameScoreLabel != null) {
+            gameTarget.setOnAction(e -> {
+                gameScore++;
+                gameScoreLabel.setText(String.valueOf(gameScore));
+                
+                double maxX = Math.max(20, gameArea.getWidth() - 35);
+                double maxY = Math.max(20, gameArea.getHeight() - 35);
+                double x = new java.util.Random().nextDouble() * maxX;
+                double y = new java.util.Random().nextDouble() * maxY;
+                gameTarget.setLayoutX(x);
+                gameTarget.setLayoutY(y);
+            });
+            
+            Platform.runLater(() -> {
+                double maxX = Math.max(20, gameArea.getWidth() - 35);
+                double maxY = Math.max(20, gameArea.getHeight() - 35);
+                gameTarget.setLayoutX(maxX / 2);
+                gameTarget.setLayoutY(maxY / 2);
+            });
         }
     }
 
@@ -347,6 +387,7 @@ public class DashboardController implements Initializable {
                         VBox pCard = new VBox(4);
                         pCard.getStyleClass().add("perf-card");
                         pCard.setMinWidth(220); // Make grades wider so text fits
+                        pCard.setMaxWidth(Double.MAX_VALUE);
                         javafx.scene.layout.HBox.setHgrow(pCard, javafx.scene.layout.Priority.ALWAYS);
                         
                         Label crs = new Label("Predmet " + m.path("enrollmentId").asText());
@@ -398,7 +439,9 @@ public class DashboardController implements Initializable {
 
     @FXML private void handleGrades() {
         setActiveNavItem("grades");
-        if (UserSession.get().isTeacher() || UserSession.get().isAdmin()) {
+        if (UserSession.get().isAdmin()) {
+            loadView("admin-panel-view.fxml");
+        } else if (UserSession.get().isTeacher()) {
             loadView("teacher-grades-view.fxml");
         } else {
             loadView("grades-view.fxml");
@@ -517,6 +560,16 @@ public class DashboardController implements Initializable {
         updateLanguage();
         if (UserSession.get().isTeacher() || UserSession.get().isAdmin()) applyTeacherUI();
         updateWelcomeBanner();
+        
+        // Reload active view
+        if (dashboardItem.getStyleClass().contains("nav-item-active")) handleDashboard();
+        else if (gradesItem.getStyleClass().contains("nav-item-active")) handleGrades();
+        else if (calendarItem.getStyleClass().contains("nav-item-active")) handleCalendar();
+        else if (progressItem.getStyleClass().contains("nav-item-active")) handleProgress();
+        else if (algebraItem.getStyleClass().contains("nav-item-active")) handleAlgebra();
+        else if (coursesItem.getStyleClass().contains("nav-item-active")) handleCourses();
+        else if (settingsItem.getStyleClass().contains("nav-item-active")) handleSettings();
+
         saveSettingsToJson();
         if (currentSettingsController != null) currentSettingsController.syncFromDashboard();
     }
@@ -527,6 +580,7 @@ public class DashboardController implements Initializable {
 
     public void setDarkMode(boolean enableDark) {
         isDarkMode = enableDark;
+        UserSession.get().setDarkMode(enableDark);
         Scene scene = darkModeToggle.getScene();
         if (scene != null) {
             scene.getStylesheets().clear();
@@ -590,8 +644,9 @@ public class DashboardController implements Initializable {
 
         if (navDashboard != null) navDashboard.setText(en ? "Dashboard"   : "Prehľad");
         if (navGrades    != null) navGrades.setText(
-            teacher ? (en ? "Student Grades" : "Známky študentov")
-                    : (en ? "Grades"          : "Hodnotenia"));
+            UserSession.get().isAdmin() ? (en ? "Admin Panel"    : "Admin Panel")
+           : teacher                    ? (en ? "Student Grades" : "Známky študentov")
+                                        : (en ? "Grades"         : "Hodnotenia"));
         if (navCalendar  != null) navCalendar.setText(en ? "Calendar"    : "Kalendár");
         if (navProgress  != null) navProgress.setText(en ? "Progress"    : "Progres");
         if (navAlgebra   != null) navAlgebra.setText(en  ? "Assignments" : "Odovzdanie");
@@ -620,6 +675,23 @@ public class DashboardController implements Initializable {
         if (perfTitle   != null) perfTitle.setText(en   ? "Recent Performance" : "Výsledky predmetov");
         if (degreeTitle != null) degreeTitle.setText(en ? "Degree Progress"    : "Progres štúdium");
         if (quickTitle  != null) quickTitle.setText(en  ? "Quick Links"        : "Rýchle odkazy");
+        
+        if (tileCalendarText != null) tileCalendarText.setText(en ? "Calendar" : "Kalendár");
+        if (tileGradesText != null) tileGradesText.setText(en ? "Grades" : "Známky");
+        if (tileAssignmentsText != null) tileAssignmentsText.setText(en ? "Assignments" : "Odovzdania");
+        if (viewAllPerfText != null) viewAllPerfText.setText(en ? "View all →" : "Zobraziť všetky →");
+        if (viewPlanBtn != null) viewPlanBtn.setText(en ? "View Plan" : "Zobraziť plán");
+        if (gameTitleText != null) gameTitleText.setText(en ? "Unwind" : "Odreagovanie");
+
+        if (dashboardProgressLabel != null && !UserSession.get().isTeacher() && !UserSession.get().isAdmin()) {
+            String txt = dashboardProgressLabel.getText();
+            try {
+                int creds = Integer.parseInt(txt.replaceAll("[^0-9]", " ").trim().split("\\s+")[0]);
+                dashboardProgressLabel.setText(en
+                    ? "You have completed " + creds + " of 180 required credits for BSc. Informatics."
+                    : "Dokončil si " + creds + " z 180 požadovaných kreditov pre Bc. Informatiku.");
+            } catch (Exception e) {}
+        }
     }
 
     private void updateDarkModeButton() {

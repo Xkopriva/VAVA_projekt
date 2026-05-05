@@ -450,4 +450,43 @@ public class StudentService {
             return Optional.empty();
         }
     }
+
+    public java.util.Optional<java.util.Map<String, Object>> getSubjectDetail(int subjectId, sk.bais.auth.AuthContext ctx) {
+        try {
+            return subjectDAO.getById(subjectId).map(s -> {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", s.getId());
+                map.put("code", s.getCode());
+                map.put("credits", s.getCredits());
+                map.put("faculty", s.getFaculty());
+                map.put("isMandatory", s.isMandatory());
+                map.put("isProfiled", s.isProfiled());
+                map.put("completionType", s.getCompletionType() != null ? s.getCompletionType().name() : "");
+                map.put("languageOfInstruction", s.getLanguageOfInstruction());
+                map.put("assessmentBreakdown", s.getAssessmentBreakdown());
+                map.put("avgStudentRating", s.getAvgStudentRating());
+                map.put("subjectDifficulty", s.getSubjectDifficulty());
+                map.put("gradeAPct", s.getGradeAPct());
+                map.put("gradeBPct", s.getGradeBPct());
+                map.put("gradeCPct", s.getGradeCPct());
+                map.put("gradeDPct", s.getGradeDPct());
+                map.put("gradeEPct", s.getGradeEPct());
+                map.put("gradeFxPct", s.getGradeFxPct());
+                String locale = "sk";
+                try {
+                    subjectTranslationDAO.get(subjectId, locale).ifPresent(tr -> {
+                        map.put("name", tr.getName());
+                        map.put("syllabus", tr.getDescription());
+                    });
+                } catch (java.sql.SQLException e) {
+                    log.error("Nepodarilo sa načítať preklad", e);
+                }
+                return map;
+            });
+        } catch (java.sql.SQLException e) {
+            log.error("Nepodarilo sa načítať predmet", e);
+            return java.util.Optional.empty();
+        }
+    }
+
 }
