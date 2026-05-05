@@ -166,7 +166,7 @@ public class GradesController implements Initializable {
             boolean passed      = "PASSED".equals(ei.status());
             boolean active      = "ACTIVE".equals(ei.status());
             
-            // Užívateľ chce vidieť len práve prebiehajúce (aktívne) predmety
+            // len práve prebiehajúce (aktívne) predmety
             if (!active) continue;
 
             boolean en = UserSession.get().isEnglish();
@@ -181,7 +181,7 @@ public class GradesController implements Initializable {
         Platform.runLater(() -> buildUI(tc, pc, tot));
     }
 
-    // ── UI ────────────────────────────────────────────────────────
+    //UI
 
     private void showLoading() {
         boolean en = UserSession.get().isEnglish();
@@ -342,7 +342,7 @@ public class GradesController implements Initializable {
         gradesRoot.getChildren().addAll(titleBlock, stats, tableCard, legend);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
+    // Helpers
 
     private VBox statCard(String icon, String label, String value) {
         VBox card = new VBox(4);

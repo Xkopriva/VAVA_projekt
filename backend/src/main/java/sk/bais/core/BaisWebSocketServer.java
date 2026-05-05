@@ -93,7 +93,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                     case "LOGIN"        -> handleLogin(conn, payload);
                     case "GET_STUDENTS" -> handleGetStudents(conn);
 
-                    // --- ADMIN AKCIE ---
+                    // ADMIN AKCIE
                     case "LIST_USERS" -> handleListUsers(conn);
                     case "CREATE_USER" -> handleCreateUser(conn, payload);
                     case "CREATE_SUBJECT" -> handleCreateSubject(conn, payload);
@@ -106,7 +106,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                     case "REMOVE_GUARANTOR" -> handleRemoveGuarantor(conn, payload);
                     
 
-                    // --- TEACHER AKCIE ---
+                    // TEACHER AKCIE 
                     case "GET_MY_SUBJECTS" -> handleGetTeacherSubjects(conn);
 
                     case "ADD_MARK" -> handleAddMark(conn, payload);
@@ -126,7 +126,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                     case "RECORD_FINAL_MARK" -> handleRecordFinalMark(conn, payload);
                     case "BROADCAST_NOTIFICATION_TO_SUBJECT" -> handleBroadcastToSubject(conn, payload);
 
-                    // --- STUDENT AKCIE ---
+                    // STUDENT AKCIE 
                     case "ENROLL_SUBJECT" -> handleEnrollSubject(conn, payload);
                     case "GET_MY_ENROLLMENTS" -> handleGetMyEnrollments(conn);
                     case "GET_SUBJECT_DETAIL" -> handleGetSubjectDetail(conn, payload);
@@ -144,7 +144,7 @@ public class BaisWebSocketServer extends WebSocketServer {
                     case "GET_TASK_DETAIL" -> handleGetTaskDetail(conn, payload);
                     case "SUBMIT_TASK" -> handleSaveSubmission(conn, payload);
                     
-                    // --- SPOLOCNE AKCIE ---
+                    // SPOLOCNE AKCIE 
                     case "GET_USER_PROFILE" -> handleGetUserProfile(conn);
                     case "CREATE_NOTIFICATION" -> handleCreateNotification(conn, payload);
 
@@ -244,7 +244,6 @@ public class BaisWebSocketServer extends WebSocketServer {
 
     private void handleGetMyCalendar(WebSocket conn, JsonNode payload) {
         requireAuth(conn).ifPresent(ctx -> {
-            // Jazyk skúsime vytiahnuť z payloadu alebo použijeme default
             String locale = payload.has("locale") ? payload.get("locale").asText() : "sk";
             
             List<CalendarItemDTO> calendar = studentService.getMyCalendar(ctx, locale);
@@ -705,8 +704,6 @@ public class BaisWebSocketServer extends WebSocketServer {
         requireAuth(conn).ifPresent(ctx -> {
             try {
                 sk.bais.model.User newUser = new sk.bais.model.User();
-                // Support both old nested format {user:{...}, password, role}
-                // and new flat format {email, firstName, lastName, password, roleName}
                 if (payload.has("user")) {
                     newUser = mapper.treeToValue(payload.get("user"), sk.bais.model.User.class);
                     String password = payload.path("password").asText();

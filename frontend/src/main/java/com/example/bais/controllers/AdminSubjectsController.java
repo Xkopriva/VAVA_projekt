@@ -18,10 +18,6 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Admin — Subjects list + Create Subject form + Calendar below (Fotka 5).
- * SK/EN + dark/light mode aware.
- */
 public class AdminSubjectsController implements Initializable {
 
     @FXML private VBox adminSubjectsRoot;
@@ -118,7 +114,7 @@ public class AdminSubjectsController implements Initializable {
         loadCalendar(en);
     }
 
-    // ── Card: Create Subject ──────────────────────────────────────────────────────
+    //Card: Create Subject
 
     private VBox buildCreateCard(boolean en) {
         VBox card = new VBox(16);
@@ -207,7 +203,7 @@ public class AdminSubjectsController implements Initializable {
         return card;
     }
 
-    // ── Card: Subjects Table ──────────────────────────────────────────────────────
+    //Card: Subjects Table
 
     private VBox buildSubjectsTableCard(boolean en) {
         VBox card = new VBox(12);
@@ -325,7 +321,7 @@ public class AdminSubjectsController implements Initializable {
         WebSocketClientService.getInstance().sendAction("GET_MY_SUBJECTS", null);
     }
 
-    // ── Embed Calendar below ──────────────────────────────────────────────────────
+    //Embed Calendar below
 
     private void loadCalendar(boolean en) {
         try {
@@ -346,7 +342,7 @@ public class AdminSubjectsController implements Initializable {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────────
+    //Helpers
 
     private ComboBox<String> buildTeacherCombo() {
         ComboBox<String> combo = new ComboBox<>();

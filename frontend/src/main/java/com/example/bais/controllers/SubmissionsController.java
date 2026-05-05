@@ -42,8 +42,7 @@ public class SubmissionsController implements Initializable {
         }
     }
 
-    // ── A. Načítanie zoznamu úloh ──────────────────────────────────────────────
-
+    // Načítanie zoznamu úloh
     private void loadMyTasks() {
         WebSocketClientService ws = WebSocketClientService.getInstance();
         System.out.println("[SubmissionsController] Sending GET_MY_TASKS");
@@ -77,8 +76,7 @@ public class SubmissionsController implements Initializable {
         });
     }
 
-    // ── B. Karta jednej úlohy ──────────────────────────────────────────────────
-
+    // Karta jednej úlohy
     private VBox buildTaskCard(JsonNode task) {
         int    taskId      = task.path("id").asInt(-1);
         String title       = task.path("title").asText(isEnglish ? "Unnamed task" : "Nepomenovaná úloha");
@@ -121,7 +119,6 @@ public class SubmissionsController implements Initializable {
             card.getChildren().add(descLbl);
         }
 
-        // Deadline + body row
         HBox metaRow = new HBox(20);
         metaRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -173,8 +170,7 @@ public class SubmissionsController implements Initializable {
         return card;
     }
 
-    // ── C. Detail úlohy (GET_TASK_DETAIL → TASK_DETAIL) ───────────────────────
-
+    // Detail úlohy (GET_TASK_DETAIL → TASK_DETAIL)
     private void openTaskDetail(int taskId, String taskTitle) {
         if (taskId < 0) return;
         WebSocketClientService ws = WebSocketClientService.getInstance();
@@ -232,7 +228,6 @@ public class SubmissionsController implements Initializable {
             root.getChildren().addAll(title, new Separator());
         }
 
-        // Deadline + body
         String dueRaw = task.path("dueAt").asText("");
         double max    = task.path("maxPoints").asDouble(0);
 
@@ -258,7 +253,6 @@ public class SubmissionsController implements Initializable {
         }
         if (!meta.getChildren().isEmpty()) root.getChildren().add(meta);
 
-        // Existing submission status
         if (!submission.isMissingNode() && !submission.isNull()) {
             String status   = submission.path("status").asText("SUBMITTED");
             String fileUrl  = submission.path("fileUrl").asText("");
@@ -337,7 +331,7 @@ public class SubmissionsController implements Initializable {
         stage.show();
     }
 
-    // ── D. Odovzdanie úlohy (SUBMIT_TASK s fileUrl) ────────────────────────────
+    // Odovzdanie úlohy (SUBMIT_TASK s fileUrl)
 
     private void showSubmitDialog(int taskId, String taskTitle) {
         if (taskId < 0) {
@@ -431,7 +425,6 @@ public class SubmissionsController implements Initializable {
                     showAlert(Alert.AlertType.INFORMATION,
                             en ? "Submitted!" : "Odovzdané!",
                             en ? "Your assignment was submitted successfully." : "Zadanie bolo úspešne odovzdané.");
-                    // Reload task list to reflect new status
                     loadMyTasks();
                 });
             });
@@ -483,7 +476,7 @@ public class SubmissionsController implements Initializable {
         stage.show();
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    //Helpers
 
     private void showAlert(Alert.AlertType type, String title, String content) {
         Alert alert = new Alert(type);

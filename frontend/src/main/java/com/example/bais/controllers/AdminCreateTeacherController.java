@@ -16,10 +16,6 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Admin — Create Teacher Account screen (Fotka 3).
- * SK/EN + dark/light mode aware.
- */
 public class AdminCreateTeacherController implements Initializable {
 
     @FXML private VBox adminCreateTeacherRoot;
@@ -252,8 +248,7 @@ public class AdminCreateTeacherController implements Initializable {
         WebSocketClientService.getInstance().sendAction("LIST_USERS", null);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────────
-
+    //Helpers
     private Region divider() {
         Region r = new Region(); r.setPrefHeight(1); r.setMaxWidth(Double.MAX_VALUE);
         r.setStyle("-fx-background-color:#e2e8f0;"); return r;

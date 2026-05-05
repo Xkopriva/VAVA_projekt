@@ -40,7 +40,7 @@ public class IndexRecordWithSubjectDTO {
         this.credits = credits;
     }
 
-    // ── Gettery (Jackson ich potrebuje na serializáciu) ──────────────
+    // Gettery (Jackson ich potrebuje na serializáciu)
 
     public int getId() { return id; }
     public int getEnrollmentId() { return enrollmentId; }

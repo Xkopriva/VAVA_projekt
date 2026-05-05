@@ -329,7 +329,7 @@ public class StudentService {
                         .durationMinutes(e.getDurationMinutes())
                         .room(e.getRoom())
                         .subjectId(subjectId)
-                        .subjectCode(subjectCode) // <--- PRIDANÉ
+                        .subjectCode(subjectCode)
                         .build());
             }
 
@@ -347,7 +347,7 @@ public class StudentService {
                         .scheduledAt(t.getDueAt())
                         .durationMinutes(30)
                         .subjectId(subjectId)
-                        .subjectCode(subjectCode) // <--- PRIDANÉ
+                        .subjectCode(subjectCode)
                         .build());
             }
         }

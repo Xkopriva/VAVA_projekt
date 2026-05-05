@@ -1,14 +1,9 @@
-/* ============================================
-   LIGHT MODE – Lepší Akademický Systém
-   Colors strictly from image 2 (cyan/blue palette, no yellow)
-   ============================================ */
+/* LIGHT MODE*/
 
-/* ─── ROOT ──────────────────────────────────── */
+/*  ROOT  */
 .root-pane { -fx-background-color: #f1f5f9; }
 
-/* ════════════════════════════════════════════════
-    LOGIN PAGE
-    ════════════════════════════════════════════════ */
+/* LOGIN PAGE */
 .login-topbar {
     -fx-padding: 12 24; -fx-background-color: transparent;
     -fx-border-color: transparent transparent #e2e8f0 transparent;
@@ -63,9 +58,7 @@
 .bottom-link       { -fx-text-fill: #bfdbfe; -fx-font-size: 12px; -fx-cursor: hand; }
 .bottom-link:hover { -fx-text-fill: white; }
 
-/* ════════════════════════════════════════════════
-   DARK-MODE TOGGLE  (sits on dark header always)
-   ════════════════════════════════════════════════ */
+/* DARK-MODE TOGGLE */
 .dark-mode-toggle {
     -fx-background-color: transparent; -fx-cursor: hand;
     -fx-font-size: 18px; -fx-padding: 6 10; -fx-text-fill: #94a3b8;
@@ -77,9 +70,7 @@
 .dark-mode-toggle:focused,
 .dark-mode-toggle:pressed { -fx-background-color: transparent; -fx-border-color: transparent; }
 
-/* ════════════════════════════════════════════════
-   HEADER  (dark bar, image 2 left side)
-   ════════════════════════════════════════════════ */
+/* HEADER */
 .header {
     -fx-background-color: #FFFFFF;
     -fx-padding: 10 23; -fx-spacing: 10;
@@ -121,9 +112,7 @@
     -fx-translate-x: 8; -fx-translate-y: 2;
 }
 
-/* ════════════════════════════════════════════════
-   SIDEBAR  (white, cyan active highlight)
-   ════════════════════════════════════════════════ */
+/* SIDEBAR */
 .sidebar {
     -fx-background-color: #ffffff;
     -fx-min-width: 220; -fx-max-width: 220; -fx-pref-width: 220;
@@ -152,7 +141,7 @@
 .nav-icon  { -fx-font-size: 17px; -fx-text-fill: #94a3b8; }
 .nav-icon-logout { -fx-text-fill: #dc2626; -fx-font-size: 20px; }
 
-/* ACTIVE — cyan, no yellow */
+/* ACTIVE */
 .nav-item-active {
     -fx-background-color: #e0f2fe;
     -fx-border-color: transparent transparent transparent #06b6d4;
@@ -180,16 +169,14 @@
 .language-selector:hover { -fx-background-color: #f0f9ff; }
 .lang-label { -fx-font-size: 13px; -fx-text-fill: #475569; }
 
-/* ════════════════════════════════════════════════
-   MAIN CONTENT
-   ════════════════════════════════════════════════ */
+/* MAIN CONTENT */
 .main-scroll {
     -fx-background-color: transparent; -fx-background: transparent;
     -fx-border-color: transparent;
 }
 .main-content { -fx-background-color: #f8f9ff; -fx-padding: 20 24; }
 
-/* ── WELCOME BANNER ─────────────────────── */
+/* WELCOME BANNER */
 .welcome-banner {
     -fx-background-color: #fef9c3;
     -fx-background-radius: 12; -fx-padding: 28 32;
@@ -198,7 +185,7 @@
 .welcome-title { -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
 .welcome-sub   { -fx-font-size: 15px; -fx-text-fill: #64748b; }
 
-/* ── SECTION CARDS ─────────────────────── */
+/* SECTION CARDS */
 .section-card {
     -fx-background-color: #ffffff; -fx-background-radius: 12;
     -fx-padding: 18 20;
@@ -208,7 +195,7 @@
 .section-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
 .link-label    { -fx-font-size: 14px; -fx-text-fill: #06b6d4; -fx-cursor: hand; }
 
-/* ── SCHEDULE ───────────────────────────── */
+/* SCHEDULE */
 .schedule-date { -fx-font-size: 13px; -fx-text-fill: #94a3b8; -fx-font-weight: bold; }
 .schedule-row {
     -fx-padding: 12 0;
@@ -223,13 +210,13 @@
 .time-red   { -fx-text-fill: #dc2626; }
 .time-green { -fx-text-fill: #16a34a; }
 
-/* ── BADGES ─────────────────────────────── */
+/* BADGES */
 .badge { -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 9; -fx-background-radius: 6; }
 .badge-lecture { -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; }
 .badge-seminar { -fx-background-color: #fee2e2; -fx-text-fill: #b91c1c; }
 .badge-lab     { -fx-background-color: #dcfce7; -fx-text-fill: #15803d; }
 
-/* ── ALERTS ─────────────────────────────── */
+/* ALERTS */
 .alert-item  { -fx-padding: 10 12; -fx-background-radius: 8; }
 .alert-title { -fx-font-size: 12px; -fx-font-weight: bold; }
 .alert-body  { -fx-font-size: 11px; -fx-text-fill: #64748b; }
@@ -240,7 +227,7 @@
 .alert-orange { -fx-background-color: #fff7ed; }
 .alert-orange .alert-title { -fx-text-fill: #d97706; }
 
-/* ── RECENT PERFORMANCE ─────────────────── */
+/* RECENT PERFORMANCE */
 .perf-card   { -fx-background-color: #f8fafc; -fx-background-radius: 10; -fx-padding: 16 18; }
 .perf-course { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; }
 .perf-grade  { -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b; }
@@ -249,11 +236,11 @@
 .perf-bar-hi  { -fx-background-color: #06b6d4; }
 .perf-bar-mid { -fx-background-color: #94a3b8; }
 
-/* ── GRADES CUSTOM TEXT ── */
+/*  GRADES CUSTOM TEXT  */
 .grade-text { -fx-text-fill: #1e293b; }
 .stat-icon  { -fx-text-fill: #1e293b; }
 
-/* ── DASHBOARD TILES ───────────────────── */
+/*  DASHBOARD TILES */
 .dashboard-tile {
     -fx-background-color: #ffffff;
     -fx-background-radius: 16;
@@ -283,7 +270,7 @@
     -fx-text-fill: #64748b;
 }
 
-/* ── DEGREE PROGRESS ────────────────────── */
+/*  DEGREE PROGRESS  */
 .progress-ring {
     -fx-min-width: 72; -fx-min-height: 72; -fx-background-radius: 36;
     -fx-border-color: #06b6d4; -fx-border-width: 5; -fx-border-radius: 36;
@@ -304,7 +291,7 @@
 }
 .btn-secondary:hover { -fx-background-color: #e0f2fe; }
 
-/* ── PROGRESS CREDITS (Light Mode) ──────────────── */
+/* PROGRESS CREDITS */
 .progress-credits {
     -fx-text-fill: #1e293b;
     -fx-font-weight: bold;
@@ -315,7 +302,7 @@
     -fx-font-size: 18px;
 }
 
-/* ── QUICK LINKS ────────────────────────── */
+/*  QUICK LINKS  */
 .quick-link-card {
     -fx-background-color: #f0f9ff; -fx-background-radius: 10;
     -fx-padding: 14 10; -fx-cursor: hand;
@@ -324,16 +311,14 @@
 .ql-icon  { -fx-font-size: 22px; }
 .ql-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #0369a1; }
 
-/* ── MINIGAME ───────────────────────────── */
+/* MINIGAME */
 .game-area {
     -fx-background-color: #f1f5f9;
     -fx-background-radius: 8;
     -fx-cursor: crosshair;
 }
 
-/* ════════════════════════════════════════════════
-   CALENDAR
-   ════════════════════════════════════════════════ */
+/* CALENDAR */
 .calendar-title    { -fx-text-fill: #1e293b; -fx-font-size: 26px; -fx-font-weight: bold; }
 .calendar-subtitle { -fx-text-fill: #64748b; -fx-font-size: 13px; }
 
@@ -360,7 +345,6 @@
 .calendar-grid-container { -fx-background-color: #ffffff; }
 .calendar-time-header { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b; }
 
-/* Event cards in light mode */
 .event-card {
     -fx-background-radius: 6;
     -fx-padding: 6 8;
@@ -409,14 +393,14 @@
 
 .content-placeholder { -fx-font-size: 16px; -fx-text-fill: #94a3b8; }
 
-/* ── CALENDAR LEGEND ─────────────────────────────────── */
+/*  CALENDAR LEGEND */
 .calendar-legend-label {
     -fx-text-fill: #1e293b;
     -fx-font-weight: 600;
     -fx-font-size: 13px;
 }
 
-/* ── ADD REMINDER DIALOG ─────────────────────────────────── */
+/*  ADD REMINDER DIALOG  */
 .add-reminder-dialog {
     -fx-background-color: #ffffff;
 }
@@ -457,9 +441,7 @@
     -fx-text-fill: #ef4444;
 }
 
-/* ════════════════════════════════════════════════
-   SUBMISSIONS
-   ════════════════════════════════════════════════ */
+/* SUBMISSIONS */
 .submission-item {
     -fx-background-color: #ffffff;
     -fx-background-radius: 12;
@@ -493,7 +475,6 @@
     -fx-background-color: #0891b2;
 }
 
-/* Globals for dialogs */
 .text-primary { -fx-text-fill: #1e293b; }
 .text-secondary { -fx-text-fill: #475569; }
 .info-box { -fx-background-color: #f8fafc; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 10; }

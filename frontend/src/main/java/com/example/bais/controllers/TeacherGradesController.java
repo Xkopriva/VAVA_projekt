@@ -21,19 +21,28 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+<<<<<<< HEAD
 /**
  * Teacher Grades view — subjects guaranteed by teacher, students, marks,
  * broadcast notification.
  * Supports: dark/light mode, SK/EN language, live data via WebSocket.
  */
+=======
+>>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
 public class TeacherGradesController implements Initializable {
 
     @FXML
     private VBox teacherGradesRoot;
 
+<<<<<<< HEAD
     // ── Data model ──────────────────────────────────────────────────────────────
     record StudentRow(int enrollmentId, int studentId, String firstName, String lastName, String status) {
     }
+=======
+    // Data model
+    record StudentRow(int enrollmentId, int studentId, String status) {}
+    record SubjectInfo(int subjectId, String code, String name) {}
+>>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
 
     record SubjectInfo(int subjectId, String code, String name) {
     }
@@ -68,8 +77,7 @@ public class TeacherGradesController implements Initializable {
         }, 8, TimeUnit.SECONDS);
     }
 
-    // ── Data loading ────────────────────────────────────────────────────────────
-
+    //Data loading 
     private void handleSubjects(JsonNode node) {
         WebSocketClientService ws = WebSocketClientService.getInstance();
         ws.unsubscribe(subTeacherSubjects);
@@ -168,7 +176,7 @@ public class TeacherGradesController implements Initializable {
             Platform.runLater(this::buildUI);
     }
 
-    // ── UI building ─────────────────────────────────────────────────────────────
+    //UI building
 
     private void showLoading() {
         teacherGradesRoot.getChildren().clear();
@@ -188,7 +196,7 @@ public class TeacherGradesController implements Initializable {
         teacherGradesRoot.setSpacing(20);
         teacherGradesRoot.setPadding(new Insets(28, 28, 28, 28));
 
-        // ── Page title ──────────────────────────────────────────────────
+        //Page title
         VBox titleBlock = new VBox(4);
         Label title = new Label(en ? "Student Grades Management" : "Správa hodnotení študentov");
         title.setStyle("-fx-font-size:26px;-fx-font-weight:bold;");
@@ -200,7 +208,7 @@ public class TeacherGradesController implements Initializable {
         sub.setWrapText(true);
         titleBlock.getChildren().addAll(title, sub);
 
-        // ── Summary stat cards ──────────────────────────────────────────
+        //Summary stat cards
         int totalEnrollments = enrollmentMap.values().stream().mapToInt(List::size).sum();
         long graded = markMap.values().stream()
                 .filter(m -> m != null && !m.equals("—")).count();
@@ -224,18 +232,17 @@ public class TeacherGradesController implements Initializable {
             return;
         }
 
-        // ── Broadcast notification panel ────────────────────────────────
+        //Broadcast notification panel
         teacherGradesRoot.getChildren().add(buildBroadcastCard(en));
 
-        // ── One card per subject ────────────────────────────────────────
+        //One card per subject
         for (SubjectInfo si : subjects) {
             List<StudentRow> rows = enrollmentMap.getOrDefault(si.subjectId(), List.of());
             teacherGradesRoot.getChildren().add(buildSubjectCard(si, rows, en));
         }
     }
 
-    // ── Broadcast notification card ─────────────────────────────────────────────
-
+    //Broadcast notification card 
     private VBox buildBroadcastCard(boolean en) {
         VBox card = new VBox(12);
         card.getStyleClass().add("section-card");
@@ -314,7 +321,6 @@ public class TeacherGradesController implements Initializable {
                 return;
             }
 
-            // Parse subjectId from picker text "CODE – subjectId"
             int sid = -1;
             try {
                 sid = Integer.parseInt(selSubject.split("–")[1].trim());
@@ -353,7 +359,7 @@ public class TeacherGradesController implements Initializable {
         return card;
     }
 
-    // ── Subject card ────────────────────────────────────────────────────────────
+    //Subject card
 
     private VBox buildSubjectCard(SubjectInfo si, List<StudentRow> rows, boolean en) {
         VBox card = new VBox(10);
@@ -453,7 +459,11 @@ public class TeacherGradesController implements Initializable {
             rowBox.setStyle("-fx-border-color:transparent transparent #e2e8f0 transparent;" +
                     "-fx-border-width:0 0 1 0;");
 
+<<<<<<< HEAD
         // ── Column 1: Avatar + student name ─────────────────────────
+=======
+        //student ID
+>>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
         Circle dot = new Circle(5, Color.web(avatarColor(row.studentId())));
         String fullName = (row.firstName() + " " + row.lastName()).trim();
         if (fullName.isEmpty())
@@ -557,8 +567,7 @@ public class TeacherGradesController implements Initializable {
         return rowBox;
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────────
-
+    //Helpers
     private VBox statCard(String icon, String label, String value, String accent) {
         VBox card = new VBox(4);
         card.getStyleClass().add("section-card");

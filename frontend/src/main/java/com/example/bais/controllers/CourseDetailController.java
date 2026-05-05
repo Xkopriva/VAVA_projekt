@@ -146,7 +146,7 @@ public class CourseDetailController implements Initializable {
         courseRoot.setSpacing(16);
         courseRoot.setPadding(new Insets(24, 28, 24, 28));
 
-        // ── Header card ───────────────────────────────────────────
+        //Header card
         HBox headerCard = new HBox(20);
         headerCard.getStyleClass().add("section-card");
         headerCard.setAlignment(Pos.CENTER_LEFT);
@@ -180,7 +180,6 @@ public class CourseDetailController implements Initializable {
 
         info.getChildren().addAll(title, codeLabel, tags);
 
-        // Upload section (static – ties into real backend upload when available)
         VBox uploadBox = new VBox(12);
         uploadBox.setAlignment(Pos.CENTER);
         uploadBox.setPadding(new Insets(0, 0, 0, 20));
@@ -204,7 +203,7 @@ public class CourseDetailController implements Initializable {
         uploadBox.getChildren().addAll(uploadBtn, fileNameLabel);
         headerCard.getChildren().addAll(info, uploadBox);
 
-        // ── Subject/Task table ────────────────────────────────────
+        // Subject/Task table
         VBox tableCard = new VBox(12);
         tableCard.getStyleClass().add("section-card");
 
@@ -237,7 +236,7 @@ public class CourseDetailController implements Initializable {
             }
         }
 
-        // ── Summary stats ─────────────────────────────────────────
+        // Summary stats
         HBox sumRow = new HBox(12);
         long passed = tasks.stream().filter(t -> t.status().equals("Ukončené") || t.status().equals("Completed")).count();
         sumRow.getChildren().addAll(

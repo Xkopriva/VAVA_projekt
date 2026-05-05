@@ -30,7 +30,6 @@ public class SettingsController implements Initializable {
     @FXML
     private VBox settingsRoot;
 
-    // Prednastavené (default) hodnoty
     private boolean deadlineReminders = true;
     private boolean newGrades = true;
     private boolean newMaterials = true;

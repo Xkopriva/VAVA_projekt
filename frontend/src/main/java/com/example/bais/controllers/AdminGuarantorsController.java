@@ -17,10 +17,6 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Admin — Assign Guarantors screen.
- * SK/EN + dark/light mode aware.
- */
 public class AdminGuarantorsController implements Initializable {
 
     @FXML
@@ -112,7 +108,7 @@ public class AdminGuarantorsController implements Initializable {
         adminGuarantorsRoot.getChildren().add(buildOverviewCard(en));
     }
 
-    // ── Card: Assign ─────────────────────────────────────────────────────────────
+    //Card: Assign
 
     private VBox buildAssignCard(boolean en) {
         VBox card = new VBox(16);
@@ -189,7 +185,7 @@ public class AdminGuarantorsController implements Initializable {
         return card;
     }
 
-    // ── Card: Overview ──────────────────────────────────────────────────────────
+    //Card: Overview
 
     private VBox buildOverviewCard(boolean en) {
         VBox card = new VBox(12);
@@ -264,8 +260,7 @@ public class AdminGuarantorsController implements Initializable {
         }
     }
 
-    // ── Helpers
-    // ───────────────────────────────────────────────────────────────────
+    //Helpers
 
     private ComboBox<String> buildTeacherCombo() {
         ComboBox<String> combo = new ComboBox<>();

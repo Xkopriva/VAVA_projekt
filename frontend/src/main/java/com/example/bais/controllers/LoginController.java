@@ -65,16 +65,15 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // 1. Načítame uložené preferencie hneď pri štarte
+        // Načítame uložené preferencie hneď pri štarte
         loadSavedPreferences();
 
-        // 2. Aktualizujeme texty a ikony
+        // Aktualizujeme texty a ikony
         updateLanguage();
         updateLanguageButton();
         updateDarkModeButton();
 
-        // 3. Aplikujeme CSS tému (musí byť cez Platform.runLater, aby scéna stihla
-        // vzniknúť)
+        // Aplikujeme CSS tému 
         Platform.runLater(this::updateTheme);
     }
 
@@ -95,8 +94,7 @@ public class LoginController implements Initializable {
 
     private void saveSettingsToJson() {
         try {
-            // Pre zachovanie ostatných nastavení (notifikácie) najprv načítame pôvodný
-            // súbor
+            // Pre zachovanie ostatných nastavení (notifikácie) najprv načítame pôvodný súbor
             ObjectNode root;
             if (SETTINGS_FILE.exists()) {
                 root = (ObjectNode) JSON_MAPPER.readTree(SETTINGS_FILE);
@@ -184,7 +182,6 @@ public class LoginController implements Initializable {
 
     private void navigateToDashboard() {
         try {
-            // SPRÁVNA CESTA pri behu z JARu
             FXMLLoader fxmlLoader = new FXMLLoader(
                     getClass().getResource("/com/example/bais/dashboard-view.fxml"));
 
@@ -221,7 +218,7 @@ public class LoginController implements Initializable {
         isDarkMode = !isDarkMode;
         updateTheme();
         updateDarkModeButton();
-        saveSettingsToJson(); // Uložíme zmenu okamžite
+        saveSettingsToJson();
     }
 
     private void updateLanguage() {
