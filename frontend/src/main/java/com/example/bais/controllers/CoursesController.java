@@ -84,9 +84,10 @@ public class CoursesController implements Initializable {
 
 
     private void showLoading() {
+        boolean en = UserSession.get().isEnglish();
         coursesRoot.getChildren().clear();
         coursesRoot.setPadding(new Insets(24, 28, 24, 28));
-        Label l = new Label("⏳  Načítavam kurzy...");
+        Label l = new Label(en ? "⏳  Loading courses..." : "⏳  Načítavam kurzy...");
         l.setStyle("-fx-font-size:16px;-fx-text-fill:#64748b;");
         coursesRoot.getChildren().add(l);
     }

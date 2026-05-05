@@ -169,7 +169,8 @@ public class GradesController implements Initializable {
             // Užívateľ chce vidieť len práve prebiehajúce (aktívne) predmety
             if (!active) continue;
 
-            String  statusText  = passed ? "Absolvované" : (active ? "Prebieha" : ei.status());
+            boolean en = UserSession.get().isEnglish();
+            String  statusText  = passed ? (en ? "Passed" : "Absolvované") : (active ? (en ? "In Progress" : "Prebieha") : ei.status());
 
             courses.add(new Course(ei.enrollmentId(), si.code(), si.name(), si.credits(), finalGrade, statusText, passed));
             totalCredits += si.credits();
@@ -183,9 +184,10 @@ public class GradesController implements Initializable {
     // ── UI ────────────────────────────────────────────────────────
 
     private void showLoading() {
+        boolean en = UserSession.get().isEnglish();
         gradesRoot.getChildren().clear();
         gradesRoot.setPadding(new Insets(24, 28, 24, 28));
-        Label l = new Label("⏳  Načítavam hodnotenia...");
+        Label l = new Label(en ? "⏳  Loading grades..." : "⏳  Načítavam hodnotenia...");
         l.setStyle("-fx-font-size:16px;-fx-text-fill:#64748b;");
         gradesRoot.getChildren().add(l);
     }
@@ -311,7 +313,7 @@ public class GradesController implements Initializable {
                 HBox sumRow = new HBox(10);
                 sumRow.setAlignment(Pos.CENTER_LEFT);
                 sumRow.setPadding(new Insets(4, 0, 0, 0));
-                Label sumTitle = new Label("Spolu:");
+                Label sumTitle = new Label(en ? "Total:" : "Spolu:");
                 sumTitle.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
                 sumTitle.getStyleClass().add("grade-text");
                 sumTitle.setPrefWidth(200);

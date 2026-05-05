@@ -187,7 +187,24 @@ public class SchoolCalendarController implements Initializable {
         );
         addBtn.setOnAction(e -> showAddReminderDialog());
 
-        titleRow.getChildren().addAll(titleBlock, addBtn);
+        Button exportBtn = new Button(en ? "Export XML" : "Exportovať XML");
+        exportBtn.setCursor(javafx.scene.Cursor.HAND);
+        exportBtn.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-border-color: #2563EB; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-text-fill: #2563EB; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 10 20; " +
+                        "-fx-background-radius: 12; " +
+                        "-fx-border-radius: 12;"
+        );
+        exportBtn.setOnAction(e -> exportReminders());
+
+        HBox btns = new HBox(12, exportBtn, addBtn);
+        btns.setAlignment(Pos.CENTER_RIGHT);
+
+        titleRow.getChildren().addAll(titleBlock, btns);
 
         gridContainer = new VBox(4);
         gridContainer.setPadding(new Insets(4, 4, 32, 4));
@@ -200,6 +217,32 @@ public class SchoolCalendarController implements Initializable {
         HBox legend = buildLegend();
         legend.setPadding(new Insets(8, 0, 16, 0)); // space below legend
         calendarRoot.getChildren().addAll(titleRow, legend, gridContainer);
+    }
+
+    private void exportReminders() {
+        boolean en = UserSession.get().isEnglish();
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle(en ? "Save Reminders to XML" : "Uložiť pripomienky do XML");
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("XML Files", "*.xml"));
+        fileChooser.setInitialFileName("reminders.xml");
+        java.io.File file = fileChooser.showSaveDialog(calendarRoot.getScene().getWindow());
+
+        if (file != null) {
+            List<String> reminderTexts = new ArrayList<>();
+            String[] days = en ? DAYS_EN : DAYS_SK;
+            for (CalEvent ev : userReminders) {
+                String dayName = (ev.dayIndex() >= 0 && ev.dayIndex() < 5) ? days[ev.dayIndex()] : "";
+                reminderTexts.add(ev.title() + " | " + dayName + " " + ev.time());
+            }
+            DataXmlExporter.exportToXml(file.getAbsolutePath(), UserSession.get().getFullName(),
+                                        new ArrayList<>(), new ArrayList<>(), reminderTexts);
+            
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setHeaderText(null);
+            alert.setTitle(en ? "Export successful" : "Export úspešný");
+            alert.setContentText(en ? "Reminders exported successfully!" : "Pripomienky boli úspešne exportované!");
+            alert.showAndWait();
+        }
     }
 
     private void showAddReminderDialog() {

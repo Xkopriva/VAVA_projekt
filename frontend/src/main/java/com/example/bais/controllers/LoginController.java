@@ -152,7 +152,7 @@ public class LoginController implements Initializable {
     private void navigateToDashboard() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
-            fxmlLoader.setLocation(getClass().getResource("dashboard-view.fxml"));
+            fxmlLoader.setLocation(getClass().getResource("../dashboard-view.fxml"));
             fxmlLoader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
             Scene dashboardScene = new Scene(fxmlLoader.load(), 1280, 800);
 

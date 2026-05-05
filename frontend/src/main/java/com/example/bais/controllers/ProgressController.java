@@ -146,7 +146,8 @@ public class ProgressController implements Initializable {
         Platform.runLater(() -> {
             progressRoot.getChildren().clear();
             progressRoot.setPadding(new Insets(24, 28, 24, 28));
-            Label l = new Label("⏳  Načítavam progres...");
+            boolean en = UserSession.get().isEnglish();
+            Label l = new Label(en ? "⏳  Loading progress..." : "⏳  Načítavam progres...");
             l.setStyle("-fx-font-size:16px;-fx-text-fill:#64748b;");
             progressRoot.getChildren().add(l);
         });
@@ -166,12 +167,14 @@ public class ProgressController implements Initializable {
         String name  = UserSession.get().getFullName();
         String email = UserSession.get().getUserEmail();
 
+        boolean en = UserSession.get().isEnglish();
+        
         HBox titleRow = new HBox(24);
         titleRow.setAlignment(Pos.CENTER_LEFT);
         titleRow.setPadding(new Insets(12, 0, 12, 0));
 
         VBox titleBlock = new VBox(10);
-        Label title = new Label("Progres štúdia");
+        Label title = new Label(en ? "Degree Progress" : "Progres štúdia");
         title.getStyleClass().add("welcome-title");
         Label sub = new Label(name + (email != null && !name.equals(email) ? "  •  " + email : ""));
         sub.getStyleClass().add("welcome-sub");
@@ -182,8 +185,8 @@ public class ProgressController implements Initializable {
         HBox statsRow = new HBox(16);
         statsRow.setAlignment(Pos.CENTER_RIGHT);
         statsRow.getChildren().addAll(
-                miniStat(earnedCredits + " / " + TOTAL, "Kreditov"),
-                miniStat(pctStr, "Hotovo")
+                miniStat(earnedCredits + " / " + TOTAL, en ? "Credits" : "Kreditov"),
+                miniStat(pctStr, en ? "Done" : "Hotovo")
         );
         titleRow.getChildren().addAll(titleBlock, statsRow);
 
@@ -193,11 +196,11 @@ public class ProgressController implements Initializable {
 
         HBox barHeader = new HBox();
         barHeader.setAlignment(Pos.CENTER_LEFT);
-        Label barLabel = new Label("Celkový progres štúdia");
+        Label barLabel = new Label(en ? "Overall Degree Progress" : "Celkový progres štúdia");
         barLabel.getStyleClass().add("section-title");
         barLabel.setPadding(new Insets(0, 15, 0, 0));
         HBox.setHgrow(barLabel, Priority.ALWAYS);
-        Label barPct = new Label(pctStr + "  (" + earnedCredits + " / " + TOTAL + " kreditov)");
+        Label barPct = new Label(pctStr + "  (" + earnedCredits + " / " + TOTAL + (en ? " credits)" : " kreditov)"));
         barPct.getStyleClass().add("schedule-date");
         barHeader.getChildren().addAll(barLabel, barPct);
 
@@ -218,7 +221,7 @@ public class ProgressController implements Initializable {
         for (Semester sem : semesters) semCards.getChildren().add(buildSemCard(sem));
 
         if (semesters.isEmpty()) {
-            Label noData = new Label("Žiadne záznamy o štúdiu neboli nájdené v databáze.");
+            Label noData = new Label(en ? "No study records found in the database." : "Žiadne záznamy o štúdiu neboli nájdené v databáze.");
             noData.getStyleClass().add("schedule-loc");
             noData.setPadding(new Insets(12, 0, 0, 0));
             semCards.getChildren().add(noData);
@@ -228,6 +231,8 @@ public class ProgressController implements Initializable {
     }
 
     private VBox buildSemCard(Semester sem) {
+        boolean en = UserSession.get().isEnglish();
+        
         VBox card = new VBox(14);
         card.getStyleClass().add("section-card");
 
@@ -242,7 +247,7 @@ public class ProgressController implements Initializable {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label cr = new Label(sem.totalCredits() + " kreditov");
+        Label cr = new Label(sem.totalCredits() + (en ? " credits" : " kreditov"));
         cr.getStyleClass().add("schedule-date");
         cr.setPadding(new Insets(0, 12, 0, 0));
         header.getChildren().addAll(badge, name, spacer, cr);
@@ -254,7 +259,7 @@ public class ProgressController implements Initializable {
         sep.setStyle("-fx-background-color:#e2e8f0;");
         card.getChildren().add(sep);
 
-        HBox courseHeader = courseRow("Predmet", "Kredity", "Zn.", true);
+        HBox courseHeader = courseRow(en ? "Subject" : "Predmet", en ? "Credits" : "Kredity", en ? "Gr." : "Zn.", true);
         courseHeader.setPadding(new Insets(8, 0, 8, 0));
         card.getChildren().add(courseHeader);
 

@@ -49,7 +49,7 @@
             <VBox spacing="6" alignment="CENTER_LEFT" prefWidth="340">
                 <children>
                     <Label fx:id="usernameLabel" text="Meno" styleClass="input-label" />
-                    <TextField fx:id="usernameField" promptText="xpriezvisko"
+                    <TextField fx:id="usernameField" promptText="meno@stuba.sk"
                                styleClass="login-input" prefWidth="340" />
                 </children>
             </VBox>

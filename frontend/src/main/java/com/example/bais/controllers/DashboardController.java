@@ -479,7 +479,7 @@ public class DashboardController implements Initializable {
             UserSession.get().setFirstName("");
             UserSession.get().setLastName("");
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getResource("login-view.fxml"));
+            loader.setLocation(getClass().getResource("../login-view.fxml"));
             loader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
             Scene loginScene = new Scene(loader.load(), 1280, 800);
             loginScene.getStylesheets().add(
@@ -504,7 +504,7 @@ public class DashboardController implements Initializable {
 
     private void loadView(String fxmlName) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlName));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../" + fxmlName));
             Node view = loader.load();
 
             Object controller = loader.getController();
