@@ -1,25 +1,25 @@
 package com.example.bais.controllers;
-import com.example.bais.*;
-import com.example.bais.models.*;
-import com.example.bais.services.*;
+import java.net.URL;
+import java.util.ResourceBundle;
 
+import com.example.bais.models.UserSession;
+import com.example.bais.services.WebSocketClientService;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * Admin Panel Overview — dashboard with quick-link tiles to admin sections.
- * Fotka 2: prehľad s dlaždicami.
  * SK/EN + dark/light mode aware.
  */
 public class AdminPanelController implements Initializable {
