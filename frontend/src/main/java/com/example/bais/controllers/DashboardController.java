@@ -1,10 +1,13 @@
 package com.example.bais.controllers;
-import com.example.bais.*;
-import com.example.bais.models.*;
-import com.example.bais.services.*;
-import com.example.bais.components.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
+import com.example.bais.components.NotificationWindow;
+import com.example.bais.models.UserSession;
+import com.example.bais.services.WebSocketClientService;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -17,9 +20,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 
 public class DashboardController implements Initializable {
 
@@ -479,7 +479,7 @@ public class DashboardController implements Initializable {
             UserSession.get().setFirstName("");
             UserSession.get().setLastName("");
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getResource("../login-view.fxml"));
+            loader.setLocation(getClass().getResource("/com/example/bais/login-view.fxml"));
             loader.setCharset(java.nio.charset.StandardCharsets.UTF_8);
             Scene loginScene = new Scene(loader.load(), 1280, 800);
             loginScene.getStylesheets().add(
@@ -504,7 +504,7 @@ public class DashboardController implements Initializable {
 
     private void loadView(String fxmlName) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("../" + fxmlName));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/bais/" + fxmlName));
             Node view = loader.load();
 
             Object controller = loader.getController();

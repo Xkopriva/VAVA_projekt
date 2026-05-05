@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,10 +48,13 @@ public class WebSocketClientService extends WebSocketClient {
 
     private record ListenerEntry(String id, Consumer<JsonNode> handler) {}
 
-    private WebSocketClientService(URI uri) { 
-        // super(uri, draft, httpHeaders, connectTimeout)
-        // null hodnoty použijú predvolené nastavenia draftu a hlavičiek
-        super(uri, null, null, 5000);
+    private WebSocketClientService(URI uri) {
+        super(
+            uri, 
+            new Draft_6455(),           // najpoužívanejší moderný draft (RFC 6455)
+            null,                       // headers (môže byť null)
+            5000                        // connect timeout v ms
+        );
     }
 
     // ── Pripojenie ────────────────────────────────────────────────
