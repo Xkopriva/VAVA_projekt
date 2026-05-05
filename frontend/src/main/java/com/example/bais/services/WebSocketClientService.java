@@ -1,13 +1,4 @@
 package com.example.bais.services;
-import com.example.bais.*;
-import com.example.bais.models.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +7,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * WebSocket klient s pub/sub systémom — namiesto jedného callbacku
@@ -34,6 +32,7 @@ public class WebSocketClientService extends WebSocketClient {
         if (instance == null) {
             try {
                 instance = new WebSocketClientService(new URI("ws://localhost:8887"));
+                instance.setConnectionLostTimeout(60);
             } catch (Exception e) { e.printStackTrace(); }
         }
         return instance;
@@ -48,7 +47,11 @@ public class WebSocketClientService extends WebSocketClient {
 
     private record ListenerEntry(String id, Consumer<JsonNode> handler) {}
 
-    private WebSocketClientService(URI uri) { super(uri); }
+    private WebSocketClientService(URI uri) { 
+        // super(uri, draft, httpHeaders, connectTimeout)
+        // null hodnoty použijú predvolené nastavenia draftu a hlavičiek
+        super(uri, null, null, 5000);
+    }
 
     // ── Pripojenie ────────────────────────────────────────────────
 
