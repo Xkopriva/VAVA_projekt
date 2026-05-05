@@ -557,6 +557,10 @@ public class DashboardController implements Initializable {
 
     @FXML
     private void handleAlgebra() {
+        if (UserSession.get().isTeacher()) {
+            handleGrades();
+            return;
+        }
         setActiveNavItem("algebra");
         loadView("submissions-view.fxml");
     }
@@ -753,8 +757,13 @@ public class DashboardController implements Initializable {
         if (algebraItem  != null) { algebraItem.setVisible(false);  algebraItem.setManaged(false);  }
         if (coursesItem  != null) { coursesItem.setVisible(false);  coursesItem.setManaged(false);  }
 
-        if (navGrades != null)
-            navGrades.setText(en ? "Admin Panel" : "Admin Panel");
+        if (navGrades != null) {
+            if (role == UserSession.Role.ADMIN) {
+                navGrades.setText("Admin Panel");
+            } else {
+                navGrades.setText("Teacher Panel");
+            }
+        }
 
         if (role == UserSession.Role.ADMIN) {
             // Show admin nav items
@@ -862,8 +871,13 @@ public class DashboardController implements Initializable {
             tileCalendarText.setText(en ? "Calendar" : "Kalendár");
         if (tileGradesText != null)
             tileGradesText.setText(en ? "Grades" : "Známky");
-        if (tileAssignmentsText != null)
-            tileAssignmentsText.setText(en ? "Assignments" : "Odovzdania");
+        if (tileAssignmentsText != null) {
+            if (UserSession.get().isTeacher()) {
+                tileAssignmentsText.setText(en ? "Teacher Panel" : "Panel učiteľa");
+            } else {
+                tileAssignmentsText.setText(en ? "Assignments" : "Odovzdania");
+            }
+        }
         if (tileAdminSubjectsText != null)
             tileAdminSubjectsText.setText(en ? "Subjects" : "Predmety");
         if (tileAdminGuarantorsText != null)

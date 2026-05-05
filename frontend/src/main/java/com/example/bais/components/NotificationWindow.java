@@ -216,9 +216,11 @@ public class NotificationWindow {
         root.getStyleClass().add("root-pane");
         
         Label titleLbl = new Label(en ? "Title:" : "Názov:");
+        titleLbl.getStyleClass().add("text-primary");
         TextField titleField = new TextField();
         
         Label msgLbl = new Label(en ? "Message:" : "Správa:");
+        msgLbl.getStyleClass().add("text-primary");
         TextArea msgField = new TextArea();
         msgField.setWrapText(true);
         msgField.setPrefRowCount(4);

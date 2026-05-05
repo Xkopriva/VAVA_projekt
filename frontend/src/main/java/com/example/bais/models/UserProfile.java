@@ -1,4 +1,5 @@
 package com.example.bais.models;
+
 import com.example.bais.*;
 
 public class UserProfile {

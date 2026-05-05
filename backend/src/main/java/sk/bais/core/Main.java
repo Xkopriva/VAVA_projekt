@@ -33,16 +33,14 @@ public class Main {
 
         try {
             var utf8 = java.nio.charset.Charset.forName("UTF-8");
-            
+
             // Prepíšeme System.out a System.err
             System.setOut(new java.io.PrintStream(System.out, true, utf8));
             System.setErr(new java.io.PrintStream(System.err, true, utf8));
-        
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-
 
         System.out.println("=== BAIS Backend Server - Štartujem ===\n");
 
@@ -61,20 +59,21 @@ public class Main {
         NotificationDAO notificationDAO = new NotificationDAO();
         TaskDAO taskDAO = new TaskDAO();
         TaskSubmissionDAO taskSubmissionDAO = new TaskSubmissionDAO();
-        
+
         // 2. Inicializácia Biznis logiky (Service vrstva)
         StudentService studentService = new StudentService(
-            studentDAO, enrollmentDAO, markDAO, indexRecordDAO, 
-            subjectDAO, subjectTranslationDAO, eventDAO, 
-            eventTranslationDAO, notificationDAO, taskDAO, taskSubmissionDAO);
+                studentDAO, enrollmentDAO, markDAO, indexRecordDAO,
+                subjectDAO, subjectTranslationDAO, eventDAO,
+                eventTranslationDAO, notificationDAO, taskDAO, taskSubmissionDAO);
         TeacherService teacherService = new TeacherService(
-            subjectDAO, enrollmentDAO, markDAO, indexRecordDAO, 
-            notificationDAO, taskDAO, taskSubmissionDAO); 
-        AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO); 
+                subjectDAO, enrollmentDAO, markDAO, indexRecordDAO,
+                notificationDAO, taskDAO, taskSubmissionDAO);
+        AdminService adminService = new AdminService(userDAO, subjectDAO, semesterDAO, subjectTranslationDAO);
 
         // 3. Spustenie WebSocket servera na porte 8887
         int port = 8887;
-        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService, adminService, userDAO);
+        BaisWebSocketServer server = new BaisWebSocketServer(port, authService, studentService, teacherService,
+                adminService, userDAO);
         server.start();
 
         System.out.println("Server beží na: ws://localhost:" + port);

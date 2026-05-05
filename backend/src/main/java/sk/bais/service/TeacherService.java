@@ -55,7 +55,8 @@ public class TeacherService {
         try {
             List<Subject> all = subjectDAO.list();
             List<Subject> mine = all.stream()
-                    .filter(s -> ctx.hasRole("ADMIN") || (s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId())))
+                    .filter(s -> ctx.hasRole("ADMIN")
+                            || (s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId())))
                     .toList();
             log.info("Teacher/Admin userId={} má {} predmetov", ctx.getUserId(), mine.size());
             return mine;
@@ -131,29 +132,29 @@ public class TeacherService {
         try {
             // 1. Bezpečnostné overenie: Má učiteľ právo meniť známky pre tento enrollment?
             if (!isGuarantorOfEnrollment(mark.getEnrollmentId(), ctx)) {
-                log.warn("Teacher {} nie je autorizovaný upraviť známku pre enrollment {}", ctx.getUserId(), mark.getEnrollmentId());
+                log.warn("Teacher {} nie je autorizovaný upraviť známku pre enrollment {}", ctx.getUserId(),
+                        mark.getEnrollmentId());
                 return false;
             }
 
             // 2. Samotná aktualizácia v DB
             boolean updated = markDAO.update(mark);
-            
+
             if (updated) {
                 log.info("Teacher userId={} upravil známku id={}", ctx.getUserId(), mark.getId());
-                
+
                 // 3. Notifikácia pre študenta o zmene hodnotenia
                 Optional<Enrollment> enrOpt = enrollmentDAO.getById(mark.getEnrollmentId());
                 enrOpt.ifPresent(enr -> {
                     createNotification(
-                        enr.getStudentId(), 
-                        ctx.getUserId(), 
-                        Notification.Type.MARK_ADDED,
-                        "Zmena hodnotenia", 
-                        "Vaše body za '" + mark.getTitle() + "' boli aktualizované.", 
-                        mark.getId(), 
-                        enr.getSubjectId(), 
-                        mark.getTaskSubmissionId()
-                    );
+                            enr.getStudentId(),
+                            ctx.getUserId(),
+                            Notification.Type.MARK_ADDED,
+                            "Zmena hodnotenia",
+                            "Vaše body za '" + mark.getTitle() + "' boli aktualizované.",
+                            mark.getId(),
+                            enr.getSubjectId(),
+                            mark.getTaskSubmissionId());
                 });
             }
             return updated;
@@ -173,7 +174,8 @@ public class TeacherService {
         }
         try {
             // Overenie, či učiteľ garantuje predmet daného zápisu
-            if (!isGuarantorOfEnrollment(e.getId(), ctx)) return false;
+            if (!isGuarantorOfEnrollment(e.getId(), ctx))
+                return false;
 
             boolean updated = enrollmentDAO.update(e);
             if (updated) {
@@ -190,13 +192,16 @@ public class TeacherService {
      * Vymaže čiastkové hodnotenie (Mark).
      */
     public boolean deleteMark(int markId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:write")) return false;
+        if (!ctx.hasPermission("marks:write"))
+            return false;
         try {
             Optional<Mark> markOpt = markDAO.getById(markId);
-            if (markOpt.isEmpty()) return false;
+            if (markOpt.isEmpty())
+                return false;
 
             // Kontrola, či učiteľ môže manipulovať so známkami tohto enrollmentu
-            if (!isGuarantorOfEnrollment(markOpt.get().getEnrollmentId(), ctx)) return false;
+            if (!isGuarantorOfEnrollment(markOpt.get().getEnrollmentId(), ctx))
+                return false;
 
             boolean deleted = markDAO.delete(markId);
             if (deleted) {
@@ -210,10 +215,10 @@ public class TeacherService {
         }
     }
 
-
     /**
      * Zapíše finálnu známku do indexu (IndexRecord).
-     * Jeden enrollment môže mať maximálne jeden IndexRecord (UNIQUE constraint v DB).
+     * Jeden enrollment môže mať maximálne jeden IndexRecord (UNIQUE constraint v
+     * DB).
      * Vyžaduje oprávnenie marks:write.
      */
     public Optional<IndexRecord> recordFinalMark(IndexRecord record, AuthContext ctx) {
@@ -250,11 +255,13 @@ public class TeacherService {
      * Vyžaduje overenie, či je učiteľ garantom predmetu.
      */
     public Optional<IndexRecord> getIndexRecordForEnrollment(int enrollmentId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:read")) return Optional.empty();
-        
+        if (!ctx.hasPermission("marks:read"))
+            return Optional.empty();
+
         try {
             // Bezpečnostná kontrola garantora
-            if (!isGuarantorOfEnrollment(enrollmentId, ctx)) return Optional.empty();
+            if (!isGuarantorOfEnrollment(enrollmentId, ctx))
+                return Optional.empty();
 
             return indexRecordDAO.getByEnrollment(enrollmentId);
         } catch (SQLException e) {
@@ -268,8 +275,9 @@ public class TeacherService {
      * Vyžaduje overenie, či je učiteľ garantom predmetu.
      */
     public List<Mark> getPointsForEnrollment(int enrollmentId, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:read")) return Collections.emptyList();
-        
+        if (!ctx.hasPermission("marks:read"))
+            return Collections.emptyList();
+
         try {
             // Kontrola, či je učiteľ garantom
             if (!isGuarantorOfEnrollment(enrollmentId, ctx)) {
@@ -286,15 +294,16 @@ public class TeacherService {
     }
 
     public Optional<Enrollment> createEnrollment(Enrollment e, AuthContext ctx) {
-        if (!ctx.hasPermission("enrollments:write")) return Optional.empty();
+        if (!ctx.hasPermission("enrollments:write"))
+            return Optional.empty();
         try {
             Enrollment created = enrollmentDAO.create(e);
             log.info("Teacher {} vytvoril zápis pre študenta {}", ctx.getUserId(), e.getStudentId());
-            
+
             // Notifikácia pre študenta
-            createNotification(e.getStudentId(), ctx.getUserId(), Notification.Type.ENROLLMENT_OPEN, 
-                "Nový zápis", "Boli ste zapísaný na predmet.", null, e.getSubjectId(), null);
-                
+            createNotification(e.getStudentId(), ctx.getUserId(), Notification.Type.ENROLLMENT_OPEN,
+                    "Nový zápis", "Boli ste zapísaný na predmet.", null, e.getSubjectId(), null);
+
             return Optional.of(created);
         } catch (SQLException ex) {
             log.error("Chyba pri vytváraní zápisu", ex);
@@ -303,7 +312,8 @@ public class TeacherService {
     }
 
     public boolean deleteEnrollment(int id, AuthContext ctx) {
-        if (!ctx.hasPermission("enrollments:write")) return false;
+        if (!ctx.hasPermission("enrollments:write"))
+            return false;
         try {
             return enrollmentDAO.delete(id);
         } catch (SQLException e) {
@@ -315,17 +325,19 @@ public class TeacherService {
     // --- TASKS ---
 
     public Optional<Task> createTask(Task t, AuthContext ctx) {
-        if (!ctx.hasPermission("tasks:write")) return Optional.empty();
+        if (!ctx.hasPermission("tasks:write"))
+            return Optional.empty();
         try {
             t.setCreatedBy(ctx.getUserId());
             Task created = taskDAO.create(t);
-            
+
             // Notifikácia všetkým študentom na predmete (zjednodušene)
             List<Enrollment> students = enrollmentDAO.list().stream()
                     .filter(e -> e.getSubjectId() == t.getSubjectId()).toList();
             for (Enrollment s : students) {
                 createNotification(s.getStudentId(), ctx.getUserId(), Notification.Type.TASK_DUE,
-                    "Nové zadanie: " + t.getTitle(), "Bolo pridané nové zadanie.", null, t.getSubjectId(), t.getId());
+                        "Nové zadanie: " + t.getTitle(), "Bolo pridané nové zadanie.", null, t.getSubjectId(),
+                        t.getId());
             }
             return Optional.of(created);
         } catch (SQLException e) {
@@ -337,20 +349,22 @@ public class TeacherService {
     // --- GRADING SUBMISSIONS ---
 
     public boolean gradeSubmission(int submissionId, TaskSubmission.Status status, AuthContext ctx) {
-        if (!ctx.hasPermission("marks:write")) return false;
+        if (!ctx.hasPermission("marks:write"))
+            return false;
         try {
             Optional<TaskSubmission> tsOpt = taskSubmissionDAO.getById(submissionId);
-            if (tsOpt.isEmpty()) return false;
-            
+            if (tsOpt.isEmpty())
+                return false;
+
             TaskSubmission ts = tsOpt.get();
             ts.setStatus(status);
             ts.setGradedBy(ctx.getUserId());
             ts.setGradedAt(java.time.OffsetDateTime.now());
-            
+
             boolean ok = taskSubmissionDAO.update(ts);
             if (ok) {
                 createNotification(ts.getStudentId(), ctx.getUserId(), Notification.Type.MARK_ADDED,
-                    "Zadanie ohodnotené", "Vaše odovzdané zadanie bolo skontrolované.", null, null, ts.getTaskId());
+                        "Zadanie ohodnotené", "Vaše odovzdané zadanie bolo skontrolované.", null, null, ts.getTaskId());
             }
             return ok;
         } catch (SQLException e) {
@@ -360,8 +374,8 @@ public class TeacherService {
     }
 
     // Helper pre notifikácie
-    private void createNotification(int recipientId, Integer senderId, Notification.Type type, 
-                                String title, String msg, Integer markId, Integer subId, Integer taskId) {
+    private void createNotification(int recipientId, Integer senderId, Notification.Type type,
+            String title, String msg, Integer markId, Integer subId, Integer taskId) {
         try {
             Notification n = new Notification();
             n.setRecipientId(recipientId);
@@ -378,24 +392,24 @@ public class TeacherService {
         }
     }
 
-
-
     public void createBroadcastNotification(String title, String message, AuthContext ctx) {
         if (!ctx.hasRole("TEACHER") && !ctx.hasRole("ADMIN")) {
             log.warn("Zamietnutý prístup k odoslaniu hromadnej notifikácie pre userId={}", ctx.getUserId());
             return;
         }
-        
+
         try {
             List<Enrollment> enrollments = enrollmentDAO.list();
             java.util.Set<Integer> studentIds = enrollments.stream()
-                .map(Enrollment::getStudentId)
-                .collect(java.util.stream.Collectors.toSet());
-            
+                    .map(Enrollment::getStudentId)
+                    .collect(java.util.stream.Collectors.toSet());
+
             for (int studentId : studentIds) {
-                createNotification(studentId, ctx.getUserId(), Notification.Type.ANNOUNCEMENT, title, message, null, null, null);
+                createNotification(studentId, ctx.getUserId(), Notification.Type.ANNOUNCEMENT, title, message, null,
+                        null, null);
             }
-            log.info("Teacher/Admin {} rozposlal hromadnú notifikáciu '{}' pre {} študentov.", ctx.getUserId(), title, studentIds.size());
+            log.info("Teacher/Admin {} rozposlal hromadnú notifikáciu '{}' pre {} študentov.", ctx.getUserId(), title,
+                    studentIds.size());
         } catch (SQLException e) {
             log.error("Chyba pri vytvarani hromadnej notifikacie", e);
         }
@@ -403,13 +417,16 @@ public class TeacherService {
 
     // Pomocná metóda na overenie práv k enrollmentu
     private boolean isGuarantorOfEnrollment(int enrollmentId, AuthContext ctx) throws SQLException {
-        if (ctx.hasRole("ADMIN")) return true;
+        if (ctx.hasRole("ADMIN"))
+            return true;
 
         Optional<Enrollment> enrollmentOpt = enrollmentDAO.getById(enrollmentId);
-        if (enrollmentOpt.isEmpty()) return false;
+        if (enrollmentOpt.isEmpty())
+            return false;
 
         Optional<Subject> subjectOpt = subjectDAO.getById(enrollmentOpt.get().getSubjectId());
-        if (subjectOpt.isEmpty()) return false;
+        if (subjectOpt.isEmpty())
+            return false;
 
         Subject s = subjectOpt.get();
         return s.getGuarantorId() != null && s.getGuarantorId().equals(ctx.getUserId());

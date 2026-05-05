@@ -1,4 +1,5 @@
 package com.example.bais.controllers;
+
 import com.example.bais.*;
 import com.example.bais.models.*;
 import com.example.bais.services.*;
@@ -26,15 +27,16 @@ import java.util.concurrent.TimeUnit;
 
 public class SettingsController implements Initializable {
 
-    @FXML private VBox settingsRoot;
+    @FXML
+    private VBox settingsRoot;
 
     // Prednastavené (default) hodnoty
     private boolean deadlineReminders = true;
-    private boolean newGrades         = true;
-    private boolean newMaterials      = true;
-    private boolean teacherMessages   = false;
-    private boolean systemAlerts      = true;
-    private boolean isDarkMode        = false;
+    private boolean newGrades = true;
+    private boolean newMaterials = true;
+    private boolean teacherMessages = false;
+    private boolean systemAlerts = true;
+    private boolean isDarkMode = false;
 
     private UserProfile currentUserProfile;
     private DashboardController dashboardController;
@@ -66,7 +68,8 @@ public class SettingsController implements Initializable {
         ws.sendAction("GET_USER_PROFILE", null);
 
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-            if (!profileReceived) ws.unsubscribe(subscriptionId);
+            if (!profileReceived)
+                ws.unsubscribe(subscriptionId);
         }, 3, TimeUnit.SECONDS);
     }
 
@@ -80,11 +83,11 @@ public class SettingsController implements Initializable {
         try {
             JsonNode root = JSON_MAPPER.readTree(SETTINGS_FILE);
             deadlineReminders = root.path("deadlineReminders").asBoolean(true);
-            newGrades         = root.path("newGrades").asBoolean(true);
-            newMaterials      = root.path("newMaterials").asBoolean(true);
-            teacherMessages   = root.path("teacherMessages").asBoolean(false);
-            systemAlerts      = root.path("systemAlerts").asBoolean(true);
-            isDarkMode        = root.path("isDarkMode").asBoolean(false);
+            newGrades = root.path("newGrades").asBoolean(true);
+            newMaterials = root.path("newMaterials").asBoolean(true);
+            teacherMessages = root.path("teacherMessages").asBoolean(false);
+            systemAlerts = root.path("systemAlerts").asBoolean(true);
+            isDarkMode = root.path("isDarkMode").asBoolean(false);
 
             if (root.has("isEnglish")) {
                 UserSession.get().setEnglish(root.path("isEnglish").asBoolean(false));
@@ -117,11 +120,13 @@ public class SettingsController implements Initializable {
     private void loadFromSession() {
         String email = UserSession.get().getUserEmail();
         String first = UserSession.get().getFirstName();
-        String last  = UserSession.get().getLastName();
+        String last = UserSession.get().getLastName();
         String fullName = ((first != null ? first : "") + " " + (last != null ? last : "")).trim();
-        if (fullName.isEmpty()) fullName = email != null ? email : "—";
+        if (fullName.isEmpty())
+            fullName = email != null ? email : "—";
 
-        currentUserProfile = new UserProfile(fullName, String.valueOf(UserSession.get().getUserId()), email != null ? email : "—", "N/A", "N/A");
+        currentUserProfile = new UserProfile(fullName, String.valueOf(UserSession.get().getUserId()),
+                email != null ? email : "—", "N/A", "N/A");
         Platform.runLater(this::buildUI);
     }
 
@@ -130,19 +135,21 @@ public class SettingsController implements Initializable {
         WebSocketClientService.getInstance().unsubscribe(subscriptionId);
         JsonNode data = node.path("data");
         String firstName = data.path("firstName").asText("");
-        String lastName  = data.path("lastName").asText("");
-        String email     = data.path("email").asText(UserSession.get().getUserEmail());
+        String lastName = data.path("lastName").asText("");
+        String email = data.path("email").asText(UserSession.get().getUserEmail());
 
         UserSession.get().setFirstName(firstName);
         UserSession.get().setLastName(lastName);
 
         String fullName = (firstName + " " + lastName).trim();
-        currentUserProfile = new UserProfile(fullName.isEmpty() ? email : fullName, String.valueOf(UserSession.get().getUserId()), email, "N/A", "N/A");
+        currentUserProfile = new UserProfile(fullName.isEmpty() ? email : fullName,
+                String.valueOf(UserSession.get().getUserId()), email, "N/A", "N/A");
         Platform.runLater(this::buildUI);
     }
 
     private void buildUI() {
-        if (settingsRoot == null) return;
+        if (settingsRoot == null)
+            return;
 
         settingsRoot.getChildren().clear();
         settingsRoot.setSpacing(16);
@@ -155,7 +162,8 @@ public class SettingsController implements Initializable {
         Label title = new Label(en ? "Settings" : "Nastavenia");
         title.setStyle("-fx-font-size:26px;-fx-font-weight:bold;");
         title.getStyleClass().add("welcome-title");
-        Label sub = new Label(en ? "Manage your account, preferences and notifications" : "Spravuj účet, preferencie a upozornenia");
+        Label sub = new Label(
+                en ? "Manage your account, preferences and notifications" : "Spravuj účet, preferencie a upozornenia");
         sub.getStyleClass().add("welcome-sub");
         titleBlock.getChildren().addAll(title, sub);
 
@@ -166,32 +174,54 @@ public class SettingsController implements Initializable {
         // Notifikácie
         VBox notifCard = buildSectionCard(en ? "🔔  Notifications" : "🔔  Upozornenia");
         notifCard.getChildren().addAll(
-                toggleRow(en ? "Deadline reminders" : "Pripomienky deadlinov", deadlineReminders, en ? "24h before submission" : "Upozornenie 24h pred odovzdaním", () -> { deadlineReminders = !deadlineReminders; updateAndSave(); }),
+                toggleRow(en ? "Deadline reminders" : "Pripomienky deadlinov", deadlineReminders,
+                        en ? "24h before submission" : "Upozornenie 24h pred odovzdaním", () -> {
+                            deadlineReminders = !deadlineReminders;
+                            updateAndSave();
+                        }),
                 separator(),
-                toggleRow(en ? "New grades" : "Nové hodnotenia", newGrades, en ? "On new grade" : "Pri novej známke", () -> { newGrades = !newGrades; updateAndSave(); }),
+                toggleRow(en ? "New grades" : "Nové hodnotenia", newGrades, en ? "On new grade" : "Pri novej známke",
+                        () -> {
+                            newGrades = !newGrades;
+                            updateAndSave();
+                        }),
                 separator(),
-                toggleRow(en ? "New materials" : "Nové materiály", newMaterials, en ? "New lectures and files" : "Nové prednášky a súbory", () -> { newMaterials = !newMaterials; updateAndSave(); }),
+                toggleRow(en ? "New materials" : "Nové materiály", newMaterials,
+                        en ? "New lectures and files" : "Nové prednášky a súbory", () -> {
+                            newMaterials = !newMaterials;
+                            updateAndSave();
+                        }),
                 separator(),
-                toggleRow(en ? "Messages from teachers" : "Správy od pedagógov", teacherMessages, en ? "Email notifications" : "E-mailové notifikácie", () -> { teacherMessages = !teacherMessages; updateAndSave(); }),
+                toggleRow(en ? "Messages from teachers" : "Správy od pedagógov", teacherMessages,
+                        en ? "Email notifications" : "E-mailové notifikácie", () -> {
+                            teacherMessages = !teacherMessages;
+                            updateAndSave();
+                        }),
                 separator(),
-                toggleRow(en ? "System alerts" : "Systémové upozornenia", systemAlerts, en ? "Technical AIS alerts" : "Technické správy AIS", () -> { systemAlerts = !systemAlerts; updateAndSave(); })
-        );
+                toggleRow(en ? "System alerts" : "Systémové upozornenia", systemAlerts,
+                        en ? "Technical AIS alerts" : "Technické správy AIS", () -> {
+                            systemAlerts = !systemAlerts;
+                            updateAndSave();
+                        }));
 
         // Vzhľad
         VBox appearCard = buildSectionCard(en ? "🎨  Appearance" : "🎨  Vzhľad");
         appearCard.getChildren().addAll(
-                toggleRow(en ? "English Language" : "Anglický jazyk", UserSession.get().isEnglish(), en ? "Interface in English" : "Rozhranie v angličtine", () -> {
-                    UserSession.get().setEnglish(!UserSession.get().isEnglish());
-                    if (dashboardController != null) dashboardController.toggleLanguage();
-                    updateAndSave();
-                }),
+                toggleRow(en ? "English Language" : "Anglický jazyk", UserSession.get().isEnglish(),
+                        en ? "Interface in English" : "Rozhranie v angličtine", () -> {
+                            UserSession.get().setEnglish(!UserSession.get().isEnglish());
+                            if (dashboardController != null)
+                                dashboardController.toggleLanguage();
+                            updateAndSave();
+                        }),
                 separator(),
-                toggleRow(en ? "Dark mode" : "Tmavý režim", isDarkMode, en ? "Switch between dark and light theme" : "Prepínanie medzi tmavou a svetlou témou", () -> {
-                    isDarkMode = !isDarkMode;
-                    if (dashboardController != null) dashboardController.setDarkMode(isDarkMode);
-                    updateAndSave();
-                })
-        );
+                toggleRow(en ? "Dark mode" : "Tmavý režim", isDarkMode,
+                        en ? "Switch between dark and light theme" : "Prepínanie medzi tmavou a svetlou témou", () -> {
+                            isDarkMode = !isDarkMode;
+                            if (dashboardController != null)
+                                dashboardController.setDarkMode(isDarkMode);
+                            updateAndSave();
+                        }));
 
         settingsRoot.getChildren().addAll(titleBlock, profileCard, notifCard, appearCard);
     }
@@ -206,7 +236,9 @@ public class SettingsController implements Initializable {
         String initials = "??";
         if (fullName != null && !fullName.isEmpty() && !fullName.equals("—")) {
             String[] parts = fullName.split("\\s+");
-            initials = parts.length >= 2 ? (parts[0].substring(0,1) + parts[parts.length-1].substring(0,1)).toUpperCase() : parts[0].substring(0,1).toUpperCase();
+            initials = parts.length >= 2
+                    ? (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase()
+                    : parts[0].substring(0, 1).toUpperCase();
         }
 
         HBox avatarRow = new HBox(16);
@@ -265,18 +297,24 @@ public class SettingsController implements Initializable {
         row.setStyle("-fx-cursor:hand;");
         VBox box = new VBox(2);
         HBox.setHgrow(box, Priority.ALWAYS);
-        Label l = new Label(label); l.getStyleClass().add("schedule-name");
-        Label d = new Label(desc);  d.getStyleClass().add("schedule-loc");
+        Label l = new Label(label);
+        l.getStyleClass().add("schedule-name");
+        Label d = new Label(desc);
+        d.getStyleClass().add("schedule-loc");
         box.getChildren().addAll(l, d);
         StackPane toggle = buildToggle(on);
         row.getChildren().addAll(box, toggle);
-        row.setOnMouseClicked(e -> { if (onToggle != null) onToggle.run(); });
+        row.setOnMouseClicked(e -> {
+            if (onToggle != null)
+                onToggle.run();
+        });
         return row;
     }
 
     private StackPane buildToggle(boolean on) {
         StackPane t = new StackPane();
-        t.setMinWidth(44); t.setMinHeight(24);
+        t.setMinWidth(44);
+        t.setMinHeight(24);
         t.setMaxWidth(44);
         t.setStyle("-fx-background-color:" + (on ? "#06b6d4" : "#e2e8f0") + ";-fx-background-radius:12;");
         Circle knob = new Circle(9, Color.WHITE);

@@ -116,7 +116,7 @@ public class AdminPanelController implements Initializable {
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         Label iconLbl = new Label(icon);
-        iconLbl.setStyle("-fx-font-size:22px;");
+        iconLbl.setStyle("-fx-font-size:22px; -fx-text-fill: " + color + ";");
         Label nameLbl = new Label(label);
         nameLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#94a3b8;");
         header.getChildren().addAll(iconLbl, nameLbl);
@@ -141,7 +141,7 @@ public class AdminPanelController implements Initializable {
         tile.setStyle("-fx-background-radius:14;-fx-border-radius:14;");
 
         Label iconLbl = new Label(icon);
-        iconLbl.setStyle("-fx-font-size:32px;");
+        iconLbl.setStyle("-fx-font-size:32px; -fx-text-fill: " + color + ";");
 
         Label titleLbl = new Label(title);
         titleLbl.setStyle("-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:" + color + ";");
