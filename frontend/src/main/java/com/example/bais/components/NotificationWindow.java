@@ -158,7 +158,6 @@ public class NotificationWindow {
             });
         });
 
-        // Correct backend action name
         ws.sendAction("GET_ALL_NOTIFICATIONS", null);
 
         // Timeout 4s – if backend doesn't respond, show fallback
