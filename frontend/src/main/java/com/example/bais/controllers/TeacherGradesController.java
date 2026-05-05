@@ -1,48 +1,48 @@
 package com.example.bais.controllers;
 
-import com.example.bais.*;
-import com.example.bais.models.*;
-import com.example.bais.services.*;
-import com.example.bais.components.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-<<<<<<< HEAD
+import com.example.bais.models.UserSession;
+import com.example.bais.services.WebSocketClientService;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+
 /**
  * Teacher Grades view — subjects guaranteed by teacher, students, marks,
  * broadcast notification.
  * Supports: dark/light mode, SK/EN language, live data via WebSocket.
  */
-=======
->>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
 public class TeacherGradesController implements Initializable {
 
     @FXML
     private VBox teacherGradesRoot;
 
-<<<<<<< HEAD
     // ── Data model ──────────────────────────────────────────────────────────────
     record StudentRow(int enrollmentId, int studentId, String firstName, String lastName, String status) {
     }
-=======
-    // Data model
-    record StudentRow(int enrollmentId, int studentId, String status) {}
-    record SubjectInfo(int subjectId, String code, String name) {}
->>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
 
     record SubjectInfo(int subjectId, String code, String name) {
     }
@@ -459,11 +459,7 @@ public class TeacherGradesController implements Initializable {
             rowBox.setStyle("-fx-border-color:transparent transparent #e2e8f0 transparent;" +
                     "-fx-border-width:0 0 1 0;");
 
-<<<<<<< HEAD
         // ── Column 1: Avatar + student name ─────────────────────────
-=======
-        //student ID
->>>>>>> eddc47416233d9733fac903cb70f2568b8324cbd
         Circle dot = new Circle(5, Color.web(avatarColor(row.studentId())));
         String fullName = (row.firstName() + " " + row.lastName()).trim();
         if (fullName.isEmpty())
