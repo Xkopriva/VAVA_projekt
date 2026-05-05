@@ -19,15 +19,26 @@ public final class DatabaseConnection {
 
     static {
         Properties props = new Properties();
-        // Načítanie z resources cez ClassLoader
-        try (InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream("application.properties")) {
-            if (input == null) {
-                // Ak súbor chýba, zastavíme aplikáciu skoro, aby sme neskôr nehľadali chybu v SQL
-                throw new RuntimeException("Kritická chyba: Súbor 'application.properties' nebol nájdený v src/main/resources!");
+        
+        // 1. Skús načítať externe (vedľa JAR súboru) — pre produkciu
+        java.nio.file.Path externalConfig = java.nio.file.Path.of("application.properties");
+        if (java.nio.file.Files.exists(externalConfig)) {
+            try (InputStream input = java.nio.file.Files.newInputStream(externalConfig)) {
+                props.load(input);
+            } catch (IOException e) {
+                throw new ExceptionInInitializerError("Chyba pri čítaní externého application.properties: " + e.getMessage());
             }
-            props.load(input);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError("Nepodarilo sa prečítať konfiguračný súbor: " + e.getMessage());
+        } else {
+            // 2. Fallback — načítaj z JAR (pre development)
+            try (InputStream input = DatabaseConnection.class.getClassLoader()
+                    .getResourceAsStream("application.properties")) {
+                if (input == null) {
+                    throw new RuntimeException("application.properties nenájdený ani externe ani v JAR!");
+                }
+                props.load(input);
+            } catch (IOException e) {
+                throw new ExceptionInInitializerError("Chyba pri čítaní application.properties z JAR: " + e.getMessage());
+            }
         }
 
         URL      = props.getProperty("db.url");

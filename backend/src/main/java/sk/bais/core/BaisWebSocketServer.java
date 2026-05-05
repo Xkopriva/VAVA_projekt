@@ -926,7 +926,6 @@ public class BaisWebSocketServer extends WebSocketServer {
     @Override
     public void onStart() {
         log.info("WebSocket server úspešne spustený na porte: {}", getPort());
-        setConnectionLostTimeout(0);
-        setConnectionLostTimeout(100);
+        setConnectionLostTimeout(200);
     }
 }
